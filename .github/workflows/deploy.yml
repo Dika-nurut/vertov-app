@@ -184,13 +184,15 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           SEED_SITE_ADDRESS: ${{ secrets.SEED_SITE_ADDRESS }}
 
-  # G-5: the worker runs on its own VM (worker-compose.yml), NOT in the app
-  # stack, so the app deploy above never touches it. This job bumps it in the
-  # same button-press, AFTER `deploy` (schema migrations are already applied
-  # before the new worker starts).
+  # G-5: the worker runs from its own worker-compose.yml, outside the app
+  # compose project, so the app deploy above never touches it. On the current
+  # solo VM the worker compose file lives on the app host and needs the same
+  # external state-network override as the app. This job bumps it in the same
+  # button-press, AFTER `deploy` (schema migrations are already applied before
+  # the new worker starts).
   #
   # Required extra repo secret:
-  #   WORKER_DEPLOY_HOST = vertov-worker public IP (currently <worker-host-via-secret-WORKER_DEPLOY_HOST>)
+  #   WORKER_DEPLOY_HOST = host containing /opt/seed/worker-compose.yml
   #
   # VM prerequisite, already applied 2026-07-09:
   #   /opt/seed/worker-compose.yml is owned by deploy:deploy, so this job does
@@ -214,9 +216,14 @@ jobs:
             echo "$YC_SA_KEY_JSON" | docker login --username json_key --password-stdin cr.yandex
             W=/opt/seed/worker-compose.yml
             test -w "$W"
-            sed -i "s#seed-worker:[^\"' ]*#seed-worker:${SEED_TAG}#" "$W"
             export SEED_REGISTRY="cr.yandex/${YC_REGISTRY_ID}"
-            docker compose -f "$W" up -d
+            export SEED_IMAGE_TAG="$SEED_TAG"
+            COMPOSE_ARGS=(-f "$W")
+            if [ -f /opt/seed-state/solo-worker-override.yml ]; then
+              COMPOSE_ARGS+=(-f /opt/seed-state/solo-worker-override.yml)
+            fi
+            docker compose "${COMPOSE_ARGS[@]}" pull worker
+            docker compose "${COMPOSE_ARGS[@]}" up -d --remove-orphans
         env:
           SEED_TAG: ${{ needs.resolve.outputs.tag }}
           YC_REGISTRY_ID: ${{ secrets.YC_REGISTRY_ID }}

@@ -21,7 +21,7 @@ re-run with an older SHA).
 | `DEPLOY_HOST` / `DEPLOY_USER` / `DEPLOY_SSH_KEY` | App VM SSH (key never leaves secrets) |
 | `DEPLOY_PATH` | Checkout path on the VM (`/opt/seed`) |
 | `SEED_SITE_ADDRESS` | Public hostname (`vertov.space`) |
-| `WORKER_DEPLOY_HOST` | Worker VM SSH host (same user/key) |
+| `WORKER_DEPLOY_HOST` | Host containing `/opt/seed/worker-compose.yml` (same user/key; on the current solo VM, the app host) |
 
 App secrets live ONLY on the VMs (`/run/secrets/seed.env`) — never in git.
 
