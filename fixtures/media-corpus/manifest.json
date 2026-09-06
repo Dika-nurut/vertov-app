@@ -1,0 +1,58 @@
+{
+  "_doc": "Contract for the zero-spend media corpus (T2). corpus.test.ts ffprobes every file and asserts it matches these properties. Regenerate bytes with generate.sh; update this file if you intentionally change a clip.",
+  "clips": [
+    {
+      "id": "bars-720p",
+      "file": "bars-1280x720-30fps-2s.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "durationSec": 2,
+      "hasAudio": true,
+      "role": "landscape bars — default video success asset"
+    },
+    {
+      "id": "testsrc-480p",
+      "file": "testsrc-854x480-24fps-1s.mp4",
+      "kind": "video",
+      "width": 854,
+      "height": 480,
+      "fps": 24,
+      "durationSec": 1,
+      "hasAudio": true,
+      "role": "short motion clip, off-spec dims (forces normalize scale/pad)"
+    },
+    {
+      "id": "tone-720p-audio",
+      "file": "tone-1280x720-30fps-3s.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "durationSec": 3,
+      "hasAudio": true,
+      "role": "multi-second clip WITH audio — exercises audio mix / mute / volume"
+    },
+    {
+      "id": "motion-portrait",
+      "file": "motion-720x1280-24fps-1s.mp4",
+      "kind": "video",
+      "width": 720,
+      "height": 1280,
+      "fps": 24,
+      "durationSec": 1,
+      "hasAudio": true,
+      "role": "portrait 9:16 motion — PiP overlay source / aspect handling"
+    },
+    {
+      "id": "still-portrait",
+      "file": "still-1080x1920.png",
+      "kind": "image",
+      "width": 1080,
+      "height": 1920,
+      "hasAudio": false,
+      "role": "portrait still — раскадровка frame / image consumer"
+    }
+  ]
+}

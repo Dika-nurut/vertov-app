@@ -1,0 +1,381 @@
+.home {
+  position: relative;
+  min-width: 1024px;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+}
+
+.topbar {
+  display: flex;
+  height: 46px;
+  align-items: center;
+  padding: 0 18px;
+  border-bottom: 2.5px solid var(--color-line);
+}
+
+.wordmark {
+  padding: 3px 8px 2px;
+  border: 2px solid var(--color-line);
+  background: var(--color-accent);
+  color: var(--color-accent2-foreground);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+}
+
+.actions {
+  display: flex;
+  margin-left: 18px;
+}
+
+.actions button,
+.empty button,
+.guidance button,
+.loadError button,
+.dialog button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 2px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.actions button + button {
+  margin-left: -2px;
+}
+
+.actions button:hover:not(:disabled),
+.actions button:focus-visible,
+.empty button:hover,
+.empty button:focus-visible,
+.guidance button:hover,
+.guidance button:focus-visible,
+.loadError button:hover,
+.loadError button:focus-visible,
+.dialog button:hover:not(:disabled),
+.dialog button:focus-visible {
+  position: relative;
+  z-index: 1;
+  background: var(--color-accent);
+  color: var(--color-accent2-foreground);
+}
+
+.actions button:disabled,
+.dialog button:disabled {
+  color: var(--color-faint);
+}
+
+.topbar time {
+  margin-left: auto;
+  color: var(--color-faint);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.projectPlane {
+  position: relative;
+  min-height: calc(100vh - 46px);
+  padding: 44px 60px;
+}
+
+.notice {
+  position: fixed;
+  z-index: 10;
+  top: 58px;
+  right: 18px;
+  max-width: 520px;
+  margin: 0;
+  padding: 10px 38px 10px 12px;
+  border: 2px solid var(--color-line);
+  background: var(--color-accent);
+  box-shadow: var(--offset-sm);
+  color: var(--color-accent2-foreground);
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+
+.notice button {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 18px;
+}
+
+.trashHeader {
+  max-width: 620px;
+  margin: -12px 0 42px;
+}
+
+.trashHeader h1 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+.trashHeader p {
+  margin: 0;
+  color: var(--color-faint);
+  font-size: 9px;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+}
+
+.projectGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 132px);
+  gap: 40px;
+}
+
+.projectGrid button {
+  display: flex;
+  width: 132px;
+  flex-direction: column;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.projectArt {
+  position: relative;
+  display: block;
+  width: 100px;
+  height: 78px;
+  margin: 0 auto 10px;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface2);
+}
+
+.projectArt::before {
+  position: absolute;
+  top: -12px;
+  left: -2.5px;
+  width: 44px;
+  height: 12px;
+  border: 2.5px solid var(--color-line);
+  border-bottom: 0;
+  background: var(--color-surface2);
+  content: '';
+}
+
+.projectGrid button:hover .projectArt,
+.projectGrid button:focus-visible .projectArt,
+.selected .projectArt {
+  box-shadow: var(--offset-sm);
+}
+
+.projectGrid b {
+  max-width: 132px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected b,
+.projectGrid button:hover b,
+.projectGrid button:focus-visible b {
+  background: var(--color-accent);
+  color: var(--color-accent2-foreground);
+}
+
+.projectGrid small {
+  margin-top: 3px;
+  color: var(--color-faint);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.empty {
+  color: var(--color-faint);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.empty p {
+  margin: 0 0 14px;
+}
+
+.firstRun {
+  max-width: 440px;
+  color: var(--color-muted-foreground);
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.guidance {
+  position: fixed;
+  z-index: 8;
+  top: 66px;
+  right: 22px;
+  width: min(360px, calc(100vw - 44px));
+  padding: 12px;
+  border: 2px solid var(--color-line);
+  background: var(--color-surface2);
+  box-shadow: var(--offset-sm);
+}
+
+.guidance p {
+  margin: 0 0 10px;
+  font-size: 11px;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+}
+
+.guidance kbd {
+  padding: 1px 3px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  font: inherit;
+}
+
+.loadError {
+  max-width: 460px;
+  color: var(--color-danger);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.trashInspection {
+  position: fixed;
+  right: 22px;
+  bottom: 24px;
+  width: 310px;
+  padding: 18px;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface2);
+  box-shadow: var(--offset-lg);
+}
+
+.trashInspection h2 {
+  margin: 0 0 8px;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 15px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.trashInspection p {
+  color: var(--color-faint);
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.trashInspection dl {
+  margin: 14px 0;
+}
+
+.trashInspection dl div {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-top: 1px solid var(--color-line);
+  font-size: 9px;
+}
+
+.trashInspection dt {
+  color: var(--color-faint);
+}
+
+.trashInspection dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.trashInspection .partialWarning {
+  color: var(--color-danger);
+}
+
+.dialogBackdrop {
+  position: fixed;
+  z-index: 20;
+  display: grid;
+  background: rgb(17 19 23 / 78%);
+  inset: 0;
+  place-items: center;
+}
+
+.dialog {
+  width: min(460px, calc(100vw - 48px));
+  padding: 22px;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface2);
+  box-shadow: var(--offset-lg);
+}
+
+.dialog h1 {
+  margin: 0 0 18px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+.dialog p,
+.dialog label {
+  display: block;
+  color: var(--color-muted-foreground);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.dialog input {
+  width: 100%;
+  height: 40px;
+  margin-top: 7px;
+  padding: 0 10px;
+  border: 2px solid var(--color-line);
+  outline: none;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+}
+
+.dialog input:focus {
+  box-shadow: var(--offset-sm);
+}
+
+.dialog [role='alert'] {
+  color: var(--color-danger);
+}
+
+.dialogButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.attribution {
+  position: fixed;
+  right: 12px;
+  bottom: 7px;
+  color: rgb(236 238 243 / 25%);
+  font-size: 7px;
+}

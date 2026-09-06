@@ -1,0 +1,2 @@
+DROP INDEX "script_assist_requests_inflight_age_idx";--> statement-breakpoint
+CREATE INDEX "script_assist_requests_inflight_age_idx" ON "script_assist_requests" USING btree ("updated_at") WHERE "script_assist_requests"."status" = 'in_progress';

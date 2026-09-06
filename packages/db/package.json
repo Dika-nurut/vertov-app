@@ -1,0 +1,39 @@
+{
+  "name": "@seed/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "echo 'no lint'",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "generate:cost-legs": "tsx scripts/generate-cost-legs.ts",
+    "import:llm-pricing": "tsx scripts/import-llm-pricing.ts",
+    "check:llm-pricing": "tsx scripts/import-llm-pricing.ts --check",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx scripts/migrate.ts",
+    "backfill:script-thread-messages": "tsx scripts/backfill-script-thread-messages.ts",
+    "backfill:asset-placements": "tsx scripts/backfill-asset-placements.ts",
+    "seed": "tsx scripts/seed.ts",
+    "reset": "tsx scripts/reset.ts",
+    "test-db:reset": "node scripts/test-db.mjs reset",
+    "test-db:url": "node scripts/test-db.mjs url"
+  },
+  "dependencies": {
+    "dotenv": "16.4.7",
+    "drizzle-orm": "0.45.2",
+    "nanoid": "5.0.9",
+    "pg": "8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/pg": "8.11.10",
+    "drizzle-kit": "0.30.1",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
+  }
+}

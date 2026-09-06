@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<FinalDraft DocumentType="Script" Template="No" Version="5">
+  <Content>
+    <Paragraph Type="Scene Heading" Number="1">
+      <Text>INT. COFFEE SHOP - DAY</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>A quiet morning. </Text>
+      <Text Style="Italic">Rain</Text>
+      <Text> streaks the window.</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>ВЕРА</Text>
+    </Paragraph>
+    <Paragraph Type="Parenthetical">
+      <Text>(тихо)</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>Ты опоздал. Опять.</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>McCLANE</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>Traffic. You know how it is.</Text>
+    </Paragraph>
+    <Paragraph Type="Transition">
+      <Text>CUT TO:</Text>
+    </Paragraph>
+    <Paragraph Type="Scene Heading" Number="2">
+      <Text>НАТ. НАБЕРЕЖНАЯ - ВЕЧЕР</Text>
+    </Paragraph>
+    <Paragraph Type="Shot">
+      <Text>CLOSE ON THE LOCKET</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>SIRENS WAIL
+Somewhere a door slams.</Text>
+    </Paragraph>
+    <Paragraph Type="Transition">
+      <Text>SMASH CUT</Text>
+    </Paragraph>
+    <Paragraph Type="General">
+      <Text>A general note paragraph.</Text>
+    </Paragraph>
+  </Content>
+  <TitlePage>
+    <Content>
+      <Paragraph Type="General">
+        <Text>THE LOCKET</Text>
+      </Paragraph>
+      <Paragraph Type="General">
+        <Text>Author: A. Writer</Text>
+      </Paragraph>
+      <Paragraph Type="General">
+        <Text>Draft date: 2026-07-02</Text>
+      </Paragraph>
+      <Paragraph Type="General">
+        <Text>A stray title-page line.</Text>
+      </Paragraph>
+    </Content>
+  </TitlePage>
+</FinalDraft>

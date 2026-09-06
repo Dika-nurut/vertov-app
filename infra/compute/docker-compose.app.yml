@@ -1,0 +1,157 @@
+# Seed COMPUTE tier (web / api / worker / edge) — INF-10/15/16.
+# The STATEFUL tiers (Postgres/Redis/Object Storage) are MANAGED cloud and are
+# NOT in this file — the apps reach them via env (DATABASE_URL, REDIS_URL,
+# MINIO_ENDPOINT=managed-S3, etc.) injected from the secret store (INF-13).
+#
+#   docker compose -f infra/compute/docker-compose.app.yml up -d --build
+#
+# Secrets come from an env file the deploy injects (NOT committed): --env-file.
+name: seed-app
+
+services:
+  api:
+    build: { context: ../.., dockerfile: apps/api/Dockerfile }
+    # SEED_REGISTRY (e.g. cr.yandex/<registry-id>) is set by CI/CD so the VM PULLS
+    # the prebuilt image; left empty for a local `--build` (back-compatible).
+    image: ${SEED_REGISTRY:+${SEED_REGISTRY}/}seed-api:${SEED_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    # Loopback-only host port so the on-VM deploy readiness gate (deploy.sh polls
+    # 127.0.0.1:4000/ready) and host-local smoke can reach the API. Public traffic
+    # still enters ONLY through the edge (Caddy 80/443) → never bind 0.0.0.0 here.
+    # 4001 = API metrics server (Prometheus on vertov-monitor scrapes it via
+    # the private subnet). Preserve the existing production observability
+    # binding when this release replaces the API container.
+    ports: ['127.0.0.1:4000:4000', '4001:4001']
+    env_file:
+      - ${SEED_ENV_FILE:-./.env.prod}
+    # ASR wiring is intra-compose and constant → defaulted here so auto-captions go
+    # live with the deploy, no manual secret entry. WHISPER_MODEL is shared with the
+    # whisper service's preload (same interpolation) — set it once to ladder small→
+    # medium. Only the OPTIONAL Groq fallback (GROQ_API_KEY) ever needs a real secret.
+    environment:
+      # Keep the readiness identity aligned with the immutable image tag. CI bakes
+      # SEED_COMMIT_SHA into the API image; the manual local-deploy path builds
+      # locally, so pass the deploy tag at runtime as the same release identity.
+      # With neither value set, local/dev images remain explicitly unidentified.
+      SEED_COMMIT_SHA: ${SEED_COMMIT_SHA:-${SEED_IMAGE_TAG:-}}
+      WHISPER_SERVER_URL: http://whisper:8000
+      WHISPER_MODEL: ${WHISPER_MODEL:-Systran/faster-whisper-small}
+      API_METRICS_HOST: 0.0.0.0
+      # Tochka serves a Russian Trusted Root CA chain that is not in the
+      # Debian/Node default store. The provider uses this CA only for Tochka;
+      # it is not installed as a process-wide NODE_EXTRA_CA_CERTS override.
+      TOCHKA_CA_CERT: /usr/local/share/ca-certificates/russian-trusted-root-ca.crt
+    # Yandex managed PG/Valkey present a PRIVATE CA (absent from the system store).
+    # Pin it read-only so PGSSLMODE=verify-full + REDIS_CA_CERT verify for real.
+    volumes:
+      - ../../certs/yc-root-ca.crt:/app/yc-root-ca.crt:ro
+    # Health-gated: compose marks the container healthy only when /health passes;
+    # the edge should route to it only once healthy (INF-16).
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 30s
+
+  # NOTE: the BullMQ/ffmpeg worker runs on a DEDICATED VM (vertov-worker) as of
+  # 2026-07-07, NOT the app host — ffmpeg renders were starving web/api on the
+  # shared 2vCPU/4GB box (SH-2). It is deliberately NOT a service here: keeping
+  # it in this file made `scripts/deploy.sh` (which pulls every listed service)
+  # abort when the worker tag wasn't built. Its compose lives in
+  # `docker-compose.worker.yml`, deployed to the worker VM separately
+  # (docs/ops/cicd.md § Worker VM).
+
+  web:
+    build: { context: ../.., dockerfile: apps/web/Dockerfile }
+    image: ${SEED_REGISTRY:+${SEED_REGISTRY}/}seed-web:${SEED_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - ${SEED_ENV_FILE:-./.env.prod}
+    # Probe /login, not /: `/` is force-dynamic and 307-redirects anonymous requests
+    # to /login (no session cookie), which would read as unhealthy. /login renders a
+    # plain 200 with no API dependency — a true "is the web server serving" signal.
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 15s
+
+  whisper:
+    # Self-hosted faster-whisper STT server (OpenAI-compatible /v1/audio/transcriptions).
+    # CPU-only image — adequate for short social clips; swap to a -cuda tag if a GPU lands.
+    # Model is downloaded on first request and cached in the named volume.
+    # NOTE: fedirz/faster-whisper-server is archived (moved to speaches-ai/speaches);
+    # we pin its last release, verified working with this adapter. Migrate to speaches
+    # only with a re-verified API contract.
+    image: ghcr.io/fedirz/faster-whisper-server:0.6.0-rc.4-cpu
+    restart: unless-stopped
+    environment:
+      # The server reads WHISPER__MODEL (double underscore — pydantic nested settings);
+      # its built-in default is large-v3 (~3GB, CPU-hostile), so we MUST override it.
+      # "small" balances speed/quality on CPU for ru/en; bump to medium/large-v3 if uz
+      # quality is poor. Must match the model the api/worker request (WHISPER_MODEL).
+      # DO NOT add WHISPER__TTL=-1 to keep the model resident — verified to 404 the whole
+      # API in 0.6.0-rc.4. Cold-start is handled by the deploy.sh pre-warm instead.
+      WHISPER__MODEL: ${WHISPER_MODEL:-Systran/faster-whisper-small}
+    volumes:
+      # HOME=/home/ubuntu in this image → HF cache lives here, NOT /root. Mounting the
+      # wrong path silently re-downloads the model on every restart.
+      - whisper_cache:/home/ubuntu/.cache/huggingface
+    # Loopback-only — only the api/worker reach it; never expose ASR to the internet.
+    ports: ['127.0.0.1:8088:8000']
+    healthcheck:
+      # The image ships no curl/wget — use the bundled python3 (on PATH via the venv).
+      test:
+        [
+          'CMD',
+          'python3',
+          '-c',
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=5).status==200 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  edge:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+      web: { condition: service_healthy }
+    ports: ['80:80', '443:443']
+    volumes:
+      - ../../docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    environment:
+      # Real domain for auto-TLS (OD-4); fail closed if production forgot it.
+      # Local/tunnel users can still pass SEED_SITE_ADDRESS=:8080 explicitly.
+      SEED_SITE_ADDRESS: ${SEED_SITE_ADDRESS:?set SEED_SITE_ADDRESS, e.g. vertov.space}
+      SEED_API_UPSTREAM: api:4000
+      SEED_WEB_UPSTREAM: web:3000
+      # Edge proxies @assets (/seed-assets/*) to the managed S3 endpoint. The
+      # upstream MUST carry the https:// scheme (YC OS is TLS-only on :443) and
+      # the Host header MUST be the S3 endpoint (path-style bucket routing) — see
+      # docker/Caddyfile. A bare host:443 sends plain HTTP → 400.
+      SEED_MINIO_UPSTREAM: ${SEED_MINIO_UPSTREAM:-https://storage.yandexcloud.net}
+      SEED_MINIO_HOST: ${SEED_MINIO_HOST:-storage.yandexcloud.net}
+
+volumes:
+  caddy_data:
+  whisper_cache:

@@ -1,0 +1,53 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'packages/providers/*'
+
+# onlyBuiltDependencies: packages allowed to run postinstall scripts.
+# @sentry/cli downloads the CLI binary (safe: official Sentry release).
+onlyBuiltDependencies:
+  - esbuild
+  - msgpackr-extract
+  - sharp
+  - unrs-resolver
+  - '@prisma/client'
+  - better-sqlite3
+  - '@sentry/cli'
+
+# allowBuilds: pnpm 11 approval map (true = approved postinstall).
+# We mirror onlyBuiltDependencies here so pnpm 11 doesn't overwrite with
+# a placeholder on next install.
+allowBuilds:
+  '@prisma/client': true
+  '@sentry/cli': true
+  better-sqlite3: true
+  canvas: false
+  esbuild: true
+  msgpackr-extract: true
+  # transformers.js (@huggingface/transformers) native/codegen deps: we only use
+  # the BROWSER (WASM) path via a Web Worker, so neither postinstall is needed.
+  onnxruntime-node: false
+  protobufjs: false
+  sharp: true
+  unrs-resolver: true
+
+overrides:
+  # Regression guard for da559c0: better-auth@1.6.23 must always get
+  # better-call@1.3.7 — without a pin, any future lockfile re-resolve can
+  # recreate the split peer-variation (better-call@1.1.8 via the dev-only
+  # @better-auth/cli 1.4.x line) that import-crashed all api auth tests.
+  better-call: 1.3.7
+  '@types/pg': 8.11.10
+  '@playwright/test': 1.55.1
+  '@babel/core': 7.29.7
+  drizzle-orm: 0.45.2
+  esbuild: 0.25.12
+  lodash: 4.18.1
+  pg: 8.13.1
+  playwright: 1.55.1
+  postcss: 8.5.10
+  vite: 6.4.3
+  vitest: 3.2.6
+  # Force a single @opentelemetry/api so prom-client doesn't fork
+  # drizzle-orm's peer-stamp into a second copy with incompatible types.
+  '@opentelemetry/api': 1.9.1

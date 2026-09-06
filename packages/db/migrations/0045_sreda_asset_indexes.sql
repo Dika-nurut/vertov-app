@@ -1,0 +1,2 @@
+CREATE INDEX "gallery_items_project_created_idx" ON "gallery_items" USING btree ("project_id","created_at");--> statement-breakpoint
+CREATE INDEX "gallery_items_project_checksum_idx" ON "gallery_items" USING btree ("project_id","checksum");

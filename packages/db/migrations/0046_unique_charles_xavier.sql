@@ -1,0 +1,2 @@
+ALTER TABLE "asset_deletion_leases" ADD COLUMN "folder_ids" jsonb DEFAULT '[]'::jsonb NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "gallery_items_project_checksum_uidx" ON "gallery_items" USING btree ("project_id","checksum") WHERE "gallery_items"."project_id" is not null and "gallery_items"."checksum" is not null;

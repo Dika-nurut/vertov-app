@@ -1,0 +1,31 @@
+-- The official-OpenRouter last-resort leg SHIPS OFF (2026-08-03).
+--
+-- Migration 0067 seeded the finance-approved caps (3 000 ₽/day, 20 000 ₽/month),
+-- which arms the leg. Three rounds of adversarial review then found real money
+-- defects in the spend accounting, the last of which is still open: the reaper's
+-- sweep can close a reservation between `reserve()` and the provider submit, so a
+-- later invoice can never correct the row.
+--
+-- A cap of 0 is the documented "leg off" state (`parseCapRub` treats a missing or
+-- non-positive cap as zero, and zero headroom refuses before submitting). With the
+-- leg off, none of the open defects can fire: they all require it to serve traffic.
+--
+-- This is a STRICTLY safer state than before this work. Previously the leg armed
+-- itself from an environment variable, served four Gemini rows from a hardcoded
+-- slug map, and had no cost recorded at all — a −55% path nobody could see. What
+-- ships now: per-row opt-in, a hard refusal on any rung with no recorded cost,
+-- honest per-leg telemetry, and this switch.
+--
+-- Turning it on requires BOTH:
+--   1. finance supplying per-rung third-leg costs — today exactly one rung is
+--      costed (gemini-3-pro-image @4K), so the leg protects a single price point;
+--      see docs/business/finance-ask-2-model-changes-2026-08-02.md §1.
+--   2. the attempt-attribution follow-up landing — carry the attempt id through
+--      the generation handle instead of inferring `max(attempt_seq)`, and fence
+--      reserve/submit against the sweep.
+--
+-- To arm it, UPDATE these two rows. No deploy needed — that is why the caps live
+-- in app_settings rather than in code.
+UPDATE "app_settings"
+SET "value" = '0'::jsonb
+WHERE "key" IN ('official_leg_budget_daily_rub', 'official_leg_budget_monthly_rub');

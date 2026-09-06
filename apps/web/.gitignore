@@ -1,0 +1,9 @@
+
+# Playwright stored auth state (god storageState)
+e2e/.auth/
+
+# Isolated prod-build e2e floor (DIST_DIR)
+.next-floor/
+.next-landing/
+# scripts/dev-stack.sh PROD=1 build
+.next-stack/

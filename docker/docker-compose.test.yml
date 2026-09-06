@@ -1,0 +1,55 @@
+# Disposable zero-spend test infrastructure.
+#
+# This file is intentionally separate from docker/docker-compose.yml: the latter
+# is the developer stack and uses persistent host data under /root/seed-prod.
+# Never point the test pyramid at that stack. Every service below uses tmpfs and
+# alternate host ports so a test reset cannot touch developer or production data.
+name: seed-test
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${TEST_POSTGRES_USER:-seedtest}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:-seed-test-password}
+      POSTGRES_DB: ${TEST_POSTGRES_DB:-seed}
+    ports:
+      - '127.0.0.1:${TEST_PG_PORT:-55434}:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${TEST_POSTGRES_USER:-seedtest} -d ${TEST_POSTGRES_DB:-seed}']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    ports:
+      - '127.0.0.1:${TEST_REDIS_PORT:-56380}:6379'
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  minio:
+    image: minio/minio:latest
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: ${TEST_MINIO_ROOT_USER:-seedtest}
+      MINIO_ROOT_PASSWORD: ${TEST_MINIO_ROOT_PASSWORD:-seed-test-password}
+    ports:
+      - '127.0.0.1:${TEST_MINIO_PORT:-59000}:9000'
+      - '127.0.0.1:${TEST_MINIO_CONSOLE_PORT:-59001}:9001'
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 2s
+      timeout: 3s
+      retries: 15

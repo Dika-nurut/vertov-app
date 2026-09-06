@@ -1,0 +1,1623 @@
+@import 'tailwindcss';
+
+/* `touch:` — applies on devices with no hover (phones/tablets). Use it to keep
+   hover-revealed ACTION affordances (delete buttons, action bars, captions)
+   visible on touch, where `group-hover` never fires. Mobile-web foundation (M0).
+   e.g. `opacity-0 group-hover:opacity-100 touch:opacity-100`.
+   NB: Tailwind 4.0.0-beta.7 registers custom variants via `@variant` (the
+   `@custom-variant` rename landed in a later release) — verified by compile. */
+@variant touch (@media (hover: none));
+
+@theme {
+  /* ============================================================
+     SEED — "Slate Brutal" · dark neo-brutalism. Graphite canvas, lifted
+     surfaces, bone borders + text (hard 2.5px), periwinkle accent (CTA /
+     active / links), mint secondary, HARD colored offset-shadows (no blur),
+     tactile press. Unbounded (display) + Onest (UI/body) + Martian Mono (labels).
+     Sharp corners (≤4px). No glass, no blur, no gradients-as-identity.
+     Source of truth: mockups/variant-nb.html?p=7 (Slate). Token NAMES are
+     preserved from the old liquid-glass system so every screen + component
+     inherits the new look without markup churn — only the VALUES changed.
+     ============================================================ */
+  --color-background: #0c0e12; /* graphite canvas — DEEPENED (DS) so lifted surfaces clearly float */
+  --color-foreground: #eceef3; /* bone — primary text */
+  --color-card: #1b1e24; /* lifted card / panel (SOLID, no glass) */
+  --color-card-foreground: #eceef3;
+  --color-muted: rgba(236, 238, 243, 0.06); /* quiet fill tint */
+  --color-muted-foreground: rgba(236, 238, 243, 0.62); /* secondary text (AA) */
+  --color-border: #eceef3; /* hard borders are bone */
+  --color-input: #eceef3;
+  --color-primary: #8d76f6; /* periwinkle — CTA / active / links */
+  --color-primary-foreground: #141414; /* DARK text on accent (AA, §2.4) */
+  --color-ring: #8d76f6;
+
+  /* Product token names used across the screens. Elevation ladder (DS): canvas
+     #0c0e12  <  well #15171c  <  panel #1b1e24 — a real 3-step lift so content
+     reads as floating planes, not boxes drawn on a flat void. */
+  --color-bg: #0c0e12;
+  --color-surface: #1b1e24; /* lifted cards / panels */
+  --color-surface2: #15171c; /* insets / wells */
+  /* media-tile backing — one notch below the well, so a thumbnail/video reads as
+     sitting IN a recess (home board tiles, витрина cells) rather than on a panel. */
+  --color-tile: #0f1116;
+  --color-line: #eceef3; /* hard border — bone, 2.5px */
+  --color-line2: #eceef3; /* one border colour — bone everywhere */
+  /* quiet inner hairline — nested card chrome (inputs, screens, neutral controls)
+     recedes UNDER the bold bone frame instead of stacking another bright bone
+     line. Restores hierarchy without breaking the brutalist silhouette. */
+  --color-line-soft: rgba(236, 238, 243, 0.16);
+  --color-fg: #eceef3;
+  /* tertiary text — AA-normal (≥4.5:1 on every surface; was 0.42 ≈ 3.6:1 which
+     failed AA on small text). P6. */
+  --color-faint: rgba(236, 238, 243, 0.52);
+  --color-accent: #8d76f6;
+  --color-shadow: #8d76f6; /* the signature HARD offset-shadow colour */
+  /* lightened periwinkle — small accent-tinted eyebrow/labels that need a touch
+     more legibility than the base accent on the darkest tiles. */
+  --color-accent-tint: #c1b4f2;
+  /* Lime — the SINGLE secondary spark (DS). Periwinkle stays the boss (CTA /
+     active / links / shadow); lime is rare: «новое»/beta stickers, the odd
+     highlight tab. Never a body-text colour (dark ink only). */
+  --color-accent2: #c2f24a;
+  --color-accent2-foreground: #141414;
+
+  /* shadcn-style semantic tokens (components consume these via bg-card /
+     bg-popover / bg-secondary / text-destructive / etc.). Everything is a
+     SOLID block now — popovers/menus/dialogs are surface blocks with a hard
+     border + offset shadow, never blurred glass. */
+  --color-secondary: #1b1e24;
+  --color-secondary-foreground: #eceef3;
+  --color-popover: #1b1e24;
+  --color-popover-foreground: #eceef3;
+  --color-destructive: #ff5247;
+  --color-destructive-foreground: #141414; /* dark on coral red for AA */
+  /* Mint — "done / saved / copied / secondary positive". */
+  --color-positive: #77d799;
+  --color-positive-foreground: #141414;
+
+  /* Scenario's screenplay "paper" — the ONE deliberate light-surface exception
+     in an otherwise all-dark system (owner-confirmed intentional, 2026-07-07:
+     script pages/notes/cards read as literal paper). Was hardcoded #fbfaf6/
+     #141414/#f3efe0 at 30+ call sites before being tokenized here — same AA-
+     safe ink value as --color-primary-foreground, aliased for call-site intent. */
+  --color-paper: #fbfaf6;
+  --color-paper-hover: #f3efe0; /* paper row/card hover — slightly duller sheet */
+  --color-paper-ink: var(--color-primary-foreground); /* #141414 — dark text ON paper */
+
+  /* Board canvas port typing (Runway-playbook colour code: text=green,
+     image=blue, video=violet) — was duplicated as hex literals independently
+     in GraphBoard.tsx AND the landing's CanvasDemo.tsx; one source of truth
+     now. -rgb siblings feed `rgba(var(--x-rgb), alpha)` for the label chip's
+     tinted fill/border instead of the old `${hex}22` string-concat hack. */
+  --color-port-text: #84d18a;
+  --color-port-text-rgb: 132, 209, 138;
+  --color-port-image: #6fb6ea;
+  --color-port-image-rgb: 111, 182, 234;
+  --color-port-video: #c79bff;
+  --color-port-video-rgb: 199, 155, 255;
+
+  /* Type — three self-hosted OFL faces, all full-Cyrillic (incl. Ukrainian
+     Ї/Ґ/Є), wired via next/font/local in app/layout.tsx:
+       • Unbounded    → --font-display-face  (black geometric headlines / wordmark)
+       • Onest        → --font-ui-face       (UI + body: paragraphs, labels, controls)
+       • Martian Mono → --font-mono-face     (technical: IDs / timecodes / eyebrows)
+     The brutalist identity is carried by hard borders / offset-shadows / mono
+     labels as much as the face. Body text is Onest (NOT the display face) — the
+     display face is reserved for headings (.font-display / .text-h*). Montserrat
+     + JetBrains Mono are kept ONLY as named fallbacks. --font-serif is aliased to
+     the display face so any stray `font-serif` never falls back to Georgia.
+     --font-screenplay is a SCOPED, deliberate 4th face: real screenplay format
+     mandates true monospace (page-timing math — 1 page ≈ 1 minute of screen
+     time — only holds at a fixed character width), so Scenario's scene-text
+     preview uses industry-standard Courier instead of Martian Mono. Not a
+     drift; the one named, documented exception to the 3-face rule. */
+  --font-sans: var(--font-ui-face), 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --font-serif: var(--font-display-face), system-ui, sans-serif;
+  --font-mono: var(--font-mono-face), 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  --font-display: var(--font-display-face), 'Montserrat', system-ui, sans-serif;
+  --font-screenplay: 'Courier New', Courier, monospace;
+
+  /* Radius — sharp. Brutalism is not rounded: 0–4px only. */
+  --radius-lg: 4px;
+  --radius-md: 4px;
+  --radius-sm: 3px;
+  --radius-xs: 2px;
+
+  /* Spacing scale */
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ============================================================
+     SLATE BRUTAL ALIAS LAYER — neobrutalism.dev vocabulary → our tokens.
+     The vendored neobrutalism.dev primitives (components/ui/*) speak a DIFFERENT
+     token vocabulary (bg-main, shadow-shadow, rounded-base, translate-x-boxShadowX,
+     ...). These aliases map that vocabulary onto the real Slate Brutal brand, so a
+     vendored component renders on-brand (periwinkle accent, bone borders, periwinkle
+     offset-shadow) with ZERO class edits. Source: design-arsenal/components/.
+     ============================================================ */
+  /* accent fill + text-on-accent → Slate Brutal periwinkle / dark-ink */
+  --color-main: var(--color-primary); /* #8d76f6 periwinkle */
+  --color-main-foreground: var(--color-primary-foreground); /* #141414 dark ink (AA) */
+
+  /* neobrutalism's "secondary-background" = our lifted surface */
+  --color-secondary-background: var(--color-secondary); /* #1b1e24 */
+
+  /* dialog/menu scrim */
+  --color-overlay: rgba(17, 19, 23, 0.66);
+  /* The same scrim for a dialog opening over full-bleed imagery rather than a
+     surface — Витрина's wall is a gapless grid of photographs, and at 0.66 it
+     keeps enough contrast and colour to compete with the panel on top of it. */
+  --color-overlay-strong: rgba(8, 9, 12, 0.88);
+
+  /* the signature hard offset shadow (no blur) — periwinkle, matches --offset */
+  --shadow-shadow: 4px 4px 0 0 var(--color-shadow); /* #8d76f6 */
+
+  /* neobrutalism rounded-base → our sharp radius */
+  --radius-base: var(--radius-md); /* 4px */
+
+  /* font weights neobrutalism applies via font-base / font-heading */
+  --font-weight-base: 600;
+  --font-weight-heading: 800;
+
+  /* press distances: translate-x-boxShadowX must equal the shadow offset so the
+     element lands on its shadow. Keep in lockstep with --shadow-shadow (4px). */
+  --spacing-boxShadowX: 4px;
+  --spacing-boxShadowY: 4px;
+  --spacing-reverseBoxShadowX: -4px;
+  --spacing-reverseBoxShadowY: -4px;
+}
+
+:root {
+  /* Periwinkle accent as channels, so banners/badges can tint a fill/border. */
+  --accent-rgb: 141, 118, 246;
+  --accent2-rgb: 194, 242, 74; /* lime — the secondary spark, channels for tints */
+  /* Bone — the single tint surfaces/lines/hovers build from (replaces white). */
+  --paper-rgb: 236, 238, 243;
+  --specular: 236, 238, 243; /* legacy alias (no specular in brutalism) */
+  --destructive-rgb: 255, 82, 71;
+  --positive-rgb: 119, 215, 153;
+  /* Call-site alias for the destructive token: the workspace/desk stylesheets
+     name the intent «danger» (load errors, partial-restore warnings, delete
+     actions). It was referenced but never defined, so those states rendered in
+     normal foreground colour. Aliased here rather than in @theme so it stays a
+     call-site name and does NOT mint a second `*-danger` utility palette. */
+  --color-danger: var(--color-destructive);
+
+  /* ============================================================
+     LAYER CONTRACT — the one place stacking order is decided.
+     Page chrome and in-page popovers stay below 60. The project desk owns a
+     band of transient layers (60–90) that only stack against each other.
+     App-level modals that must cover ANY surface, the desk included, sit above
+     that band. Nothing desk-local may be raised past --z-app-modal: that
+     inversion is exactly how the global Search dialog ended up opening BEHIND
+     an open desk context menu, drag ghost, name prompt or receipt.
+     ============================================================ */
+  --z-desk-menu: 60;
+  --z-desk-ghost: 80;
+  /* The desk-prompt scrim: directly UNDER the prompt it makes modal and over
+     every desk-local layer, so the pointer cannot reach the desk behind an
+     `aria-modal` dialog. */
+  --z-desk-scrim: 89;
+  --z-desk-prompt: 90;
+  --z-app-modal: 100;
+
+  /* Brutalist primitives. */
+  --border-w: 2.5px;
+  --offset: 5px 5px 0 0 var(--color-shadow); /* CTA / cards / elevated */
+  --offset-sm: 3px 3px 0 0 var(--color-shadow); /* chips / small controls */
+  --offset-lg: 7px 7px 0 0 var(--color-shadow); /* hero CTA */
+  --offset-pressed: 2px 2px 0 0 var(--color-shadow);
+
+  /* Component shadows (referenced by the ui/* components via shadow-[var()]).
+     All hard offsets now — no blur, no inset specular. */
+  --shadow-primary: 4px 4px 0 0 var(--color-shadow);
+  --shadow-pop: 5px 5px 0 0 var(--color-shadow);
+  --shadow-card: 5px 5px 0 0 var(--color-shadow);
+}
+
+/* ============================================================
+   DENSE APP SURFACES (the Studio editor — AppShell fullBleed). Restrained
+   brutalism (roadmap P5): keep the identity — graphite, bone borders, sharp
+   corners, periwinkle accent — but EASE the hard offset-shadows so the dense
+   timeline / tracks / inspector stay a usable NLE. The offset vars cascade, so
+   redefining them here automatically calms every inherited Card / chip / menu /
+   popover inside Studio without touching a single Studio component file.
+   ============================================================ */
+.app-dense {
+  --offset: 3px 3px 0 0 var(--color-shadow);
+  --offset-lg: 4px 4px 0 0 var(--color-shadow);
+  --offset-sm: 2px 2px 0 0 var(--color-shadow);
+  --offset-pressed: 1px 1px 0 0 var(--color-shadow);
+  --shadow-card: 3px 3px 0 0 var(--color-shadow);
+  --shadow-pop: 3px 3px 0 0 var(--color-shadow);
+  --shadow-primary: 2px 2px 0 0 var(--color-shadow);
+}
+
+/* A-B1: bold brutalist keyboard focus across the whole UI (WCAG 2.4.7 + 1.4.11).
+   Periwinkle ring on the graphite ground passes ≥3:1. Keyboard-only
+   (:focus-visible). Defined after the Tailwind import so it wins over utility
+   `outline-none` on equal specificity. */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+/* The prompt is the hero text field; on such a large surface the brutalist
+   focus ring reads as an unwanted violet border (owner). Suppress it on the
+   prompt textbox only — the caret already signals focus, and the a11y ring
+   stays everywhere else. Attribute+pseudo (0,2,0) out-specifies `:focus-visible`. */
+[data-testid='prompt']:focus-visible,
+[data-testid='prompt']:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+html,
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---- Atmosphere (DS): app-wide night sky (2026-07-07, owner: "give every
+   screen our night sky, minus the purple oval"; follow-up same day: the flat
+   CSS speckle read "lame" next to the landing hero's canvas-drawn stars —
+   replaced by <AppStarfield> (app/_components/AppStarfield.tsx), mounted once
+   in the root layout so client-side navigation never repaints/reshuffles it.
+   It reuses the hero's exact star shapes + seed, minus the glow dome and the
+   twinkle/comet animation. No corner-glow ovals anywhere (that periwinkle/
+   lime wash was the "purple oval" the owner wants gone). Boards' canvas
+   editor draws its OWN dot grid (React Flow `<Background variant={Dots}>`) —
+   the /boards LIST page is a normal screen and gets the same starfield as
+   everywhere else, not a second, different dotted texture. ---- */
+/* Keep in-flow page content above the fixed AppStarfield backdrop. EXCLUDE
+   Radix portals: dialog / sheet / overlay are appended as direct body children
+   and carry a data-state attribute. They are position:fixed + z-50 and must keep
+   their own positioning — and because THIS rule is unlayered, a bare
+   `position: relative` here would override Tailwind's *layered* `.fixed` utility
+   (unlayered CSS wins over any @layer regardless of specificity), collapsing
+   every modal/sheet to the bottom of the page. Skipping [data-state] children
+   keeps them fixed while still lifting real content. AppStarfield's own canvas
+   sets `position:fixed` via an inline style, which beats this rule regardless
+   (inline styles always win over stylesheet rules), so it isn't excluded here.*/
+body > *:not([data-state]) {
+  position: relative;
+  z-index: 1;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Text selection = a periwinkle key with dark ink (owner-approved 2026-07-10,
+   docket D8). The default browser highlight breaks the dark world. */
+::selection {
+  background: var(--color-accent);
+  color: var(--color-primary-foreground);
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+/* Display — Unbounded, black. */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* Mono eyebrow / micro-label — Martian Mono, UPPERCASE, letter-spaced. The
+   brutalist stage-direction voice (replaces the old serif-italic eyebrow). */
+.label-eyebrow,
+.eyebrow,
+.eyebrow-mono {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+/* Hard bone rules — call-sheet structure. */
+.rule {
+  border: 0;
+  border-top: var(--border-w) solid var(--color-line);
+}
+.rule-faded {
+  height: 2px;
+  border: 0;
+  background: var(--color-line);
+  opacity: 0.55;
+}
+
+/* Headings — Unbounded, black, tight. */
+.text-h1 {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 7vw, 60px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+.text-h2 {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 5vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+}
+.text-h3 {
+  font-family: var(--font-display);
+  font-size: clamp(19px, 4vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+.text-body-lg {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+.text-body-md {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.text-body-sm {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.text-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* Numbers line up in tables/rows. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ============================================================
+   BRUTALIST BUILDING BLOCKS — hard borders, hard offset shadows, tactile press
+   ============================================================ */
+/* Hard offset shadow utilities (bright periwinkle, no blur). */
+.offset {
+  box-shadow: var(--offset);
+}
+.offset-sm {
+  box-shadow: var(--offset-sm);
+}
+.offset-lg {
+  box-shadow: var(--offset-lg);
+}
+
+/* The default elevated block — surface + hard bone border + offset shadow,
+   sharp. `.brutal-card` is the canonical name; `.glass` is kept as an alias so
+   legacy markup inherits the brutalist card automatically. */
+.brutal-card,
+.glass {
+  position: relative;
+  background: var(--color-surface);
+  border: var(--border-w) solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--offset);
+}
+
+/* Tactile press — hover nudges the element up-left, :active drives it into its
+   shadow (translate + shrunk offset). Replaces the old scale press. */
+.press {
+  transition:
+    transform 0.07s ease,
+    box-shadow 0.07s ease,
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+.press:hover {
+  transform: translate(-1px, -1px);
+}
+.press:active {
+  transform: translate(3px, 3px) !important;
+  box-shadow: var(--offset-pressed) !important;
+}
+
+/* Hover-lift for cards/menus that carry an offset. */
+.glass-hover {
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+.glass-hover:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--offset-lg);
+}
+.glass-hover:active {
+  transform: translate(3px, 3px);
+  box-shadow: var(--offset-pressed);
+}
+
+/* Inset-press for neutral icon controls (toolbar, rail). Brutal nudge — no
+   scale, no inset glow; it slides a touch into a small shadow. */
+.press-inset {
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.1s ease;
+}
+.press-inset:active {
+  transform: translate(2px, 2px);
+}
+
+/* Solid menu/popover surface (no blur) — bordered block + offset. */
+.glass-menu {
+  background: var(--color-surface);
+  border: var(--border-w) solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--offset);
+}
+
+/* Selectable option chip — surface + border + small offset; one clear selected
+   grammar = solid accent fill + dark on-accent text. */
+.chip {
+  position: relative;
+  background: var(--color-surface);
+  border: var(--border-w) solid var(--color-line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--offset-sm);
+  transition:
+    transform 0.07s ease,
+    box-shadow 0.07s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.chip:hover {
+  transform: translate(-1px, -1px);
+}
+.chip:active {
+  transform: translate(3px, 3px);
+  box-shadow: var(--offset-pressed);
+}
+.chip[data-selected='true'] {
+  background: var(--color-accent);
+  color: var(--color-primary-foreground);
+}
+
+/* Calm popover option (Layout A) — borderless filled well inside a popover; the
+   ONE selected grammar = accent fill. No per-option bone border, so a grid of
+   them reads quiet (matches the calm dock). */
+.opt {
+  border-radius: var(--radius-sm);
+  background: var(--color-surface2);
+  color: var(--color-fg);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.opt:hover {
+  background: color-mix(in srgb, var(--color-fg) 9%, var(--color-surface2));
+}
+.opt[data-selected='true'] {
+  background: var(--color-accent);
+  color: var(--color-primary-foreground);
+}
+
+/* Neutral "selected" for mode switches — bone-ink fill so accent-fill stays
+   reserved for primary CTA / active. */
+.selected-neutral {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+
+/* Interactive content card — ONE crafted hover/press for every grid tile
+   (landing / gallery / presets / showcase). Brutal lift: nudges up-left into a
+   bigger offset on hover, presses into a small offset on click. */
+.lift-card {
+  border-radius: var(--radius-md);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    border-color 0.15s ease;
+}
+.lift-card:hover {
+  transform: translate(-2px, -4px);
+  box-shadow: var(--offset-lg);
+  z-index: 3;
+}
+.lift-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--offset-pressed);
+}
+.lift-card:focus-visible {
+  outline: 3px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* The primary action — a flat periwinkle tablet, hard bone border + offset,
+   tactile press. Reads as a physical, pressable key. */
+.glass-accent {
+  position: relative;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border: var(--border-w) solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--offset);
+  transition:
+    transform 0.07s ease,
+    box-shadow 0.07s ease,
+    filter 0.15s ease;
+}
+.glass-accent:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--offset-lg);
+}
+.glass-accent:active {
+  transform: translate(3px, 3px);
+  box-shadow: var(--offset-pressed);
+}
+.glass-accent:disabled {
+  background: var(--color-surface2);
+  color: var(--color-muted-foreground);
+  border-color: var(--color-line);
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+/* Corner ticks for gallery tiles (mockup). */
+.tick {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  background: var(--color-line);
+  z-index: 2;
+}
+
+/* Stickers / rotated badges — personality, used sparingly. */
+.sticker,
+.sticker-rec {
+  background: var(--color-accent);
+  color: var(--color-primary-foreground);
+  border: 2px solid var(--color-line);
+  box-shadow: var(--offset-sm);
+  transform: rotate(-4deg);
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+/* «Новое»/beta spark — the ONE place the lime secondary lives. Periwinkle stays
+   the boss; lime is rare. (Was mint, which collided with mint = «готово».)
+   Pref 11: status chips are BORDERLESS lime pills — a bone outline here reads
+   "lame", so no border and no offset-shadow, just the lime fill + dark ink. */
+.badge-new {
+  background: var(--color-accent2);
+  color: var(--color-accent2-foreground);
+  border: none;
+  box-shadow: none;
+  transform: rotate(8deg);
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+/* Marquee strip (marketing / empty surfaces). */
+.marquee {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.marquee-track {
+  display: inline-block;
+  will-change: transform;
+  animation: seed-marq 26s linear infinite;
+}
+@keyframes seed-marq {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ============================================================
+   BUTTONS — flat fills, hard border + offset, tactile press. One periwinkle
+   CTA; the rest surface + bone border.
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  border-radius: var(--radius-md);
+  padding: 9px 16px;
+  cursor: pointer;
+  border: var(--border-w) solid var(--color-line);
+  text-decoration: none;
+  box-shadow: var(--offset-sm);
+  transition:
+    transform 0.07s ease,
+    box-shadow 0.07s ease,
+    background 0.14s ease,
+    color 0.14s ease;
+}
+.btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--offset);
+}
+.btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: var(--offset-pressed);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-fg);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-muted-foreground);
+  border-color: transparent;
+  box-shadow: none;
+}
+.btn-ghost:hover {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  transform: none;
+  box-shadow: none;
+}
+.btn-ghost:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+/* ============================================================
+   SCENARIO CONTROLS (remediation R3) — no dead buttons. Composable
+   utilities that add the FULL interaction state set (pointer cursor,
+   hover lift, tactile press-in, focus-visible ring, disabled) onto the
+   «Сценарий» stickers. Tailwind v4 preflight makes a raw <button>
+   `cursor: default`, so bespoke scenario buttons read dead — these fix it
+   in one place. The element keeps its own border/background/padding via
+   Tailwind; .sp-btn owns the offset shadow + motion so the press is
+   consistent. Hard-cut doctrine: motion only on transform/box-shadow,
+   killed under reduced-motion (block below). */
+.sp-btn {
+  cursor: pointer;
+  box-shadow: var(--offset-sm);
+  transition:
+    transform 0.07s ease,
+    box-shadow 0.07s ease,
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+.sp-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--offset);
+}
+.sp-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--offset-pressed);
+}
+.sp-btn:focus-visible {
+  outline: 2.5px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.sp-btn:disabled,
+.sp-btn[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: var(--offset-sm);
+}
+
+/* Ghost/secondary scenario control: no resting shadow; hover fills the
+   surface + darkens the border/text; same press/focus/disabled discipline. */
+.sp-btn-ghost {
+  cursor: pointer;
+  transition:
+    transform 0.07s ease,
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+.sp-btn-ghost:hover {
+  background: var(--color-surface2);
+  color: var(--color-fg);
+  border-color: var(--color-line);
+}
+.sp-btn-ghost:active {
+  transform: translate(1px, 1px);
+}
+.sp-btn-ghost:focus-visible {
+  outline: 2.5px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.sp-btn-ghost:disabled,
+.sp-btn-ghost[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+/* ============================================================
+   FORM CONTROLS — blocky brutalist
+   ============================================================ */
+/* Range slider — a blocky bone track, periwinkle fill, square bordered thumb. */
+.seed-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+.seed-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border: 2px solid var(--color-line);
+  background: linear-gradient(
+    to right,
+    var(--color-accent) 0 var(--pct, 50%),
+    var(--color-surface2) var(--pct, 50%) 100%
+  );
+}
+.seed-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  width: 14px;
+  margin-top: -7px;
+  border: 2px solid var(--color-line);
+  background: var(--color-fg);
+  box-shadow: 2px 2px 0 0 var(--color-shadow);
+}
+.seed-range:focus-visible::-webkit-slider-thumb {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.seed-range::-moz-range-track {
+  height: 8px;
+  border: 2px solid var(--color-line);
+  background: var(--color-surface2);
+}
+.seed-range::-moz-range-progress {
+  height: 8px;
+  background: var(--color-accent);
+}
+.seed-range::-moz-range-thumb {
+  height: 18px;
+  width: 14px;
+  border: 2px solid var(--color-line);
+  border-radius: 0;
+  background: var(--color-fg);
+  box-shadow: 2px 2px 0 0 var(--color-shadow);
+}
+.seed-range:disabled {
+  opacity: 0.4;
+}
+
+/* Studio filter/effect preview swatch — a periwinkle→graphite gradient that
+   visibly transforms under the per-filter CSS (warm/cool/mono/punch). Replaces
+   the dead hardcoded #7c5cff→#e0794a gradient; keeps all hex in this file. NOTE:
+   deliberately NOT lime — lime stays a rare single spark, not a catalog colour. */
+.studio-swatch {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-surface2));
+}
+
+/* Checkbox — a blocky bordered box, periwinkle fill + dark check when on. */
+.seed-check {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  flex-shrink: 0;
+  border-radius: var(--radius-xs);
+  background: var(--color-surface2);
+  border: var(--border-w) solid var(--color-line);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    box-shadow 0.07s ease,
+    transform 0.07s ease;
+}
+.seed-check:hover {
+  box-shadow: var(--offset-sm);
+  transform: translate(-1px, -1px);
+}
+.seed-check:checked {
+  background-color: var(--color-accent);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23141414' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.seed-check:focus-visible {
+  outline: 3px solid var(--color-ring);
+  outline-offset: 2px;
+}
+.seed-check:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+textarea {
+  resize: none;
+}
+
+/* ============================================================
+   RESULT STAGE — re-grammar'd to a flat brutalist well (no blur, no aurora).
+   Names kept so /generate inherits.
+   ============================================================ */
+.stage-aurora {
+  display: none; /* the soft blurred glow is retired in brutalism */
+}
+.stage-grain {
+  position: relative;
+  background: var(--color-surface2);
+  border: var(--border-w) solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--offset);
+}
+
+/* ============================================================
+   D3 SIGNATURE DYNAMICS — the "rendering" language for /generate (P5). A
+   periwinkle SCANLINE sweeps a frame while it's generated; the progress track
+   marches in discrete STEPS (brutalist snap, not a smooth glide). CSS-only;
+   both stop under prefers-reduced-motion.
+   ============================================================ */
+@keyframes brutal-scan {
+  to {
+    background-position: 0 8px;
+  }
+}
+/* host must be position:relative + overflow:hidden (the generate placeholder is). */
+.brutal-scan {
+  position: relative;
+  overflow: hidden;
+}
+.brutal-scan::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(
+    transparent 0 50%,
+    color-mix(in srgb, var(--color-accent) 18%, transparent) 50% 52%,
+    transparent 52%
+  );
+  background-size: 100% 8px;
+  animation: brutal-scan 1.1s linear infinite;
+}
+
+/* Stepped progress fill — discrete periwinkle blocks march to --pct of a
+   bone-bordered surface2 track; the fill SNAPS in steps. Drive via --pct. */
+.seed-step-bar {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--color-accent) 0 12px,
+    transparent 12px 16px
+  );
+  background-repeat: no-repeat;
+  background-size: var(--pct, 0%) 100%;
+  transition: background-size 0.45s steps(1, end);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brutal-scan::after {
+    animation: none;
+  }
+  .seed-step-bar {
+    transition: none;
+  }
+  /* React Flow draws a marching-dash on `animated` edges (boards graph). Stop it
+     under reduced-motion — the edge stays drawn, just static. */
+  .react-flow__edge.animated .react-flow__edge-path {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   SCROLLBARS — blocky bone thumb
+   ============================================================ */
+.seed-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+.seed-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.seed-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-fg);
+  border: 2px solid var(--color-bg);
+}
+.seed-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-fg);
+  border: 2px solid var(--color-bg);
+}
+
+/* ============================================================
+   MOTION (restrained) — keep the animation vocabulary; offset-press replaces
+   scale. Reduced-motion kills marquee + press translate below.
+   ============================================================ */
+@keyframes seed-shimmer {
+  0% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(230%);
+  }
+}
+@keyframes seed-develop {
+  0% {
+    opacity: 0;
+    transform: scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes seed-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes seed-pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes seed-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Landing prompt-ticker block caret (goal §3.1). */
+@keyframes seed-caret {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  49%,
+  100% {
+    opacity: 0.12;
+  }
+}
+.seed-caret {
+  animation: seed-caret 1.05s steps(1) infinite;
+}
+@keyframes seed-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+@keyframes seed-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes onboarding-surface-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes onboarding-surface-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes onboarding-card-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+}
+@keyframes onboarding-card-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(8px);
+  }
+}
+
+.seed-shimmer-sweep {
+  animation: seed-shimmer 2.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.seed-develop {
+  animation: seed-develop 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.seed-fade-up {
+  animation: seed-fade-up 0.4s ease both;
+}
+.seed-pulse-dot {
+  animation: seed-pulse-dot 1.3s ease-in-out infinite;
+}
+.seed-spin {
+  animation: seed-spin 1s linear infinite;
+}
+.seed-bar {
+  animation: seed-bar 1.6s cubic-bezier(0.5, 0, 0.3, 1) infinite;
+}
+.seed-pop-in {
+  animation: seed-pop-in 0.13s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.onboarding-surface-enter,
+.onboarding-card-enter {
+  animation: onboarding-surface-in 0.18s ease-out both;
+}
+.onboarding-surface-exit {
+  animation: onboarding-surface-out 0.18s ease-in both;
+}
+.onboarding-card-enter {
+  animation-name: onboarding-card-in;
+}
+.onboarding-card-exit {
+  animation: onboarding-card-out 0.18s ease-in both;
+}
+
+/* Radix overlay enter/exit, driven by data-state — used by the ui/* floating
+   surfaces (dropdown, select, popover, dialog, tooltip). No blur, just a quick
+   pop. */
+@keyframes ui-pop-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+@keyframes ui-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ui-pop[data-state='open'] {
+  animation: seed-pop-in 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ui-pop[data-state='closed'] {
+  animation: ui-pop-out 0.1s ease forwards;
+}
+.ui-overlay[data-state='open'] {
+  animation: ui-overlay-in 0.16s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seed-shimmer-sweep,
+  .seed-develop,
+  .seed-fade-up,
+  .seed-pulse-dot,
+  .seed-spin,
+  .seed-bar,
+  .seed-pop-in,
+  .onboarding-surface-enter,
+  .onboarding-surface-exit,
+  .onboarding-card-enter,
+  .onboarding-card-exit,
+  .marquee-track,
+  .ui-pop[data-state='open'],
+  .ui-pop[data-state='closed'],
+  .ui-overlay[data-state='open'] {
+    animation: none !important;
+  }
+  /* no tactile translate when reduced-motion is requested */
+  .press:hover,
+  .press:active,
+  .chip:hover,
+  .chip:active,
+  .btn:hover,
+  .btn:active,
+  .sp-btn:hover,
+  .sp-btn:active,
+  .sp-btn-ghost:active,
+  .glass-hover:hover,
+  .glass-hover:active,
+  .glass-accent:hover,
+  .glass-accent:active,
+  .lift-card:hover,
+  .lift-card:active,
+  .seed-check:hover {
+    transform: none !important;
+  }
+}
+
+/* ============================================================
+   CANVAS (react-flow / boards) — brutalist square handles + cursors
+   ============================================================ */
+.seed-graph.seed-graph--pan .react-flow__pane {
+  cursor: grab;
+}
+.seed-graph.seed-graph--pan .react-flow__pane:active {
+  cursor: grabbing;
+}
+.seed-graph.seed-graph--select .react-flow__pane {
+  cursor: crosshair;
+}
+.seed-graph .react-flow__node {
+  cursor: grab;
+}
+.seed-graph .react-flow__node:active {
+  cursor: grabbing;
+}
+.seed-graph .nodrag,
+.seed-graph input,
+.seed-graph textarea,
+.seed-graph select {
+  cursor: auto;
+}
+.seed-graph button {
+  cursor: pointer;
+}
+
+/* Tailwind beta's named/standard group variant is not consistently winning the
+   opacity utility in optimized builds. Keep the Board action labels observable
+   for both pointer and keyboard users with one explicit, local rule. */
+.seed-toolbar-action:hover > .seed-toolbar-tooltip,
+.seed-toolbar-action:focus-visible > .seed-toolbar-tooltip {
+  opacity: 1;
+}
+
+/* A node "picks up" while dragged — it floats higher off its (periwinkle) shadow
+   and borrows the accent border, so the grabbed card is unmistakable. RF toggles
+   `.dragging` on the wrapper; `.seed-node` is the shell. This out-specifies the
+   shellIdle :hover utilities, so drag wins over hover. */
+.seed-graph .react-flow__node.dragging .seed-node {
+  transform: translate(-2px, -2px);
+  border-color: var(--color-accent);
+  box-shadow: 6px 6px 0 0 var(--color-shadow);
+}
+
+/* Typed port "key" — a ROUND bone-bordered plug in the port's type colour. It is
+   deliberately a circle so it never reads as a (square) NodeResizer corner grip:
+   round + type-coloured = "connection anchor", square + periwinkle = "resize". */
+.react-flow__handle.seed-port {
+  width: 13px;
+  height: 13px;
+  border-radius: 9999px;
+  z-index: 25;
+  background: rgb(var(--port-rgb));
+  border: 2px solid var(--color-line);
+  box-shadow: 2px 2px 0 0 var(--color-shadow);
+  cursor: crosshair;
+  transition:
+    box-shadow 0.14s ease,
+    transform 0.14s ease,
+    filter 0.14s ease;
+}
+/* Hover / connection feedback — brighten + a HARD halo ring in the port's own
+   type colour (no blur; brutalist). The ring grows the target without moving it.
+   NOTE: RF centres handles with `transform: translate(±50%,-50%)`; any transform
+   here MUST re-apply that translate per side or the port jumps — so the scale
+   lives in the side-specific rules below, never on this shared one. */
+.react-flow__handle.seed-port:hover,
+.react-flow__handle.seed-port.connectingfrom {
+  filter: brightness(1.15);
+  box-shadow:
+    2px 2px 0 0 var(--color-shadow),
+    0 0 0 4px rgba(var(--port-rgb), 0.22);
+}
+/* a legal drop target under the cursor mid-wire — the strongest emphasis */
+.react-flow__handle.seed-port.connectingto.valid {
+  filter: brightness(1.25);
+  box-shadow: 0 0 0 5px rgba(var(--port-rgb), 0.34);
+}
+/* the grow — scale around centre, then re-centre on the edge (per side) */
+.react-flow__handle-left.seed-port:hover,
+.react-flow__handle-left.seed-port.connectingfrom,
+.react-flow__handle-left.seed-port.connectingto.valid {
+  transform: translate(-50%, -50%) scale(1.32);
+}
+.react-flow__handle-right.seed-port:hover,
+.react-flow__handle-right.seed-port.connectingfrom,
+.react-flow__handle-right.seed-port.connectingto.valid {
+  transform: translate(50%, -50%) scale(1.32);
+}
+
+/* ============================================================
+   LEGAL / FAQ editorial prose — Unbounded headings, periwinkle links, bone rules
+   ============================================================ */
+.legal-prose {
+  color: var(--color-foreground);
+  font-size: 15px;
+  line-height: 1.72;
+}
+.legal-prose > :first-child {
+  margin-top: 0;
+}
+.legal-prose h1 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+  margin: 0 0 0.5em;
+}
+.legal-prose h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin: 1.9em 0 0.5em;
+  padding-top: 1.4em;
+  border-top: var(--border-w) solid var(--color-line);
+}
+.legal-prose h3 {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 800;
+  margin: 1.5em 0 0.4em;
+}
+.legal-prose p,
+.legal-prose ul,
+.legal-prose ol,
+.legal-prose blockquote,
+.legal-prose table {
+  margin: 0.85em 0;
+}
+.legal-prose ul,
+.legal-prose ol {
+  padding-left: 1.4em;
+}
+.legal-prose ul {
+  list-style: disc;
+}
+.legal-prose ol {
+  list-style: decimal;
+}
+.legal-prose li {
+  margin: 0.3em 0;
+  padding-left: 0.25em;
+}
+.legal-prose li::marker {
+  color: var(--color-accent);
+}
+.legal-prose a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 700;
+}
+.legal-prose a:hover {
+  background: var(--color-accent);
+  color: var(--color-primary-foreground);
+  text-decoration: none;
+}
+.legal-prose strong,
+.legal-prose b {
+  font-weight: 800;
+  color: var(--color-fg);
+}
+.legal-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--color-surface2);
+  border: 2px solid var(--color-line);
+  border-radius: var(--radius-xs);
+  padding: 0.1em 0.4em;
+}
+.legal-prose pre {
+  background: var(--color-surface2);
+  border: var(--border-w) solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 1em 1.2em;
+  overflow-x: auto;
+  box-shadow: var(--offset-sm);
+}
+.legal-prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.legal-prose blockquote {
+  border-left: var(--border-w) solid var(--color-accent);
+  padding-left: 1em;
+  color: var(--color-muted-foreground);
+}
+.legal-prose hr {
+  border: 0;
+  border-top: var(--border-w) solid var(--color-line);
+  margin: 2em 0;
+}
+.legal-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.legal-prose th,
+.legal-prose td {
+  border: 2px solid var(--color-line);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.legal-prose th {
+  background: var(--color-surface2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+/* Native range fallback (non-.seed-range) — blocky brutalist. */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border: 2px solid var(--color-line);
+  background: var(--color-surface2);
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 18px;
+  border-radius: 0;
+  background: var(--color-fg);
+  border: 2px solid var(--color-line);
+  box-shadow: 2px 2px 0 0 var(--color-shadow);
+  cursor: pointer;
+}
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 18px;
+  border-radius: 0;
+  background: var(--color-fg);
+  border: 2px solid var(--color-line);
+  cursor: pointer;
+}
+
+/* ============================================================
+   AUTHENTICATED HOME — «доска пользователя» (Metro mosaic) + витрина wall.
+   Owner-approved 2026-07-08 (design/homepage-launchpad-mockup). Two zones:
+   a neobrutalist Metro live-tile board over a starfield, then the marginless
+   витрина media wall (ported from design/landing-mocks/slices/vitrina.html).
+   ============================================================ */
+
+/* Starfield backdrop for the board zone (звёздное небо, not the dotted grid).
+   Sparse bone speckle at co-prime tiles + a low periwinkle dome glow. */
+.home-sky {
+  position: relative;
+  background-image: radial-gradient(rgba(236, 238, 243, 0.8) 1px, transparent 1.6px),
+    radial-gradient(rgba(236, 238, 243, 0.45) 1px, transparent 1.6px),
+    radial-gradient(rgba(236, 238, 243, 0.3) 1.4px, transparent 2px),
+    radial-gradient(150% 130% at 50% 165%, rgba(var(--accent-rgb), 0.28), transparent 60%);
+  background-size:
+    227px 331px,
+    157px 233px,
+    293px 411px,
+    100% 100%;
+  background-position:
+    13px 7px,
+    61px 47px,
+    149px 23px,
+    0 0;
+}
+
+/* Metro mosaic — explicit 8×4 placement on desktop, every cell filled; 4-col
+   dense flow on mobile. Tiles are placed via .home-t-<name> area classes. */
+.home-mosaic {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(4, 132px);
+  gap: 10px;
+}
+.home-mosaic > * {
+  min-width: 0;
+}
+/* desktop tile placement */
+.home-t-gen {
+  grid-column: 1 / 5;
+  grid-row: 1 / 2;
+}
+.home-t-proj {
+  grid-column: 1 / 5;
+  grid-row: 2 / 3;
+}
+.home-t-a {
+  grid-column: 5 / 7;
+  grid-row: 1 / 3;
+}
+.home-t-b {
+  grid-column: 7 / 9;
+  grid-row: 1 / 3;
+}
+.home-t-c {
+  grid-column: 1 / 3;
+  grid-row: 3 / 5;
+}
+.home-t-d {
+  grid-column: 5 / 7;
+  grid-row: 3 / 5;
+}
+.home-t-e {
+  grid-column: 7 / 9;
+  grid-row: 3 / 5;
+}
+.home-t-f1 {
+  grid-column: 3 / 4;
+  grid-row: 3 / 4;
+}
+.home-t-f2 {
+  grid-column: 4 / 5;
+  grid-row: 3 / 4;
+}
+.home-t-f3 {
+  grid-column: 3 / 4;
+  grid-row: 4 / 5;
+}
+.home-t-f4 {
+  grid-column: 4 / 5;
+  grid-row: 4 / 5;
+}
+@media (max-width: 760px) {
+  .home-mosaic {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: 104px;
+  }
+  /* mobile: two stacked wide strips, then medium pairs, then the small cluster */
+  .home-t-gen {
+    grid-column: 1 / 5;
+    grid-row: auto;
+  }
+  .home-t-proj {
+    grid-column: 1 / 5;
+    grid-row: auto;
+  }
+  .home-t-a,
+  .home-t-b,
+  .home-t-c,
+  .home-t-d,
+  .home-t-e {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+  .home-t-f1,
+  .home-t-f2,
+  .home-t-f3,
+  .home-t-f4 {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}
+
+/* витрина wall — marginless mosaic, images BIG / videos SMALL. Row height is
+   tied to the wall's OWN width (container-query units), not the viewport, so
+   the tile proportions hold whether the wall is full-bleed or inside the
+   max-w-1600 app column — and never triggers a 100vw-scrollbar overflow. */
+.vitrina-scope {
+  container-type: inline-size;
+}
+.vitrina-wall {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: calc(100cqw / 13);
+  grid-auto-flow: dense;
+  gap: 0;
+  width: 100%;
+}
+.vitrina-wall .v-cell {
+  position: relative;
+  overflow: hidden;
+  background: #0f1116;
+}
+.v-i-big {
+  grid-column: span 3;
+  grid-row: span 3;
+}
+.v-i-tall {
+  grid-column: span 2;
+  grid-row: span 4;
+}
+.v-i-mid {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.v-v-sm {
+  grid-column: span 1;
+  grid-row: span 1;
+}
+.v-v-md {
+  grid-column: span 2;
+  grid-row: span 1;
+}
+.v-v-sq {
+  grid-column: span 1;
+  grid-row: span 2;
+}
+@media (max-width: 760px) {
+  .vitrina-wall {
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: calc(100cqw / 6);
+  }
+  .v-i-big {
+    grid-column: span 3;
+    grid-row: span 3;
+  }
+  .v-i-tall {
+    grid-column: span 2;
+    grid-row: span 4;
+  }
+  .v-v-md {
+    grid-column: span 2;
+  }
+}

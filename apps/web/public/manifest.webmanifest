@@ -1,0 +1,25 @@
+{
+  "name": "Vertov",
+  "short_name": "Vertov",
+  "description": "Генерация изображений и видео на ByteDance Seedream и Seedance.",
+  "theme_color": "#7c3aed",
+  "background_color": "#09090b",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/icons/192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

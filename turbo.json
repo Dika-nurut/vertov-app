@@ -1,0 +1,34 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "stream",
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "REDIS_URL",
+    "TEST_DB_NAME",
+    "MINIO_*",
+    "ASSET_PUBLIC_URL",
+    "PROVIDER_GATEWAY"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["build"]
+    },
+    "lint": {},
+    "typecheck": { "dependsOn": ["^build"] },
+    "test": { "dependsOn": ["^build"] },
+    "@seed/db#test": { "dependsOn": ["^build"] },
+    "@seed/credits#test": { "dependsOn": ["@seed/db#test"] },
+    "@seed/api#test": { "dependsOn": ["@seed/credits#test"] },
+    "@seed/worker#test": { "dependsOn": ["@seed/api#test"] }
+  }
+}

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."gallery_kind" ADD VALUE 'audio';

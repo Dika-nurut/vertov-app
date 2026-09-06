@@ -1,0 +1,59 @@
+{
+  "name": "seed",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.3.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "start": "turbo run start --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:all": "node scripts/test-all.mjs",
+    "test:all:quick": "node scripts/test-all.mjs --quick",
+    "test:all:no-e2e": "node scripts/test-all.mjs --no-e2e",
+    "test:backup-safety": "node scripts/backup-safety.test.mjs",
+    "test:deploy-safety": "node scripts/deploy-safety.test.mjs",
+    "test:test-env-safety": "node scripts/test-env-safety.test.mjs",
+    "test:readiness-ledger": "node scripts/readiness-ledger-safety.test.mjs",
+    "test:readiness-audit": "node scripts/readiness-audit-consistency.test.mjs",
+    "test:test-all-safety": "node scripts/test-all-safety.test.mjs",
+    "test:alerting-render": "node scripts/alertmanager-render.test.mjs",
+    "test:phase5-browser-safety": "node scripts/phase5-production-browser-safety.test.mjs",
+    "test:db:reset": "pnpm --filter @seed/db test-db:reset",
+    "test:boards:quick": "node scripts/test-boards-release.mjs quick",
+    "test:boards:e2e": "node scripts/test-boards-release.mjs e2e",
+    "test:boards:perf": "node scripts/test-boards-release.mjs perf",
+    "test:boards:release": "pnpm test:boards:quick && pnpm test:boards:e2e && pnpm test:boards:perf",
+    "billing:smoke": "node scripts/tochka-live-smoke.mjs",
+    "test:boards:cleanup": "node scripts/test-boards-release.mjs cleanup",
+    "test:studio:media": "pnpm --filter @seed/db test-db:reset && pnpm --filter @seed/worker exec vitest run --config vitest.integration.config.ts src/studio-media-compat.integration.test.ts",
+    "test:studio:uhd": "pnpm --filter @seed/db test-db:reset && STUDIO_UHD_INTEGRATION=1 pnpm --filter @seed/worker exec vitest run --config vitest.integration.config.ts src/studio-render.integration.test.ts",
+    "test:studio:browsers": "pnpm --filter @seed/web exec playwright test --config playwright.studio-readiness.config.ts",
+    "test:studio:chaos": "bash scripts/studio-chaos-drill.sh",
+    "test:studio:soak": "node scripts/studio-project-soak.mjs",
+    "db:generate": "pnpm --filter @seed/db generate",
+    "db:migrate": "pnpm --filter @seed/db migrate",
+    "db:seed": "pnpm --filter @seed/db seed",
+    "db:reset": "pnpm --filter @seed/db reset",
+    "tochka:preflight": "node scripts/tochka-preflight.mjs",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "prepare": "git config core.hooksPath .husky 2>/dev/null || true"
+  },
+  "devDependencies": {
+    "lint-staged": "^17.0.5",
+    "prettier": "3.3.3",
+    "turbo": "2.3.3",
+    "typescript": "5.7.2"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=11"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

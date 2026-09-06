@@ -1,0 +1,1 @@
+ALTER TABLE "script_assist_requests" ADD COLUMN "amount" integer;

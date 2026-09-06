@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /presets
+
+Sitemap: https://vertov.space/sitemap.xml

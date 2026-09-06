@@ -1,0 +1,22 @@
+# Dedicated worker VM (vertov-worker) — BullMQ generation jobs + ffmpeg studio
+# renders, isolated off the app host (SH-2). Deployed separately from the app
+# stack: on the worker VM, `SEED_IMAGE_TAG=<sha> docker compose -f
+# docker-compose.worker.yml up -d` after `docker login cr.yandex` (see
+# docs/ops/cicd.md § Worker VM). The worker's egress + concurrency come from the
+# same /run/secrets/seed.env the app uses (EGRESS_PROXY_URL, EGRESS_PROXY_TOKEN,
+# JOBS_WORKER_CONCURRENCY, STUDIO_RENDER_CONCURRENCY).
+services:
+  worker:
+    image: ${SEED_REGISTRY:+${SEED_REGISTRY}/}seed-worker:${SEED_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - ${SEED_ENV_FILE:-/run/secrets/seed.env}
+    # Same private-CA pin as the API (managed PG/Valkey over verify-full TLS).
+    volumes:
+      - ${SEED_CA_CERT:-/opt/seed/certs/yc-root-ca.crt}:/app/yc-root-ca.crt:ro
+    environment:
+      # Provider-scoped CA for Tochka; see packages/providers/tochka.
+      TOCHKA_CA_CERT: /usr/local/share/ca-certificates/russian-trusted-root-ca.crt
+    # Must exceed SHUTDOWN_DRAIN_TIMEOUT_MS (25s) so the clean drain (INF-12)
+    # finishes before SIGKILL.
+    stop_grace_period: 35s

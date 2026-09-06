@@ -1,0 +1,13 @@
+{
+  "assets": [
+    {
+      "contentType": "image/png",
+      "extension": "png",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMAAQAAAAUAAQDA3f63AAAAAElFTkSuQmCC"
+    }
+  ],
+  "meta": {
+    "seed": 42,
+    "model": "seedream-stub"
+  }
+}

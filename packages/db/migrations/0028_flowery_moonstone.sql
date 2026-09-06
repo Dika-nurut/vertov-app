@@ -1,0 +1,2 @@
+ALTER TABLE "scripts" ADD COLUMN "create_key" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "scripts_user_create_key_uidx" ON "scripts" USING btree ("user_id","create_key") WHERE "scripts"."create_key" IS NOT NULL;

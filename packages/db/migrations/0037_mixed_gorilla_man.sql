@@ -1,0 +1,2 @@
+ALTER TABLE "preset_packs" ADD COLUMN "series_count" integer DEFAULT 1 NOT NULL;--> statement-breakpoint
+ALTER TABLE "preset_packs" ADD COLUMN "reference_asset_urls" jsonb DEFAULT '[]'::jsonb NOT NULL;

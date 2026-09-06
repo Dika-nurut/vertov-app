@@ -1,0 +1,66 @@
+[
+  {
+    "id": "film-idea-ru",
+    "format": "film",
+    "task": "idea_to_plan",
+    "language": "ru",
+    "input": "Архивист обнаруживает, что из городских газет исчезают события вчерашнего дня.",
+    "checks": ["brief", "ordered_beats", "no_silent_rewrite"]
+  },
+  {
+    "id": "social-hook-ru",
+    "format": "social",
+    "task": "idea_to_plan",
+    "language": "ru",
+    "input": "Короткий ролик о дизайнере, который замечает одну и ту же ошибку во всех логотипах города.",
+    "checks": ["hook", "duration", "payoff"]
+  },
+  {
+    "id": "ad-proof-mixed",
+    "format": "ad",
+    "task": "idea_to_plan",
+    "language": "mixed",
+    "input": "Brand film for a note app: показать proof, что мысль не теряется между устройствами.",
+    "checks": ["audience", "proof", "cta"]
+  },
+  {
+    "id": "sketch-turn-ru",
+    "format": "sketch",
+    "task": "idea_to_plan",
+    "language": "ru",
+    "input": "Два соседа спорят, чей умный дом первым начал манипулировать хозяином.",
+    "checks": ["premise", "escalation", "turn", "punchline"]
+  },
+  {
+    "id": "film-span-rewrite",
+    "format": "film",
+    "task": "span_rewrite",
+    "language": "ru",
+    "input": "Перепиши выделенную реплику короче, сохранив скрытую угрозу.",
+    "checks": ["proposal", "meaning_preserved", "no_raw_tags"]
+  },
+  {
+    "id": "film-scene-critique",
+    "format": "film",
+    "task": "scene_critique",
+    "language": "ru",
+    "input": "Проверь цель, конфликт и изменение внутри текущей сцены.",
+    "checks": ["scene_specific", "causality", "actionable"]
+  },
+  {
+    "id": "project-structure",
+    "format": "film",
+    "task": "project_analysis",
+    "language": "ru",
+    "input": "Найди слабые поворотные точки и разрывы причинности, не переписывая сценарий.",
+    "checks": ["project_map_used", "specific_findings", "no_silent_rewrite"]
+  },
+  {
+    "id": "malformed-provider-output",
+    "format": "social",
+    "task": "renderer_fallback",
+    "language": "mixed",
+    "input": "Provider returns broken markdown and internal rewrite tags.",
+    "checks": ["no_raw_tags", "plain_text_fallback", "usable_or_rejected"]
+  }
+]

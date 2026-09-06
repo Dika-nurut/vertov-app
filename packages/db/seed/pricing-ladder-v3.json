@@ -1,0 +1,931 @@
+{
+  "_source": "docs/business/pricing-workbook/Vertov_Pricing_Model_v14_2026-07-28.xlsx — sheet «Сетка FX» AA (СПИСЫВАТЬ — кредитов) / AB (за сколько секунд), sheet «Параметрика» rows 38–45 for the with-video-input ladder. Updated 2026-08-12 to the 03_08 owner-reviewed workbook (HappyHorse 1.0 delisted, 1.1 720p repriced 226 → 212).",
+  "_purpose": "Drift guard for the canonical parametric price matrix (see packages/db/seed/price-points.ts). This file is the finance-frozen resolution/audio ladder; the CI test price-points-drift.test.ts asserts every cell maps to seed row(s) with equal baseCredits. Do NOT hand-edit to match code — edit only when finance re-exports the workbook. It also carries the frozen COGS cost-model (fx, per-model cogs/credits), read by packages/db/src/price-breakeven.ts.",
+  "_dbIdMapping": "ladder[].model / costModel[].matrix.modelId are LIVE DB ids (packages/db/seed/models.ts), not workbook display names — unlike the retired v3 file, which used workbook names for ladder[].model. This regeneration switched to DB ids throughout so every citation is byte-verifiable against the seed without a name-reconciliation table. Only exception: the workbook's «nano-banana-pro» is DB id 'gemini-3-pro-image'.",
+  "_prunedNote": "The retired v3 file carried a `_pruned` block auditing 5 workbook cells (veo/omni 4K + a redundant omni 1080p) that the client/model contract cannot deliver. v14 does not carry those cells in the 55-row SSOT this file was regenerated from (docs/business/pricing-v14-price-rows-2026-07-28.md), and re-deriving them would mean reading the retired-basis workbook cells directly — which goal invariant 1 forbids (prices come ONLY from the v14 55-row SSOT). Per data-audit finding B2, stale numbers claiming to preserve a book they no longer match are worse than no block, so the block is dropped rather than carried forward unverified. seedance-2-0's 4K row IS still seeded (inactive) in price-points.ts — via the v14 SSOT itself (row 7, `Сетка FX!AA15/AB15`), not via this block.",
+  "_delisted": {
+    "_note": "FINANCE: workbook rows removed from the sellable catalog after owner review. Kept here with the final price before delisting so the audit trail survives and old migrations can be reconciled.",
+    "cells": [
+      {
+        "ref": "Сетка FX!AA23/AB23",
+        "model": "happyhorse-1-0",
+        "resolution": "720p",
+        "credits": 284,
+        "reason": "Delisted 2026-08-03 per workbook 'Сетка FX' row 23 and 'ЖУРНАЛ ЦЕН': HappyHorse 1.0 is dearer than 1.1 at the same result."
+      },
+      {
+        "ref": "Сетка FX!AA24/AB24",
+        "model": "happyhorse-1-0",
+        "resolution": "1080p",
+        "credits": 365,
+        "reason": "Delisted 2026-08-03 per workbook 'Сетка FX' row 24 and 'ЖУРНАЛ ЦЕН': HappyHorse 1.0 1080p removed from sale."
+      }
+    ]
+  },
+  "fx": {
+    "or": 106.182,
+    "orRef": "Сетка FX!F3",
+    "direct": 100.6315,
+    "directRef": "Сетка FX!F4",
+    "_note": "v14 live landed FX basis (phase 1.2 point 4), replacing the stale 95.5567/90.5751 pair derived from the retired 76.5 basis. `or` = OpenRouter landed; `direct` = kie/laozhang landed."
+  },
+  "creditCostRub": {
+    "base": 0.331,
+    "baseRef": "Сетка FX!B4",
+    "baseFx": 85,
+    "baseFxRef": "Сетка FX!B3",
+    "_note": "v14 prices off ONE credit rate (0.331 ₽/credit at base FX 85 ₽/$), not the retired book's base/video/image 3-way split — that split does not exist in v14. Kept as a single value under the old key names so nothing importing `.base` breaks; `.video`/`.image` removed rather than left stale (no v14 cell backs a per-category split)."
+  },
+  "tiers": [
+    {
+      "name": "Start",
+      "priceRub": 599,
+      "credits": 1175
+    },
+    {
+      "name": "Pro",
+      "priceRub": 1649,
+      "credits": 4400
+    },
+    {
+      "name": "Studio",
+      "priceRub": 3799,
+      "credits": 10300
+    },
+    {
+      "name": "Elite",
+      "priceRub": 5799,
+      "credits": 15900
+    },
+    {
+      "name": "Ultra",
+      "priceRub": 11699,
+      "credits": 32500
+    }
+  ],
+  "ladder": [
+    {
+      "ref": "Сетка FX!AA9/AB9",
+      "model": "veo-3-1",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 895,
+      "baseUnits": 8
+    },
+    {
+      "ref": "Сетка FX!AA10/AB10",
+      "model": "veo-3-1",
+      "resolution": "1080p",
+      "videoInput": false,
+      "credits": 913,
+      "baseUnits": 8
+    },
+    {
+      "ref": "Сетка FX!AA11/AB11",
+      "model": "veo-3-1-fast",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 215,
+      "baseUnits": 8
+    },
+    {
+      "ref": "Сетка FX!AA12/AB12",
+      "model": "veo-3-1-fast",
+      "resolution": "1080p",
+      "videoInput": false,
+      "credits": 233,
+      "baseUnits": 8
+    },
+    {
+      "ref": "Сетка FX!AA13/AB13",
+      "model": "veo-3-1-lite",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 108,
+      "baseUnits": 8
+    },
+    {
+      "ref": "Сетка FX!AA14/AB14",
+      "model": "veo-3-1-lite",
+      "resolution": "1080p",
+      "videoInput": false,
+      "credits": 126,
+      "baseUnits": 8
+    },
+    {
+      "ref": "Сетка FX!AA15/AB15",
+      "model": "seedance-2-0",
+      "resolution": "4K",
+      "videoInput": false,
+      "credits": 2183,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA16/AB16",
+      "model": "seedance-2-0",
+      "resolution": "1080p",
+      "videoInput": false,
+      "credits": 776,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA17/AB17",
+      "model": "seedance-2-0",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 564,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA18/AB18",
+      "model": "seedance-2-0",
+      "resolution": "480p",
+      "videoInput": false,
+      "credits": 564,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA19/AB19",
+      "model": "seedance-2-0-fast",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 259,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA20/AB20",
+      "model": "seedance-2-0-fast",
+      "resolution": "480p",
+      "videoInput": false,
+      "credits": 183,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA21/AB21",
+      "model": "happyhorse-1-1",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 212,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA22/AB22",
+      "model": "happyhorse-1-1",
+      "resolution": "1080p",
+      "videoInput": false,
+      "credits": 274,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA23/AB23",
+      "model": "happyhorse-1-0",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 284,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA24/AB24",
+      "model": "happyhorse-1-0",
+      "resolution": "1080p",
+      "videoInput": false,
+      "credits": 365,
+      "baseUnits": 5
+    },
+
+    {
+      "ref": "Сетка FX!AA25/AB25",
+      "model": "wan-2-7",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 251,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA26/AB26",
+      "model": "wan-2-7",
+      "resolution": "1080p",
+      "videoInput": false,
+      "credits": 251,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA27/AB27",
+      "model": "kling-v3-0-std",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 270,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA28/AB28",
+      "model": "grok-imagine-video",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 41,
+      "baseUnits": 6
+    },
+    {
+      "ref": "Сетка FX!AA29/AB29",
+      "model": "grok-imagine-video",
+      "resolution": "480p",
+      "videoInput": false,
+      "credits": 41,
+      "baseUnits": 6
+    },
+    {
+      "ref": "Сетка FX!AA30/AB30",
+      "model": "gemini-omni-flash",
+      "resolution": "default",
+      "videoInput": false,
+      "credits": 273,
+      "baseUnits": 8
+    },
+    {
+      "ref": "Сетка FX!AA31",
+      "model": "gemini-2-5-flash-image",
+      "resolution": "default",
+      "videoInput": false,
+      "credits": 9,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA32",
+      "model": "gemini-3-1-flash-image",
+      "resolution": "1K",
+      "videoInput": false,
+      "credits": 23,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA47",
+      "model": "gemini-3-1-flash-image",
+      "resolution": "2K",
+      "videoInput": false,
+      "credits": 27,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA48",
+      "model": "gemini-3-1-flash-image",
+      "resolution": "4K",
+      "videoInput": false,
+      "credits": 32,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA33",
+      "model": "gemini-3-1-flash-lite-image",
+      "resolution": "default",
+      "videoInput": false,
+      "credits": 11,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA34",
+      "model": "gemini-3-pro-image",
+      "resolution": "1K",
+      "videoInput": false,
+      "credits": 37,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA46",
+      "model": "gemini-3-pro-image",
+      "resolution": "2K",
+      "videoInput": false,
+      "credits": 43,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA35",
+      "model": "gemini-3-pro-image",
+      "resolution": "4K",
+      "videoInput": false,
+      "credits": 50,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA36",
+      "model": "gpt-image-2",
+      "resolution": "low",
+      "videoInput": false,
+      "credits": 13,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA37",
+      "model": "gpt-image-2",
+      "resolution": "medium",
+      "videoInput": false,
+      "credits": 21,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA38",
+      "model": "gpt-image-2",
+      "resolution": "high",
+      "videoInput": false,
+      "credits": 33,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA39",
+      "model": "seedream-4-5",
+      "resolution": "1K",
+      "videoInput": false,
+      "credits": 14,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA49",
+      "model": "seedream-4-5",
+      "resolution": "2K",
+      "videoInput": false,
+      "credits": 17,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA50",
+      "model": "seedream-4-5",
+      "resolution": "4K",
+      "videoInput": false,
+      "credits": 20,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA40",
+      "model": "seedream-5-0-pro",
+      "resolution": "1K",
+      "videoInput": false,
+      "credits": 16,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA41",
+      "model": "seedream-5-0-pro",
+      "resolution": "2K",
+      "videoInput": false,
+      "credits": 29,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA42",
+      "model": "seedream-5-0-lite",
+      "resolution": "2K",
+      "videoInput": false,
+      "credits": 12,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA51",
+      "model": "seedream-5-0-lite",
+      "resolution": "3K",
+      "videoInput": false,
+      "credits": 14,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA52",
+      "model": "seedream-5-0-lite",
+      "resolution": "4K",
+      "videoInput": false,
+      "credits": 17,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA43",
+      "model": "flux-2-pro",
+      "resolution": "default",
+      "videoInput": false,
+      "credits": 13,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA44",
+      "model": "recraft-v4",
+      "resolution": "default",
+      "videoInput": false,
+      "credits": 18,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA45",
+      "model": "recraft-v4-vector",
+      "resolution": "default",
+      "videoInput": false,
+      "credits": 35,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Параметрика!C40",
+      "model": "seedance-2-0-reference-to-video",
+      "resolution": "4K",
+      "videoInput": true,
+      "credits": 242,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Параметрика!C41",
+      "model": "seedance-2-0-reference-to-video",
+      "resolution": "1080p",
+      "videoInput": true,
+      "credits": 117,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Параметрика!C42",
+      "model": "seedance-2-0-reference-to-video",
+      "resolution": "720p",
+      "videoInput": true,
+      "credits": 47,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Параметрика!C43",
+      "model": "seedance-2-0-reference-to-video",
+      "resolution": "480p",
+      "videoInput": true,
+      "credits": 22,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Параметрика!C44",
+      "model": "seedance-2-0-fast-reference-to-video",
+      "resolution": "720p",
+      "videoInput": true,
+      "credits": 34,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Параметрика!C45",
+      "model": "seedance-2-0-fast-reference-to-video",
+      "resolution": "480p",
+      "videoInput": true,
+      "credits": 15,
+      "baseUnits": 1
+    },
+    {
+      "ref": "Сетка FX!AA16/AB16 (deliberate mirror of the t2v twin — owner ruling 5)",
+      "model": "seedance-2-0-reference-to-video",
+      "resolution": "1080p",
+      "videoInput": false,
+      "credits": 776,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA17/AB17 (deliberate mirror of the t2v twin — owner ruling 5)",
+      "model": "seedance-2-0-reference-to-video",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 564,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA18/AB18 (deliberate mirror of the t2v twin — owner ruling 5)",
+      "model": "seedance-2-0-reference-to-video",
+      "resolution": "480p",
+      "videoInput": false,
+      "credits": 564,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA19/AB19 (deliberate mirror of the t2v twin — owner ruling 5)",
+      "model": "seedance-2-0-fast-reference-to-video",
+      "resolution": "720p",
+      "videoInput": false,
+      "credits": 259,
+      "baseUnits": 5
+    },
+    {
+      "ref": "Сетка FX!AA20/AB20 (deliberate mirror of the t2v twin — owner ruling 5)",
+      "model": "seedance-2-0-fast-reference-to-video",
+      "resolution": "480p",
+      "videoInput": false,
+      "credits": 183,
+      "baseUnits": 5
+    }
+  ],
+  "costModel": [
+    {
+      "workbookId": "veo-3-1 · 1080p · direct",
+      "kind": "video",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.159375,
+      "cogsRef": "Сетка FX!F10 (= $1.275/clip ÷ 8s — the 'per CLIP, not per second' semantic v14 prices Veo at; C4 fix)",
+      "vendorBilling": "per_clip",
+      "creditsBaseConfig": 913,
+      "creditsRef": "Сетка FX!AA10",
+      "refClipSeconds": 8,
+      "fallbackCostPerCredit": null,
+      "gatewayCosts": [
+        {
+          "gateway": "kie",
+          "resolution": "720p",
+          "videoInput": false,
+          "audio": false,
+          "vendorBilling": "per_clip",
+          "refClipSeconds": 8,
+          "cogsUsdPerUnit": 0.15625
+        },
+        {
+          "gateway": "kie",
+          "resolution": "1080p",
+          "videoInput": false,
+          "audio": false,
+          "vendorBilling": "per_clip",
+          "refClipSeconds": 8,
+          "cogsUsdPerUnit": 0.159375
+        },
+        {
+          "gateway": "openrouter",
+          "resolution": "720p",
+          "videoInput": false,
+          "audio": false,
+          "cogsUsdPerUnit": 0.4
+        },
+        {
+          "gateway": "openrouter",
+          "resolution": "1080p",
+          "videoInput": false,
+          "audio": false,
+          "cogsUsdPerUnit": 0.4
+        }
+      ],
+      "matrix": {
+        "modelId": "veo-3-1",
+        "resolution": "1080p"
+      }
+    },
+    {
+      "workbookId": "veo-3-1-fast · 1080p · direct",
+      "kind": "video",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.040625,
+      "cogsRef": "Сетка FX!F12 (= $0.325/clip ÷ 8s)",
+      "vendorBilling": "per_clip",
+      "creditsBaseConfig": 233,
+      "creditsRef": "Сетка FX!AA12",
+      "refClipSeconds": 8,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "veo-3-1-fast",
+        "resolution": "1080p"
+      }
+    },
+    {
+      "workbookId": "veo-3-1-lite · 1080p · direct",
+      "kind": "video",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.021875,
+      "cogsRef": "Сетка FX!F14 (= $0.175/clip ÷ 8s)",
+      "vendorBilling": "per_clip",
+      "creditsBaseConfig": 126,
+      "creditsRef": "Сетка FX!AA14",
+      "refClipSeconds": 8,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "veo-3-1-lite",
+        "resolution": "1080p"
+      }
+    },
+    {
+      "workbookId": "seedance-2-0 · 1080p · OpenRouter",
+      "kind": "video",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.34,
+      "cogsRef": "Сетка FX!F16",
+      "creditsBaseConfig": 776,
+      "creditsRef": "Сетка FX!AA16",
+      "refClipSeconds": 5,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "seedance-2-0",
+        "resolution": "1080p"
+      }
+    },
+    {
+      "workbookId": "seedance-2-0-fast · 720p · OpenRouter",
+      "kind": "video",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.121,
+      "cogsRef": "Сетка FX!F19",
+      "creditsBaseConfig": 259,
+      "creditsRef": "Сетка FX!AA19",
+      "refClipSeconds": 5,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "seedance-2-0-fast",
+        "resolution": "720p"
+      }
+    },
+    {
+      "workbookId": "happyhorse-1-1 · 1080p · OpenRouter",
+      "kind": "video",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.1278,
+      "cogsRef": "Сетка FX!F22",
+      "creditsBaseConfig": 274,
+      "creditsRef": "Сетка FX!AA22",
+      "refClipSeconds": 5,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "happyhorse-1-1",
+        "resolution": "1080p"
+      }
+    },
+    {
+      "workbookId": "happyhorse-1-0 · 1080p · OpenRouter",
+      "kind": "video",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.1694,
+      "cogsRef": "Сетка FX!F24",
+      "creditsBaseConfig": 365,
+      "creditsRef": "Сетка FX!AA24",
+      "refClipSeconds": 5,
+      "fallbackCostPerCredit": null,
+      "_note": "happyhorse-1-0 is delisted 2026-08-03 (workbook v14 03_08): dearer than 1.1 at the same result. Cost model kept for audit reconciliation only.",
+      "matrix": {
+        "modelId": "happyhorse-1-0",
+        "resolution": "1080p"
+      }
+    },
+
+    {
+      "workbookId": "wan-2-7 · 1080p · direct",
+      "kind": "video",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.12,
+      "cogsRef": "Сетка FX!F26",
+      "creditsBaseConfig": 251,
+      "creditsRef": "Сетка FX!AA26",
+      "refClipSeconds": 5,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "wan-2-7",
+        "resolution": "1080p"
+      }
+    },
+    {
+      "workbookId": "kling-v3-0-std · 720p · OpenRouter",
+      "kind": "video",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.126,
+      "cogsRef": "Сетка FX!F27",
+      "creditsBaseConfig": 270,
+      "creditsRef": "Сетка FX!AA27",
+      "refClipSeconds": 5,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "kling-v3-0-std",
+        "resolution": "720p"
+      }
+    },
+    {
+      "workbookId": "grok-imagine-video · 720p · direct",
+      "kind": "video",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.015,
+      "cogsRef": "Сетка FX!F28",
+      "creditsBaseConfig": 41,
+      "creditsRef": "Сетка FX!AA28",
+      "refClipSeconds": 6,
+      "fallbackCostPerCredit": null,
+      "gatewayCosts": [
+        {
+          "gateway": "kie",
+          "resolution": "480p",
+          "videoInput": false,
+          "audio": false,
+          "cogsUsdPerUnit": 0.008
+        },
+        {
+          "gateway": "kie",
+          "resolution": "720p",
+          "videoInput": false,
+          "audio": false,
+          "cogsUsdPerUnit": 0.015
+        },
+        {
+          "gateway": "openrouter",
+          "resolution": "480p",
+          "videoInput": false,
+          "audio": false,
+          "cogsUsdPerUnit": 0.05
+        },
+        {
+          "gateway": "openrouter",
+          "resolution": "720p",
+          "videoInput": false,
+          "audio": false,
+          "cogsUsdPerUnit": 0.05
+        }
+      ],
+      "matrix": {
+        "modelId": "grok-imagine-video",
+        "resolution": "720p"
+      }
+    },
+    {
+      "workbookId": "gemini-omni-flash · direct",
+      "kind": "video",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.079,
+      "cogsRef": "Сетка FX!F30",
+      "creditsBaseConfig": 273,
+      "creditsRef": "Сетка FX!AA30",
+      "refClipSeconds": 8,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "gemini-omni-flash",
+        "resolution": "default"
+      }
+    },
+    {
+      "workbookId": "seedance-2-0-reference-to-video · 1080p · OpenRouter (deliberate mirror of seedance-2-0)",
+      "kind": "video",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.34,
+      "cogsRef": "Сетка FX!F16 (deliberate mirror of the t2v twin — owner ruling 5; the with-video kie leg, Параметрика!D41, is NOT usable here: only one cost-model entry per model id is representable, and real routing is OpenRouter, not kie)",
+      "creditsBaseConfig": 776,
+      "creditsRef": "Сетка FX!AA16",
+      "refClipSeconds": 5,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "seedance-2-0-reference-to-video",
+        "resolution": "1080p"
+      }
+    },
+    {
+      "workbookId": "seedance-2-0-fast-reference-to-video · 720p · OpenRouter (deliberate mirror of seedance-2-0-fast)",
+      "kind": "video",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.121,
+      "cogsRef": "Сетка FX!F19 (deliberate mirror of the t2v twin — owner ruling 5; the with-video kie leg, Параметрика!D44, is NOT usable here for the same reason as the row above)",
+      "creditsBaseConfig": 259,
+      "creditsRef": "Сетка FX!AA19",
+      "refClipSeconds": 5,
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "seedance-2-0-fast-reference-to-video",
+        "resolution": "720p"
+      }
+    },
+    {
+      "workbookId": "nano-banana · direct",
+      "kind": "image",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.02,
+      "cogsRef": "Сетка FX!F31",
+      "creditsBaseConfig": 9,
+      "creditsRef": "Сетка FX!AA31",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "gemini-2-5-flash-image",
+        "resolution": "default"
+      }
+    },
+    {
+      "workbookId": "nano-banana-2 · direct",
+      "kind": "image",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.055,
+      "cogsRef": "Сетка FX!F32",
+      "creditsBaseConfig": 23,
+      "creditsRef": "Сетка FX!AA32",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "gemini-3-1-flash-image",
+        "resolution": "1K"
+      }
+    },
+    {
+      "workbookId": "nano-banana-2-lite · direct",
+      "kind": "image",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.025,
+      "cogsRef": "Сетка FX!F33",
+      "creditsBaseConfig": 11,
+      "creditsRef": "Сетка FX!AA33",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "gemini-3-1-flash-lite-image",
+        "resolution": "default"
+      }
+    },
+    {
+      "workbookId": "nano-banana-pro · 4K · direct",
+      "kind": "image",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.09,
+      "cogsRef": "Сетка FX!F35",
+      "creditsBaseConfig": 50,
+      "creditsRef": "Сетка FX!AA35",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "gemini-3-pro-image",
+        "resolution": "4K"
+      }
+    },
+    {
+      "workbookId": "gpt-image-2 · high · direct",
+      "kind": "image",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.08,
+      "cogsRef": "Сетка FX!F38",
+      "creditsBaseConfig": 33,
+      "creditsRef": "Сетка FX!AA38",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "gpt-image-2",
+        "resolution": "high"
+      }
+    },
+    {
+      "workbookId": "seedream-4-5 · direct",
+      "kind": "image",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.0325,
+      "cogsRef": "Сетка FX!F39",
+      "creditsBaseConfig": 17,
+      "creditsRef": "Сетка FX!AA49",
+      "fallbackCostPerCredit": null,
+      "_note": "Seedream 4.5's 1K workbook rung (Сетка FX!AA39) is retained as an inactive price point for drift mapping only: Kie exposes no 1K tier. This reference configuration is the entry sellable 2K tier (Сетка FX!AA49), routed to Kie basic.",
+      "matrix": {
+        "modelId": "seedream-4-5",
+        "resolution": "2K"
+      }
+    },
+    {
+      "workbookId": "seedream-5-0-pro · 2K · direct",
+      "kind": "image",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.07,
+      "cogsRef": "Сетка FX!F41",
+      "creditsBaseConfig": 29,
+      "creditsRef": "Сетка FX!AA41",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "seedream-5-0-pro",
+        "resolution": "2K"
+      }
+    },
+    {
+      "workbookId": "seedream-5-0-lite · direct",
+      "kind": "image",
+      "channelPrimary": "direct",
+      "cogsUsdPerUnit": 0.0275,
+      "cogsRef": "Сетка FX!F42",
+      "creditsBaseConfig": 12,
+      "creditsRef": "Сетка FX!AA42",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "seedream-5-0-lite",
+        "resolution": "2K"
+      }
+    },
+    {
+      "workbookId": "flux-2-pro · OpenRouter",
+      "kind": "image",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.03,
+      "cogsRef": "Сетка FX!F43",
+      "creditsBaseConfig": 13,
+      "creditsRef": "Сетка FX!AA43",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "flux-2-pro",
+        "resolution": "default"
+      }
+    },
+    {
+      "workbookId": "recraft-v4 · OpenRouter",
+      "kind": "image",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.04,
+      "cogsRef": "Сетка FX!F44",
+      "creditsBaseConfig": 18,
+      "creditsRef": "Сетка FX!AA44",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "recraft-v4",
+        "resolution": "default"
+      }
+    },
+    {
+      "workbookId": "recraft-v4-vector · OpenRouter",
+      "kind": "image",
+      "channelPrimary": "OpenRouter",
+      "cogsUsdPerUnit": 0.08,
+      "cogsRef": "Сетка FX!F45",
+      "creditsBaseConfig": 35,
+      "creditsRef": "Сетка FX!AA45",
+      "fallbackCostPerCredit": null,
+      "matrix": {
+        "modelId": "recraft-v4-vector",
+        "resolution": "default"
+      }
+    }
+  ],
+  "_costModelNote": "Each entry is the MOST EXPENSIVE resolution/channel for its model (fail-safe direction, phase 1.3) — price-breakeven.ts's modelBreakEven keys strictly on matrix.modelId (COST_MODEL.find, single match), so a model with per-resolution COGS cannot have more than one entry here. This is a real shape limitation of price-breakeven.ts, reported per phase 1.3 rather than silently working around it: it means the break-even guard checks ONE reference config per model, not every priced row. `fallbackCostPerCredit` is null everywhere — the retired file's fallback numbers all cited the wrong workbook column (data-audit finding C3: 'Тарифы!AE##' is a MARGIN column; the stored values actually came from 'AD') and v14's per-model channel table gives exactly one $/unit figure per model, not a primary+fallback pair, so there is no v14-sourced replacement to re-cite. Video entries priced 'per CLIP' in v14 (Veo) carry cogsUsdPerUnit as (clipCost ÷ refClipSeconds) — a $/second EQUIVALENT — so price-breakeven.ts's existing `cogsUsdPerUnit × refClipSeconds` formula (unchanged, out of this brief's scope) recovers the correct per-clip cost instead of the 8× overcount data-audit finding C4 flagged (the retired file's Veo numbers were ALSO stored this way, just wrong-valued; C4's warning was about resyncing the VALUE without preserving this semantic — this file avoids that trap by construction)."
+}

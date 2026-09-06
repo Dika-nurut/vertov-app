@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "script_assist_requests_user_inflight_uidx" ON "script_assist_requests" USING btree ("user_id") WHERE "script_assist_requests"."status" = 'in_progress';

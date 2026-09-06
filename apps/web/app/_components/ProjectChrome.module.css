@@ -1,0 +1,216 @@
+.bar {
+  display: flex;
+  height: 46px;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+  padding: 0 18px;
+  border-bottom: 2.5px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+}
+
+.wordmark {
+  color: transparent;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  -webkit-text-stroke: 1.2px var(--color-line);
+}
+
+.separator {
+  flex: none;
+  width: 1.5px;
+  height: 16px;
+  background: var(--color-line-soft);
+}
+
+.context {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.deskArrow {
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 26px;
+  place-items: center;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--offset-pressed);
+  color: var(--color-accent2);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.name {
+  flex: 0 1 250px;
+  min-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.products,
+.skeletonProducts {
+  display: flex;
+  flex: none;
+  width: 342px;
+  height: 26px;
+  align-items: stretch;
+}
+
+.products {
+  position: relative;
+}
+
+.dockForm {
+  display: contents;
+}
+
+.product {
+  display: flex;
+  height: 26px;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  margin-left: -2.5px;
+  padding: 0 9px;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.product:first-child {
+  margin-left: 0;
+}
+
+.product:hover,
+.product:focus-visible {
+  color: var(--color-fg);
+}
+
+.productActive {
+  position: relative;
+  z-index: 1;
+  background: var(--color-accent);
+  color: var(--color-primary-foreground);
+}
+
+.skeletonName,
+.skeletonProducts {
+  border: 2.5px solid var(--color-line-soft);
+  background: transparent;
+}
+
+.skeletonName {
+  height: 15px;
+}
+
+.invalid {
+  flex: 0 1 auto;
+}
+
+/* E2 renders no product row, so the freed width belongs to the message. Left in
+   the 250px name slot it truncated to «ПРОЕКТ НЕДОСТУПЕН — РАБОТАЕМ Б…» at
+   1280 — an error the user cannot finish reading. Seen in a browser, not
+   reasoned about. */
+.invalid .name {
+  flex: 0 1 auto;
+  color: var(--color-destructive);
+}
+
+.deskArrowInvalid {
+  border-color: var(--color-destructive);
+  box-shadow: 2px 2px 0 0 var(--color-destructive);
+  color: var(--color-destructive);
+}
+
+.bar:has(.invalid) {
+  border-bottom-color: var(--color-destructive);
+}
+
+.account {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+  padding-left: 18px;
+}
+
+.search,
+.upgrade,
+.balance {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--color-faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.search kbd {
+  margin-left: 7px;
+  border: 1.5px solid rgb(236 238 243 / 30%);
+  padding: 1px 4px;
+  font-size: 8px;
+}
+
+.search:hover,
+.search:focus-visible {
+  color: var(--color-accent);
+}
+
+.upgrade {
+  color: var(--color-accent2);
+}
+
+.balance {
+  gap: 5px;
+  color: var(--color-fg);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.balance :global([data-testid='balance-value']) {
+  font-size: 10px;
+}
+
+.profile :global([data-testid='profile-menu-trigger']) {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 9px;
+}
+
+.profile :global([data-testid='profile-menu-trigger']) span {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+}

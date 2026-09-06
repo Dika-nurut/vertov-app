@@ -1,0 +1,66 @@
+name: seed
+
+networks:
+  seed-net:
+    external: true
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: seed-postgres
+    restart: unless-stopped
+    environment:
+      # Same non-secret local defaults as .env.example, so a clean checkout
+      # remains runnable when only DATABASE_URL is configured.
+      POSTGRES_USER: ${POSTGRES_USER:-seed}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-CHANGE_ME_HEX24}
+      POSTGRES_DB: ${POSTGRES_DB:-seed}
+    ports:
+      - '127.0.0.1:5434:5432'
+    volumes:
+      - /root/seed-prod/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-seed} -d ${POSTGRES_DB:-seed}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - seed-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: seed-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '127.0.0.1:6380:6379'
+    volumes:
+      - /root/seed-prod/data/redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - seed-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: seed-minio
+    restart: unless-stopped
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-seedminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-CHANGE_ME_HEX24}
+    ports:
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
+    volumes:
+      - /root/seed-prod/data/minio:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - seed-net

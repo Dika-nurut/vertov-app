@@ -1,0 +1,48 @@
+Title: Edge Cases
+Draft date: 2026-07-02
+
+.OPENING SHOT - A FORCED HEADING #A-1#
+
+Some action with *italics*, **bold**, _underline_ and a \*literal star\*.
+
+DEALER
+Ten.
+Four.
+  
+Change?
+
+MCCLANE ^
+No dice.
+
+@McCLANE
+Now I am forced and mixed-case.
+
+INT. WAREHOUSE - CONTINUOUS
+
+CUT TO:
+
+!INT. THIS IS FORCED ACTION - NOT A HEADING
+
+EXT. BRICK'S POOL - DAY
+
+Steel, in the water, arms wrapped around his knees.
+
+> BURN TO PINK.
+
+>THE END<
+
+===
+
+# Act One
+
+## Sequence A
+
+= A synopsis of the sequence.
+
+[[A standalone note.]]
+
+Action containing an inline [[note to self]] survives.
+
+/* a boneyard line */
+
+THE END

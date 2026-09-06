@@ -1,0 +1,13 @@
+-- P-11(b): purge `models.credit_cost_per_unit`.
+--
+-- The legacy per-unit ceiling lost its last runtime reader: /v1/models now
+-- projects a workbook-derived `minUnitCredits` from the active price points,
+-- the exposure gate keys on `has_active_price` alone, and the execution
+-- snapshot (v2) no longer carries the field. What remained was a display-only
+-- integer that had drifted from the rungs it was meant to bound
+-- (gpt-image-2: ceiling 33 vs cheapest real rung 13).
+--
+-- CONTRACT step of expand→migrate→contract: deployed readers must stop
+-- touching the column before this drop runs. Backfilling minUnitCredits or
+-- any other derivation is unnecessary — nothing reads it.
+ALTER TABLE "models" DROP COLUMN IF EXISTS "credit_cost_per_unit";

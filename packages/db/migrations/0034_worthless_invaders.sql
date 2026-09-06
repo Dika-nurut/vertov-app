@@ -1,0 +1,2 @@
+DROP INDEX "script_assist_requests_user_key_uidx";--> statement-breakpoint
+CREATE UNIQUE INDEX "script_assist_requests_user_op_key_uidx" ON "script_assist_requests" USING btree ("user_id","op","idempotency_key");

@@ -1,0 +1,142 @@
+{
+  "fixtureVersion": 1,
+  "current": {
+    "schemaVersion": 1,
+    "nodes": [
+      {
+        "id": "prompt-current",
+        "version": 1,
+        "type": "prompt",
+        "position": { "x": 40, "y": 80 },
+        "data": { "text": "A quiet harbor at dawn" }
+      },
+      {
+        "id": "shot-current",
+        "version": 1,
+        "type": "generate",
+        "position": { "x": 420, "y": 80 },
+        "data": { "mode": "video", "prompt": "", "count": 1, "status": "idle" }
+      },
+      {
+        "id": "frame-current",
+        "version": 1,
+        "type": "frame",
+        "position": { "x": 20, "y": 40 },
+        "width": 520,
+        "height": 320,
+        "data": { "title": "Утро", "tint": "blue" }
+      },
+      {
+        "id": "text-current",
+        "version": 1,
+        "type": "text",
+        "position": { "x": 40, "y": 80 },
+        "parentId": "frame-current",
+        "extent": "parent",
+        "data": { "text": "Заметка", "size": "m" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-current",
+        "source": "prompt-current",
+        "sourceHandle": "text",
+        "target": "shot-current",
+        "targetHandle": "prompt",
+        "type": "typed"
+      }
+    ],
+    "viewport": { "x": 0, "y": 0, "zoom": 1 },
+    "tray": []
+  },
+  "legacy": {
+    "nodes": [
+      {
+        "id": "image-legacy",
+        "type": "media",
+        "position": { "x": 0, "y": 0 },
+        "data": { "url": "https://assets.example/reference.png", "mediaKind": "image" }
+      },
+      {
+        "id": "shot-legacy",
+        "type": "generate",
+        "position": { "x": 300, "y": 0 },
+        "data": { "mode": "image", "prompt": "" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-legacy",
+        "source": "image-legacy",
+        "target": "shot-legacy",
+        "targetHandle": "images"
+      }
+    ]
+  },
+  "malformed": [
+    {
+      "name": "future-version",
+      "document": { "schemaVersion": 99, "nodes": [], "edges": [], "tray": [] }
+    },
+    {
+      "name": "dangling-edge",
+      "document": {
+        "schemaVersion": 1,
+        "nodes": [],
+        "edges": [
+          {
+            "id": "edge-dangling",
+            "source": "missing-a",
+            "sourceHandle": "out",
+            "target": "missing-b",
+            "targetHandle": "prompt"
+          }
+        ],
+        "tray": []
+      }
+    },
+    {
+      "name": "semantic-type-confusion",
+      "document": {
+        "schemaVersion": 1,
+        "nodes": [
+          {
+            "id": "video-source",
+            "version": 1,
+            "type": "generate",
+            "position": { "x": 0, "y": 0 },
+            "data": { "mode": "video" }
+          },
+          {
+            "id": "image-target",
+            "version": 1,
+            "type": "generate",
+            "position": { "x": 300, "y": 0 },
+            "data": { "mode": "image" }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge-invalid",
+            "source": "video-source",
+            "sourceHandle": "out",
+            "target": "image-target",
+            "targetHandle": "images[0]"
+          }
+        ],
+        "tray": []
+      }
+    }
+  ],
+  "limits": {
+    "nodes": 500,
+    "edges": 2000,
+    "tray": 500,
+    "text": 8000,
+    "organizerText": 2000,
+    "frameTitle": 120,
+    "note": 20000,
+    "castImages": 4,
+    "takes": 4
+  }
+}

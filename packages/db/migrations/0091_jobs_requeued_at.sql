@@ -1,0 +1,14 @@
+-- The queue reaper refunds a job that has sat in `queued` past its timeout. It measured
+-- that wait from `queued_at`, which is written once at row creation and is read as the
+-- job's CREATION time elsewhere — it orders «Твои генерации» and groups the admin's
+-- daily analytics — so the retry path could not simply rewrite it.
+--
+-- The effect: a job that ran for nine minutes, hit a retryable error and re-entered the
+-- queue was already older than the ten-minute queue timeout, so the next reaper tick
+-- failed and refunded it while BullMQ's own retry was still in flight. No double charge
+-- (the claim is atomic and the refund key is shared) — the customer simply lost a job
+-- that was one attempt from delivering.
+--
+-- Additive and nullable: existing rows read as "never requeued", which is true, and the
+-- reaper falls back to `queued_at` for them.
+ALTER TABLE "jobs" ADD COLUMN IF NOT EXISTS "requeued_at" timestamptz;

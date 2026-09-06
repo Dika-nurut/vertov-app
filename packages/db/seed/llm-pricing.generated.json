@@ -1,0 +1,4053 @@
+{
+  "workbook": {
+    "path": "docs/business/pricing-workbook/Vertov_Pricing_Model_v14_2026-07-28.xlsx",
+    "sheet": "LLM ЦЕНЫ",
+    "capturedOn": "2026-08-13",
+    "sha256": "ab35021e534e264a9bbb16c7ed391fb05b1a4056fc523b8e487728c41dd2d2fd"
+  },
+  "financial": {
+    "usdRub": 85,
+    "landedRubPerUsdOpenRouter": 106.182,
+    "landedRubPerUsdDirect": 100.6315,
+    "creditFloorRub": 0.331111,
+    "marginFloor": 0.25,
+    "scenarioMarginFloor": 0.07,
+    "scenarioBandMarginFloor": 0.25,
+    "scenarioConspectTokenBudget": {
+      "input": 24000,
+      "output": 1600
+    },
+    "scenarioConspectMaxAttempts": 2,
+    "structurizeMaxAttempts": 2
+  },
+  "records": [
+    {
+      "surface": "boards_prompt_studio",
+      "selector": "gemini",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 1,
+      "typicalTokenBudget": {
+        "input": 420,
+        "output": 96
+      },
+      "maxTokenBudget": {
+        "input": 2400,
+        "output": 400
+      },
+      "credits": 2,
+      "marginAtFloor": 0.5057677334791053,
+      "briefCharLimit": 1000,
+      "resultCharLimit": 1000,
+      "charsPerToken": 1.5,
+      "source": "owner-confirmed Kie + OpenRouter catalog; 2026-08-13",
+      "sourceRef": "LLM ЦЕНЫ!A11:AE11",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "boards_prompt_studio",
+      "selector": "claude",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 1,
+      "typicalTokenBudget": {
+        "input": 420,
+        "output": 96
+      },
+      "maxTokenBudget": {
+        "input": 2400,
+        "output": 400
+      },
+      "credits": 6,
+      "marginAtFloor": 0.3397130040983235,
+      "briefCharLimit": 1000,
+      "resultCharLimit": 1000,
+      "charsPerToken": 1.5,
+      "source": "owner-confirmed Kie + OpenRouter catalog; 2026-08-13",
+      "sourceRef": "LLM ЦЕНЫ!A12:AE12",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "boards_prompt_studio",
+      "selector": "gpt",
+      "model": "openai/gpt-5.6-terra",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.7,
+        "output": 4.2
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2.5,
+        "output": 15
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 1,
+      "typicalTokenBudget": {
+        "input": 420,
+        "output": 96
+      },
+      "maxTokenBudget": {
+        "input": 2400,
+        "output": 400
+      },
+      "credits": 7,
+      "marginAtFloor": 0.3043740446125749,
+      "briefCharLimit": 1000,
+      "resultCharLimit": 1000,
+      "charsPerToken": 1.5,
+      "source": "owner-confirmed Kie + OpenRouter catalog; 2026-08-13",
+      "sourceRef": "LLM ЦЕНЫ!A13:AE13",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "economy/project",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 2000
+      },
+      "credits": 13,
+      "marginAtFloor": 0.10721574336098771,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. OpenRouter catalog; two pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A15:AE15",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "economy/span",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 22400,
+        "output": 1500
+      },
+      "credits": 12,
+      "marginAtFloor": 0.09674006602015639,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. OpenRouter catalog; two pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A16:AE16",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "economy/scene",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 28000,
+        "output": 2000
+      },
+      "credits": 14,
+      "marginAtFloor": 0.12334156737252977,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. OpenRouter catalog; two pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A17:AE17",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "economy/script",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 83800,
+        "output": 2500
+      },
+      "credits": 24,
+      "marginAtFloor": 0.08006449800822091,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. OpenRouter catalog; two pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A18:AE18",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "standard/project",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 2000
+      },
+      "credits": 21,
+      "marginAtFloor": 0.10529586409736569,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. Kie primary + two OpenRouter pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A20:AE20",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "standard/span",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 22400,
+        "output": 1500
+      },
+      "credits": 19,
+      "marginAtFloor": 0.09979288723180602,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. Kie primary + two OpenRouter pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A21:AE21",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "standard/scene",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 28000,
+        "output": 2000
+      },
+      "credits": 22,
+      "marginAtFloor": 0.07936930460836944,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. Kie primary + two OpenRouter pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A22:AE22",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "standard/script",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 83800,
+        "output": 2500
+      },
+      "credits": 45,
+      "marginAtFloor": 0.07131832366386692,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. Kie primary + two OpenRouter pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A23:AE23",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "max/project",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 2000
+      },
+      "credits": 63,
+      "marginAtFloor": 0.07913459851113058,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. Kie primary + two OpenRouter pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A25:AE25",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "max/span",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 22400,
+        "output": 1500
+      },
+      "credits": 56,
+      "marginAtFloor": 0.07692250172525228,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. Kie primary + two OpenRouter pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A26:AE26",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "max/scene",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 28000,
+        "output": 2000
+      },
+      "credits": 70,
+      "marginAtFloor": 0.08316007411411874,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. Kie primary + two OpenRouter pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A27:AE27",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_price",
+      "selector": "max/script",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 83800,
+        "output": 2500
+      },
+      "credits": 166,
+      "marginAtFloor": 0.07212713901078471,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. Kie primary + two OpenRouter pre-token attempts + conspect overhead",
+      "sourceRef": "LLM ЦЕНЫ!A28:AE28",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_structurize",
+      "selector": "economy",
+      "model": "deepseek/deepseek-v4-flash",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.09,
+        "output": 0.18
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 40000,
+        "output": 4000
+      },
+      "credits": 3,
+      "marginAtFloor": 0.07643007933895274,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "TEMPORARY 7% Scenario margin policy — owner-approved 2026-08-14; review before launch. OpenRouter catalog; two schema attempts priced",
+      "sourceRef": "LLM ЦЕНЫ!A30:AE30",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_candidate",
+      "selector": "candidate",
+      "model": "google/gemini-2.5-flash",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.3,
+        "output": 2.5
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "credits": 0,
+      "marginAtFloor": 0,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "OpenRouter catalog; evaluated candidate, not active",
+      "sourceRef": "LLM ЦЕНЫ!A31:AE31",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "boards_shot_plan",
+      "selector": "default",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 4500
+      },
+      "credits": 22,
+      "marginAtFloor": 0.25659618128608896,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "OpenRouter; reserve ceiling covers two schema attempts",
+      "sourceRef": "LLM ЦЕНЫ!A33:AE33",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "boards_scene_objects",
+      "selector": "default",
+      "model": "deepseek/deepseek-v4-flash",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.09,
+        "output": 0.18
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 68000,
+        "output": 800
+      },
+      "credits": 3,
+      "marginAtFloor": 0.33041180752074073,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "OpenRouter; free user policy, COGS ceiling still signed",
+      "sourceRef": "LLM ЦЕНЫ!A34:AE34",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "disabled_prompt_enhancer",
+      "selector": "generate",
+      "model": "openai/gpt-4o-mini",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "credits": 0,
+      "marginAtFloor": 0,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "Disabled feature flag; rate recorded for inventory, not billed",
+      "sourceRef": "LLM ЦЕНЫ!A35:AE35",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_material_compaction",
+      "selector": "background",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 72000,
+        "output": 700
+      },
+      "credits": 17,
+      "marginAtFloor": 0.2525421867591231,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 0,
+      "source": "Free background policy; two OpenRouter attempts and bounded raw material",
+      "sourceRef": "LLM ЦЕНЫ!A36:AE36",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "not_applicable",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "not_applicable",
+      "cacheEvidence": "not_applicable"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/project/8k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 5,
+      "marginAtFloor": 0.33297727952257694,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/project/8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A37:AE37",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/project/8k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 12,
+      "marginAtFloor": 0.25515796213354425,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/project/8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A38:AE38",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/project/16k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 7,
+      "marginAtFloor": 0.33297727952257705,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/project/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A39:AE39",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/project/16k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 14,
+      "marginAtFloor": 0.2662750074748347,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/project/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A40:AE40",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/project/24k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 14400,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 2000
+      },
+      "credits": 9,
+      "marginAtFloor": 0.33297727952257694,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/project/24k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A41:AE41",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/project/24k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 14400,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 2000
+      },
+      "credits": 16,
+      "marginAtFloor": 0.2746127914808024,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/project/24k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A42:AE42",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/span/8k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 1500
+      },
+      "credits": 4,
+      "marginAtFloor": 0.291288359492738,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/span/8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A43:AE43",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/span/8k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 1500
+      },
+      "credits": 12,
+      "marginAtFloor": 0.2968468821633832,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/span/8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A44:AE44",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/span/16k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 1500
+      },
+      "credits": 6,
+      "marginAtFloor": 0.30518466616935114,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/span/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A45:AE45",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/span/16k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 1500
+      },
+      "credits": 14,
+      "marginAtFloor": 0.3020083675004108,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/span/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A46:AE46",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/span/22_4k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 13440,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 22400,
+        "output": 1500
+      },
+      "credits": 7,
+      "marginAtFloor": 0.25198166346460427,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/span/22_4k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A47:AE47",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/span/22_4k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 13440,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 22400,
+        "output": 1500
+      },
+      "credits": 15,
+      "marginAtFloor": 0.2773920528161251,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/span/22_4k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A48:AE48",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/scene/8k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 5,
+      "marginAtFloor": 0.33297727952257694,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/scene/8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A49:AE49",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/scene/8k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 12,
+      "marginAtFloor": 0.25515796213354425,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/scene/8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A50:AE50",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/scene/16k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 7,
+      "marginAtFloor": 0.33297727952257705,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/scene/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A51:AE51",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/scene/16k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 14,
+      "marginAtFloor": 0.2662750074748347,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/scene/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A52:AE52",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/scene/28k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 16800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 28000,
+        "output": 2000
+      },
+      "credits": 9,
+      "marginAtFloor": 0.25886364391397443,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/scene/28k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A53:AE53",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/scene/28k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 16800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 28000,
+        "output": 2000
+      },
+      "credits": 17,
+      "marginAtFloor": 0.2780459966597304,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/scene/28k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A54:AE54",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/16k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2500
+      },
+      "credits": 7,
+      "marginAtFloor": 0.26151055947142465,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A55:AE55",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/16k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2500
+      },
+      "credits": 15,
+      "marginAtFloor": 0.28183887095264115,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A56:AE56",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/32k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 19200,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 32000,
+        "output": 2500
+      },
+      "credits": 11,
+      "marginAtFloor": 0.28749845767184357,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/32k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A57:AE57",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/32k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 19200,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 32000,
+        "output": 2500
+      },
+      "credits": 18,
+      "marginAtFloor": 0.25330512124332927,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/32k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A58:AE58",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/48k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 28800,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 48000,
+        "output": 2500
+      },
+      "credits": 15,
+      "marginAtFloor": 0.29962614349870587,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/48k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A59:AE59",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/48k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 28800,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 48000,
+        "output": 2500
+      },
+      "credits": 22,
+      "marginAtFloor": 0.2677909682031925,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/48k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A60:AE60",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/64k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 38400,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 64000,
+        "output": 2500
+      },
+      "credits": 18,
+      "marginAtFloor": 0.26812784836504966,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/64k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A61:AE61",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/64k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 38400,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 64000,
+        "output": 2500
+      },
+      "credits": 26,
+      "marginAtFloor": 0.27781963148309774,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/64k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A62:AE62",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/83_8k/no-conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 50280,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 83800,
+        "output": 2500
+      },
+      "credits": 22,
+      "marginAtFloor": 0.2511154001912569,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/83_8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A63:AE63",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "economy/script/83_8k/conspect",
+      "model": "qwen/qwen3.5-plus-02-15",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 50280,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 83800,
+        "output": 2500
+      },
+      "credits": 30,
+      "marginAtFloor": 0.26405159840657666,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. economy/script/83_8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A64:AE64",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/project/8k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 10,
+      "marginAtFloor": 0.26745577766972406,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/project/8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A65:AE65",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/project/8k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 18,
+      "marginAtFloor": 0.2817537180381603,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/project/8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A66:AE66",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/project/16k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 14,
+      "marginAtFloor": 0.26745577766972406,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/project/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A67:AE67",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/project/16k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 22,
+      "marginAtFloor": 0.2791540925166265,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/project/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A68:AE68",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/project/24k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 14400,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 2000
+      },
+      "credits": 18,
+      "marginAtFloor": 0.26745577766972406,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/project/24k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A69:AE69",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/project/24k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 14400,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 2000
+      },
+      "credits": 26,
+      "marginAtFloor": 0.27735435177094925,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/project/24k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A70:AE70",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/span/8k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 1500
+      },
+      "credits": 9,
+      "marginAtFloor": 0.30815267891029485,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/span/8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A71:AE71",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/span/8k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 1500
+      },
+      "credits": 16,
+      "marginAtFloor": 0.26064895363639384,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/span/8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A72:AE72",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/span/16k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 1500
+      },
+      "credits": 13,
+      "marginAtFloor": 0.29563055545165773,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/span/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A73:AE73",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/span/16k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 1500
+      },
+      "credits": 20,
+      "marginAtFloor": 0.2620103184430598,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/span/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A74:AE74",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/span/22_4k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 13440,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 22400,
+        "output": 1500
+      },
+      "credits": 16,
+      "marginAtFloor": 0.28119098183841673,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/span/22_4k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A75:AE75",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/span/22_4k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 13440,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 22400,
+        "output": 1500
+      },
+      "credits": 23,
+      "marginAtFloor": 0.2563506459741005,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/span/22_4k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A76:AE76",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/scene/8k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 10,
+      "marginAtFloor": 0.26745577766972406,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/scene/8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A77:AE77",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/scene/8k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 18,
+      "marginAtFloor": 0.2817537180381603,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/scene/8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A78:AE78",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/scene/16k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 14,
+      "marginAtFloor": 0.26745577766972406,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/scene/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A79:AE79",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/scene/16k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 22,
+      "marginAtFloor": 0.2791540925166265,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/scene/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A80:AE80",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/scene/28k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 16800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 28000,
+        "output": 2000
+      },
+      "credits": 20,
+      "marginAtFloor": 0.26745577766972406,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/scene/28k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A81:AE81",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/scene/28k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 16800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 28000,
+        "output": 2000
+      },
+      "credits": 28,
+      "marginAtFloor": 0.27664731076371885,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/scene/28k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A82:AE82",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/16k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2500
+      },
+      "credits": 16,
+      "marginAtFloor": 0.2903477846175452,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A83:AE83",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/16k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2500
+      },
+      "credits": 23,
+      "marginAtFloor": 0.26272059573349427,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A84:AE84",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/32k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 19200,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 32000,
+        "output": 2500
+      },
+      "credits": 23,
+      "marginAtFloor": 0.2515309032712397,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/32k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A85:AE85",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/32k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 19200,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 32000,
+        "output": 2500
+      },
+      "credits": 31,
+      "marginAtFloor": 0.2639425781686504,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/32k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A86:AE86",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/48k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 28800,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 48000,
+        "output": 2500
+      },
+      "credits": 31,
+      "marginAtFloor": 0.2556405482773002,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/48k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A87:AE87",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/48k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 28800,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 48000,
+        "output": 2500
+      },
+      "credits": 39,
+      "marginAtFloor": 0.2646632344765628,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/48k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A88:AE88",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/64k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 38400,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 64000,
+        "output": 2500
+      },
+      "credits": 39,
+      "marginAtFloor": 0.25806418507574613,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/64k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A89:AE89",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/64k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 38400,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 64000,
+        "output": 2500
+      },
+      "credits": 47,
+      "marginAtFloor": 0.2651385609775264,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/64k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A90:AE90",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/83_8k/no-conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 50280,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 83800,
+        "output": 2500
+      },
+      "credits": 49,
+      "marginAtFloor": 0.2614758248343749,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/83_8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A91:AE91",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "standard/script/83_8k/conspect",
+      "model": "google/gemini-3-flash-preview",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.15,
+        "output": 0.9
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0.5,
+        "output": 3
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 50280,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 83800,
+        "output": 2500
+      },
+      "credits": 56,
+      "marginAtFloor": 0.2537379386584645,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. standard/script/83_8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A92:AE92",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/project/8k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 38,
+      "marginAtFloor": 0.26962022713324474,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/project/8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A93:AE93",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/project/8k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 45,
+      "marginAtFloor": 0.2587239506456209,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/project/8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A94:AE94",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/project/16k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 54,
+      "marginAtFloor": 0.25772258508587864,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/project/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A95:AE95",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/project/16k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 61,
+      "marginAtFloor": 0.2510496515184769,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/project/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A96:AE96",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/project/24k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 14400,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 2000
+      },
+      "credits": 70,
+      "marginAtFloor": 0.25126386511730836,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/project/24k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A97:AE97",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/project/24k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 14400,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 24000,
+        "output": 2000
+      },
+      "credits": 78,
+      "marginAtFloor": 0.25622409879745167,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/project/24k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A98:AE98",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/span/8k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 1500
+      },
+      "credits": 32,
+      "marginAtFloor": 0.25318872544346915,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/span/8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A99:AE99",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/span/8k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 1500
+      },
+      "credits": 40,
+      "marginAtFloor": 0.2624762090545164,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/span/8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A100:AE100",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/span/16k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 1500
+      },
+      "credits": 49,
+      "marginAtFloor": 0.26068347301561545,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/span/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A101:AE101",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/span/16k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 1500
+      },
+      "credits": 56,
+      "marginAtFloor": 0.25304463081705,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/span/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A102:AE102",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/span/22_4k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 13440,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 22400,
+        "output": 1500
+      },
+      "credits": 62,
+      "marginAtFloor": 0.25662340239716896,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/span/22_4k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A103:AE103",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/span/22_4k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 13440,
+        "output": 900
+      },
+      "maxTokenBudget": {
+        "input": 22400,
+        "output": 1500
+      },
+      "credits": 69,
+      "marginAtFloor": 0.25083565357411775,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/span/22_4k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A104:AE104",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/scene/8k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 38,
+      "marginAtFloor": 0.26962022713324474,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/scene/8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A105:AE105",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/scene/8k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 4800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 8000,
+        "output": 2000
+      },
+      "credits": 45,
+      "marginAtFloor": 0.2587239506456209,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/scene/8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A106:AE106",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/scene/16k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 54,
+      "marginAtFloor": 0.25772258508587864,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/scene/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A107:AE107",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/scene/16k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2000
+      },
+      "credits": 61,
+      "marginAtFloor": 0.2510496515184769,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/scene/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A108:AE108",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/scene/28k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 16800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 28000,
+        "output": 2000
+      },
+      "credits": 79,
+      "marginAtFloor": 0.2585341270885907,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/scene/28k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A109:AE109",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/scene/28k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 16800,
+        "output": 1200
+      },
+      "maxTokenBudget": {
+        "input": 28000,
+        "output": 2000
+      },
+      "credits": 86,
+      "marginAtFloor": 0.25373494404637564,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/scene/28k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A110:AE110",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/16k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2500
+      },
+      "credits": 59,
+      "marginAtFloor": 0.2552635425679616,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/16k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A111:AE111",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/16k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 9600,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 16000,
+        "output": 2500
+      },
+      "credits": 67,
+      "marginAtFloor": 0.2605605695447668,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/16k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A112:AE112",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/32k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 19200,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 32000,
+        "output": 2500
+      },
+      "credits": 92,
+      "marginAtFloor": 0.2543853362897611,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/32k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A113:AE113",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/32k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 19200,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 32000,
+        "output": 2500
+      },
+      "credits": 99,
+      "marginAtFloor": 0.25050969784492605,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/32k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A114:AE114",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/48k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 28800,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 48000,
+        "output": 2500
+      },
+      "credits": 125,
+      "marginAtFloor": 0.25397082292645057,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/48k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A115:AE115",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/48k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 28800,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 48000,
+        "output": 2500
+      },
+      "credits": 132,
+      "marginAtFloor": 0.25108607586209075,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/48k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A116:AE116",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/64k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 38400,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 64000,
+        "output": 2500
+      },
+      "credits": 158,
+      "marginAtFloor": 0.25372946071490254,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/64k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A117:AE117",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/64k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 38400,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 64000,
+        "output": 2500
+      },
+      "credits": 165,
+      "marginAtFloor": 0.25143190267238935,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/64k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A118:AE118",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/83_8k/no-conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 50280,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 83800,
+        "output": 2500
+      },
+      "credits": 198,
+      "marginAtFloor": 0.25038432286768,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/83_8k/no-conspect",
+      "sourceRef": "LLM ЦЕНЫ!A119:AE119",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_assist_band",
+      "selector": "max/script/83_8k/conspect",
+      "model": "anthropic/claude-sonnet-5",
+      "primaryProvider": "Kie",
+      "fallbackProvider": "OpenRouter",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.85,
+        "output": 4.275
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 2,
+        "output": 10
+      },
+      "primaryMaxAttempts": 1,
+      "fallbackMaxAttempts": 2,
+      "typicalTokenBudget": {
+        "input": 50280,
+        "output": 1500
+      },
+      "maxTokenBudget": {
+        "input": 83800,
+        "output": 2500
+      },
+      "credits": 206,
+      "marginAtFloor": 0.2522966265815062,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% Scenario band; uncached worst-route; conditional conspect; no user content. max/script/83_8k/conspect",
+      "sourceRef": "LLM ЦЕНЫ!A120:AE120",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    },
+    {
+      "surface": "scenario_structurize_active",
+      "selector": "economy/active",
+      "model": "deepseek/deepseek-v4-flash",
+      "primaryProvider": "OpenRouter",
+      "fallbackProvider": "—",
+      "primaryPriceUsdPerMTok": {
+        "input": 0.09,
+        "output": 0.18
+      },
+      "fallbackPriceUsdPerMTok": {
+        "input": 0,
+        "output": 0
+      },
+      "primaryMaxAttempts": 2,
+      "fallbackMaxAttempts": 0,
+      "typicalTokenBudget": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokenBudget": {
+        "input": 40000,
+        "output": 4000
+      },
+      "credits": 4,
+      "marginAtFloor": 0.3073225595042145,
+      "briefCharLimit": 0,
+      "resultCharLimit": 0,
+      "charsPerToken": 3,
+      "source": "ACTIVE 25% structurize row; two uncached OpenRouter attempts",
+      "sourceRef": "LLM ЦЕНЫ!A121:AE121",
+      "cacheReadMultiplier": 1,
+      "cacheWriteMultiplier": 1,
+      "cacheTtl": "none",
+      "cacheMinPrefixTokens": 0,
+      "cacheStatus": "unverified_disabled",
+      "cacheEvidence": "OWNER-GATED PROBE; 2026-08-15"
+    }
+  ]
+}

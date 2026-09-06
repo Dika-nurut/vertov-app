@@ -1,0 +1,1291 @@
+.desk {
+  --color-ink: var(--color-accent2-foreground);
+  position: relative;
+  z-index: 2;
+  min-width: 1024px;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+}
+
+.centerState {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  gap: 16px;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.centerState a {
+  color: var(--color-accent);
+}
+
+.menubar {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  height: 46px;
+  align-items: center;
+  gap: 18px;
+  padding: 0 18px;
+  border-bottom: 2.5px solid var(--color-line);
+  background: var(--color-bg);
+  white-space: nowrap;
+}
+
+.exitButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 4px;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--offset-pressed);
+  color: var(--color-fg);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.exitButton:hover {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.exitButton svg {
+  width: 13px;
+  height: 13px;
+  color: var(--color-accent2);
+}
+
+.menuSeparator {
+  width: 1.5px;
+  height: 16px;
+  background: var(--color-line-soft);
+}
+
+.projectName,
+.credits,
+.clock {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.projectName {
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuRight {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+}
+
+.deskSearch {
+  border: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.deskSearch:hover,
+.deskSearch:focus-visible {
+  color: var(--color-accent);
+}
+
+.clock {
+  color: var(--color-faint);
+  font-size: 9px;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.shelfWrap {
+  position: relative;
+}
+
+.shelfButton {
+  display: flex;
+  min-width: 42px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 2px solid var(--color-line);
+  background: var(--color-surface2);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.progressRing {
+  color: var(--color-accent);
+  font-size: 15px;
+}
+
+.shelfPanel {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  width: 390px;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--offset);
+  color: var(--color-fg);
+}
+
+.shelfTitle {
+  padding: 10px 12px;
+  border-bottom: 1.5px solid var(--color-line-soft);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+}
+
+.batchRow {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  overflow: hidden;
+  padding: 11px 12px 13px;
+  border-bottom: 1.5px solid var(--color-line-soft);
+}
+
+.batchRow:last-child {
+  border-bottom: 0;
+}
+
+.batchRow div:first-child {
+  min-width: 0;
+}
+
+.batchRow b,
+.batchRow span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.batchRow b,
+.batchRow div > span {
+  font-size: 9px;
+}
+
+.batchRow div > span {
+  margin-top: 4px;
+  color: var(--color-faint);
+}
+
+.batchRow .batchReceipt {
+  color: var(--color-muted-foreground);
+}
+
+.batchActions,
+.assetActions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+}
+
+.batchActions button,
+.assetActions button,
+.receipt button {
+  border: 1.5px solid var(--color-line);
+  background: var(--color-surface2);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  padding: 4px 6px;
+  text-transform: uppercase;
+}
+
+.batchActions button:hover,
+.assetActions button:hover,
+.receipt button:hover {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.progressBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2.5px;
+  background: var(--color-accent);
+}
+
+.plane {
+  position: absolute;
+  inset: 46px 0 0;
+  overflow: auto;
+  padding: 30px 40px 132px;
+  outline: none;
+}
+
+.surfaceGrid {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  min-height: calc(100vh - 226px);
+}
+
+.overflowNotices {
+  position: relative;
+  z-index: 7;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.overflowNotices a {
+  padding: 5px 8px;
+  border: 1.5px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: 2px 2px 0 var(--color-shadow);
+  color: var(--color-muted-foreground);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.overflowNotices a:hover,
+.overflowNotices a:focus-visible {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.deskIcon {
+  position: absolute;
+  display: flex;
+  width: 108px;
+  height: 110px;
+  flex-direction: column;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  text-align: center;
+  transition:
+    left 120ms ease-out,
+    top 120ms ease-out;
+}
+
+.deskIcon:focus-visible {
+  outline: 2.5px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+.folderArt,
+.fileArt {
+  position: relative;
+  display: block;
+  width: 84px;
+  height: 66px;
+  flex: none;
+  margin: 0 auto 8px;
+}
+
+.folderArt {
+  top: 4px;
+  width: 68px;
+  height: 50px;
+  margin-bottom: 20px;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface2);
+}
+
+.folderArt::before {
+  position: absolute;
+  top: -12px;
+  left: -2.5px;
+  width: 38px;
+  height: 12px;
+  border: 2.5px solid var(--color-line);
+  border-bottom: 0;
+  background: var(--color-surface2);
+  content: '';
+}
+
+.folderGlyph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-faint);
+}
+
+.folderGlyph svg {
+  width: 26px;
+  height: 26px;
+}
+
+.folderStamp {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1.5px solid var(--color-ink);
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.folderStamp svg {
+  width: 10px;
+  height: 10px;
+}
+
+.fileShape {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  color: var(--color-faint);
+}
+
+.fileShape::after {
+  position: absolute;
+  top: -2.5px;
+  right: -2.5px;
+  width: 18px;
+  height: 18px;
+  border-bottom: 2.5px solid var(--color-line);
+  background: var(--color-bg);
+  content: '';
+  transform: rotate(45deg) translate(7px, -6px);
+}
+
+.fileShape > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fileShape > svg {
+  width: 24px;
+  height: 24px;
+}
+
+.playOverlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(12 14 18 / 28%);
+}
+
+.playOverlay svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-fg);
+}
+
+.typeStamp {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  z-index: 2;
+  border: 1.5px solid var(--color-ink);
+  background: var(--color-fg);
+  color: var(--color-ink);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  padding: 2px 4px 1px;
+}
+
+.typeSCN {
+  background: var(--color-accent2);
+}
+
+.typeBRD {
+  background: var(--color-port-image);
+}
+
+.typeEDT {
+  background: var(--color-port-video);
+}
+
+.typeVID {
+  background: var(--color-port-video);
+}
+
+.typeAUD {
+  background: var(--color-accent);
+}
+
+.iconLabel {
+  display: inline-block;
+  max-width: 108px;
+  overflow: hidden;
+  color: var(--color-fg);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  padding: 1px 5px 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deskIcon:hover .iconLabel,
+.selected .iconLabel,
+.targetHot .iconLabel {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.selected .folderArt,
+.selected .fileArt,
+.targetHot .folderArt {
+  box-shadow: 4px 4px 0 var(--color-accent);
+}
+
+.dragging .invalidTarget {
+  opacity: 0.28;
+}
+
+.dragging .validTarget .folderArt,
+.dragging .folderWindow.validTarget {
+  outline: 2.5px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+.watermark {
+  position: fixed;
+  right: 0;
+  bottom: 70px;
+  left: 0;
+  z-index: 0;
+  display: grid;
+  pointer-events: none;
+  text-align: center;
+  user-select: none;
+}
+
+.watermark span {
+  color: transparent;
+  font-family: var(--font-display);
+  font-size: clamp(72px, 8vw, 116px);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  -webkit-text-stroke: 2px rgb(141 118 246 / 16%);
+}
+
+.watermark small {
+  margin-top: 10px;
+  color: rgb(236 238 243 / 13%);
+  font-size: 14px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.deskGuidance {
+  position: fixed;
+  z-index: 7;
+  top: 62px;
+  right: 22px;
+  width: min(350px, calc(100vw - 44px));
+  padding: 12px;
+  border: 2px solid var(--color-line);
+  background: var(--color-surface2);
+  box-shadow: var(--offset-sm);
+  font-size: 11px;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+}
+
+.deskGuidance p {
+  margin: 0 0 10px;
+}
+
+.deskGuidance button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 2px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.deskGuidance button:hover,
+.deskGuidance button:focus-visible {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.teaching {
+  position: fixed;
+  bottom: 30px;
+  left: 40px;
+  z-index: 6;
+  color: var(--color-faint);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.teaching button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.teaching button:hover,
+.teaching button:focus-visible {
+  color: var(--color-fg);
+  text-decoration: underline;
+}
+
+.dock {
+  position: fixed;
+  bottom: 26px;
+  left: 50%;
+  z-index: 25;
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  transform: translateX(-50%);
+}
+
+/* Resolving tiles POST (R1: a tile opens work, not a list), so they are buttons
+   inside a form. The form is a delivery mechanism, not a box — take it out of
+   the flex flow so every tile stays a direct child of .dock and the row keeps
+   its exact geometry. */
+.dockForm {
+  display: contents;
+}
+
+.dockTile {
+  position: relative;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--offset-pressed);
+  color: var(--color-fg);
+  transition:
+    transform 140ms steps(3, end),
+    box-shadow 140ms steps(3, end),
+    background 140ms steps(3, end);
+}
+
+.dockTile > svg {
+  width: 30px;
+  height: 30px;
+}
+
+.dockTile:hover,
+.dockTile:focus-visible {
+  background: var(--color-accent);
+  box-shadow: var(--offset-lg);
+  color: var(--color-ink);
+  transform: translateY(-18px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deskIcon,
+  .dockTile {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}
+
+.dockTip {
+  position: absolute;
+  bottom: 74px;
+  left: 50%;
+  display: none;
+  padding: 3px 8px 2px;
+  transform: translateX(-50%);
+  border: 2px solid var(--color-ink);
+  background: var(--color-fg);
+  color: var(--color-ink);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dockTile:hover .dockTip,
+.dockTile:focus-visible .dockTip {
+  display: block;
+}
+
+.contextMenu {
+  position: fixed;
+  z-index: var(--z-desk-menu);
+  min-width: 220px;
+  margin: 0;
+  padding: 0;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--offset-sm);
+}
+
+.contextMenu button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+
+.contextMenu button + button {
+  border-top: 1.5px solid var(--color-line-soft);
+}
+
+.contextMenu button:hover,
+.contextMenu button:focus-visible {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.contextMenu svg {
+  width: 15px;
+  height: 15px;
+}
+.contextMenuDanger {
+  color: var(--color-danger);
+}
+.contextMenu button.contextMenuDanger:hover,
+.contextMenu button.contextMenuDanger:focus-visible {
+  background: var(--color-danger);
+  color: var(--color-surface);
+}
+
+.folderWindow {
+  position: fixed;
+  z-index: 20;
+  width: min(620px, calc(100vw - 80px));
+  max-height: calc(100vh - 170px);
+  overflow: auto;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--offset);
+}
+
+.windowBar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  height: 38px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-bottom: 2px solid var(--color-line);
+  background: var(--color-surface2);
+  cursor: move;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  touch-action: none;
+  user-select: none;
+}
+
+.windowBar > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-accent);
+}
+
+.windowBar > span {
+  color: var(--color-faint);
+  font-size: 8px;
+}
+
+.windowBar > button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  margin-left: auto;
+  border: 1.5px solid var(--color-line);
+  background: transparent;
+  color: var(--color-fg);
+}
+
+.windowBar > button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.folderBreadcrumbs {
+  position: sticky;
+  top: 38px;
+  z-index: 2;
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 5px 10px;
+  border-bottom: 1.5px solid var(--color-line);
+  background: var(--color-bg);
+  white-space: nowrap;
+}
+
+.folderBreadcrumbs > button,
+.folderBreadcrumbs > span > button {
+  border: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.folderBreadcrumbs > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-accent);
+}
+
+.folderBreadcrumbs svg {
+  width: 14px;
+  height: 14px;
+}
+
+.folderBreadcrumbs > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.folderBreadcrumbs [aria-current='page'] {
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.folderBreadcrumbs small {
+  display: grid;
+  width: 14px;
+  height: 14px;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  color: var(--color-faint);
+  font-size: 7px;
+}
+
+.folderToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1.5px solid var(--color-line-soft);
+}
+
+.folderToolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border: 1.5px solid var(--color-line);
+  background: var(--color-surface2);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.folderToolbar button:last-child {
+  margin-left: auto;
+}
+
+.folderToolbar svg {
+  width: 12px;
+  height: 12px;
+}
+
+.nestedFolderGrid {
+  display: grid;
+  max-height: 210px;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 9px;
+  overflow-y: auto;
+  padding: 12px 14px 2px;
+}
+
+.nestedFolderTile {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  padding: 8px;
+  border: 1.5px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  text-align: left;
+}
+
+.nestedFolderTile:hover,
+.nestedFolderTile:focus-visible {
+  border-color: var(--color-accent);
+}
+
+.nestedFolderSelected {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 18%, var(--color-bg));
+  box-shadow: 3px 3px 0 var(--color-accent);
+}
+
+.nestedFolderIcon {
+  display: grid;
+  width: 34px;
+  height: 30px;
+  grid-row: 1 / 3;
+  place-items: center;
+  border: 1.5px solid var(--color-line);
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.nestedFolderIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.nestedFolderTile b,
+.nestedFolderTile small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nestedFolderTile b {
+  align-self: end;
+  font-size: 9px;
+}
+
+.nestedFolderTile small {
+  align-self: start;
+  color: var(--color-faint);
+  font-size: 7px;
+}
+
+.folderOverflow {
+  margin: 5px 14px 0;
+  color: var(--color-faint);
+  font-size: 8px;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.folderError {
+  display: grid;
+  min-height: 150px;
+  place-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--color-fg);
+  font-size: 9px;
+  text-align: center;
+}
+
+.folderError button {
+  padding: 6px;
+  border: 1.5px solid var(--color-line);
+  background: var(--color-accent);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+}
+
+.assetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+
+.assetCard {
+  position: relative;
+  min-width: 0;
+  padding: 8px;
+  border: 1.5px solid var(--color-line-soft);
+  background: var(--color-bg);
+}
+
+.assetCard:active {
+  cursor: grabbing;
+}
+
+.assetPreview {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  place-items: center;
+  border: 1.5px solid var(--color-line);
+  background: var(--color-surface2);
+  color: var(--color-accent);
+}
+
+.assetPreview img,
+.assetPreview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.assetPreview svg {
+  width: 34px;
+  height: 34px;
+}
+
+.assetCard > b,
+.assetCard > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assetCard > b {
+  margin-top: 8px;
+  font-size: 9px;
+}
+
+.assetCard > span {
+  margin-top: 4px;
+  color: var(--color-faint);
+  font-size: 8px;
+}
+
+.usageLine {
+  color: var(--color-muted-foreground) !important;
+}
+
+.assetActions {
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.windowEmpty {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  padding: 30px;
+  color: var(--color-faint);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.windowReason {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  color: var(--color-faint);
+  font-size: 8px;
+}
+
+.deskDropHint {
+  position: fixed;
+  inset: 46px 0 0;
+  z-index: 12;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  border: 4px solid var(--color-accent);
+  background: rgb(12 14 18 / 82%);
+  pointer-events: none;
+}
+
+.deskDropHint svg {
+  width: 48px;
+  height: 48px;
+  color: var(--color-accent);
+}
+
+.deskDropHint b {
+  margin-top: 12px;
+  font-size: 18px;
+  letter-spacing: 0.16em;
+}
+
+.deskDropHint span {
+  margin-top: 6px;
+  color: var(--color-faint);
+  font-size: 9px;
+}
+
+.dragGhost {
+  position: fixed;
+  z-index: var(--z-desk-ghost);
+  display: grid;
+  grid-template-columns: 54px auto;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  pointer-events: none;
+  transition: transform 180ms steps(3, end);
+}
+
+.ghostFile {
+  position: relative;
+  display: grid;
+  width: 50px;
+  height: 58px;
+  grid-row: 1 / 3;
+  place-items: center;
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--offset-sm);
+}
+
+.ghostFile > svg {
+  width: 23px;
+  height: 23px;
+}
+
+.ghostFileFold {
+  position: absolute;
+  top: -2.5px;
+  right: -2.5px;
+  width: 13px;
+  height: 13px;
+  border-bottom: 2px solid var(--color-line);
+  border-left: 2px solid var(--color-line);
+  background: var(--color-bg);
+}
+
+.ghostType {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  font-size: 7px;
+  padding: 1px 2px;
+}
+
+.ghostVerb {
+  align-self: end;
+  width: max-content;
+  border: 1.5px solid var(--color-line);
+  background: var(--color-accent);
+  color: var(--color-ink);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  padding: 2px 5px;
+  text-transform: uppercase;
+}
+
+.ghostName {
+  align-self: start;
+  max-width: 190px;
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bounce .dragGhost {
+  animation: bounce-back 400ms steps(4, end) both;
+}
+
+@keyframes bounce-back {
+  to {
+    opacity: 0;
+    transform: translate(-30px, 18px) rotate(-5deg);
+  }
+}
+
+/* Must sit AFTER .dragGhost and .bounce .dragGhost: same-specificity rules are
+   resolved by source order, so the reduced-motion overrides only win here. */
+@media (prefers-reduced-motion: reduce) {
+  .dragGhost {
+    transition: none;
+  }
+
+  /* A missed drop still has to READ as a failure without motion. The ghost is
+     removed on the same 420ms timer either way; hold it in place, dimmed, so
+     the rejection is legible instead of animated. */
+  .bounce .dragGhost {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
+/* Real modality for the desk prompts. `aria-modal="true"` promises the rest of
+   the desk is unreachable: the Tab trap covers the keyboard, this scrim covers
+   the pointer. It deliberately does NOT dismiss on click — naming and deleting
+   are deliberate actions with an explicit «Отмена». */
+.promptScrim {
+  position: fixed;
+  z-index: var(--z-desk-scrim);
+  background: rgb(12 14 18 / 55%);
+  inset: 0;
+}
+
+.namePrompt,
+.receipt {
+  position: fixed;
+  z-index: var(--z-desk-prompt);
+  border: 2.5px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--offset);
+}
+
+.namePrompt {
+  top: 50%;
+  left: 50%;
+  width: 360px;
+  padding: 18px;
+  transform: translate(-50%, -50%);
+}
+
+.namePrompt label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.namePrompt input,
+.namePrompt select {
+  width: 100%;
+  margin: 10px 0;
+  padding: 9px;
+  border: 2px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+}
+
+.folderDeleteWarning,
+.folderActionError {
+  margin: 12px 0;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.folderDeleteWarning {
+  color: var(--color-faint);
+}
+
+.folderActionError {
+  color: var(--color-danger);
+}
+
+.namePrompt div {
+  display: flex;
+  gap: 8px;
+}
+
+.namePrompt button {
+  padding: 7px 9px;
+  border: 2px solid var(--color-line);
+  background: var(--color-accent);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.namePrompt button:last-child {
+  background: var(--color-surface2);
+  color: var(--color-fg);
+}
+
+.namePrompt button:disabled {
+  opacity: 0.4;
+}
+
+.receipt {
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  max-width: 620px;
+  align-items: center;
+  gap: 8px;
+  padding: 11px;
+}
+
+.receiptCopy {
+  display: grid;
+  gap: 4px;
+  font-size: 9px;
+}
+
+.retentionReminder {
+  color: var(--color-accent);
+}
+
+.destinationBadge {
+  border: 1.5px solid var(--color-line);
+  background: var(--color-accent);
+  color: var(--color-ink);
+  font-size: 8px;
+  padding: 3px 5px;
+  text-transform: uppercase;
+}
+
+.receipt > button:last-child {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+}
+
+.receipt svg {
+  width: 12px;
+  height: 12px;
+}
+
+.attribution {
+  position: fixed;
+  right: 12px;
+  bottom: 7px;
+  z-index: 2;
+  color: rgb(236 238 243 / 25%);
+  font-size: 7px;
+}

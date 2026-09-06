@@ -1,0 +1,194 @@
+# CI gate — runs on every push to main and every PR.
+# This NEVER deploys. It only proves the code is green so that a later, manual
+# "Deploy" (see deploy.yml) is pushing something that already passed checks.
+#
+# Infra: scripts/test-all.mjs expects postgres :5434 / redis :6380 / minio
+# :9000 (locally provided by docker/docker-compose.yml, which needs the VM-only
+# `seed-net` network + .env — unavailable on a GitHub runner). Here the same
+# three services run as runner-local containers with throwaway test creds, so
+# the tcp preflight passes and compose is never invoked.
+#
+# The broad monorepo check stays fast. Boards additionally has a dedicated,
+# zero-retry production-build job below so its declared release matrix cannot be
+# bypassed by a green unit-only check.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch/PR cancels the older in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Throwaway CI-only creds — mirror .env.example ports, never real secrets.
+  DATABASE_URL: postgres://seed:ci_test_pw@127.0.0.1:5434/seed
+  REDIS_URL: redis://127.0.0.1:6380
+  MINIO_ROOT_USER: seedminio
+  MINIO_ROOT_PASSWORD: ci_test_pw_minio
+  MINIO_ENDPOINT: http://127.0.0.1:9000
+  MINIO_PUBLIC_URL: http://127.0.0.1:9000
+  MINIO_REGION: us-east-1
+  MINIO_BUCKET: seed-assets
+  PROVIDER_GATEWAY: mock
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: seed
+          POSTGRES_PASSWORD: ci_test_pw
+          POSTGRES_DB: seed
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U seed -d seed"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # `services:` can't override the container command, and minio needs
+      # `server /data` — so it runs via docker directly.
+      - name: Start minio
+        run: |
+          docker run -d --name ci-minio -p 9000:9000 \
+            -e MINIO_ROOT_USER="$MINIO_ROOT_USER" \
+            -e MINIO_ROOT_PASSWORD="$MINIO_ROOT_PASSWORD" \
+            minio/minio server /data
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:9000/minio/health/live && break
+            sleep 1
+          done
+
+      # Worker integration tests spawn ffmpeg (studio renders).
+      - name: Install ffmpeg
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+
+      - name: Enable corepack (pins pnpm from package.json#packageManager)
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen lockfile = reproducible)
+        run: pnpm install --frozen-lockfile
+
+      # Gating since 2026-09-04: apps/web has an eslint flat config
+      # (apps/web/eslint.config.mjs); next lint no longer prompts, and the
+      # baseline is 0 errors (212 tracked warnings — dead imports and
+      # exhaustive-deps audit targets, triaged in the config header). A NEW
+      # error fails CI; warnings stay visible but non-blocking.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Deploy failure-path safety contract
+        run: pnpm test:deploy-safety
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Unit DB-backed tests (e.g. @seed/credits) run against the base DB —
+      # locally that's the already-migrated dev DB, on CI it starts empty.
+      - name: Migrate base DB
+        run: pnpm db:migrate
+
+      # The db smoke test asserts active models match the seed catalog; the
+      # api beta-redeem suite asserts the 30 SEED-* invite codes exist.
+      - name: Seed base DB
+        run: |
+          pnpm db:seed
+          pnpm --filter @seed/db exec tsx scripts/seed-beta-invites.ts
+
+      # Unit/integration tests without E2E (kept off the hot path; see docs/ops/cicd.md).
+      - name: Test
+        run: pnpm test:all:no-e2e
+
+  boards-release:
+    name: Boards release gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium runtime
+        run: pnpm --filter @seed/web exec playwright install --with-deps chromium
+
+      - name: Boards quick contracts
+        env:
+          BOARDS_RELEASE_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}-quick
+          BOARDS_RELEASE_EVIDENCE_DIR: docs/evidence/product-testing/boards/ci/${{ github.run_id }}-${{ github.run_attempt }}/quick
+        run: pnpm test:boards:quick
+
+      - name: Boards large-graph performance
+        env:
+          BOARDS_RELEASE_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}-perf
+          BOARDS_RELEASE_EVIDENCE_DIR: docs/evidence/product-testing/boards/ci/${{ github.run_id }}-${{ github.run_attempt }}/perf
+          BOARDS_RELEASE_BUILD: 1
+        run: |
+          status=0
+          pnpm test:boards:perf || status=$?
+          result=$(jq -r '.result' "$BOARDS_RELEASE_EVIDENCE_DIR/run.json")
+          if [ "$result" = "ENVIRONMENT_FAILURE" ]; then
+            echo "::warning::Boards performance was not certifiable on this runner; see the uploaded evidence."
+            {
+              echo "### Boards performance"
+              echo
+              echo "Runner classified the sample as \`ENVIRONMENT_FAILURE\`; certification still requires an eligible controlled runner."
+            } >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          exit "$status"
+
+      - name: Boards production browser matrix
+        if: ${{ !cancelled() }}
+        env:
+          BOARDS_RELEASE_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}-e2e
+          BOARDS_RELEASE_EVIDENCE_DIR: docs/evidence/product-testing/boards/ci/${{ github.run_id }}-${{ github.run_attempt }}/e2e
+          BOARDS_RELEASE_BUILD: 0
+        run: pnpm test:boards:e2e
+
+      - name: Verify Boards cleanup
+        if: always()
+        env:
+          BOARDS_RELEASE_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}-cleanup
+          BOARDS_RELEASE_EVIDENCE_DIR: docs/evidence/product-testing/boards/ci/${{ github.run_id }}-${{ github.run_attempt }}/cleanup
+        run: pnpm test:boards:cleanup
+
+      - name: Upload Boards evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boards-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: docs/evidence/product-testing/boards/ci/${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 14

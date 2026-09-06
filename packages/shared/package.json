@@ -1,0 +1,45 @@
+{
+  "name": "@seed/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./board-prompt": "./src/board-prompt.ts",
+    "./board-order": "./src/board-order.ts",
+    "./shot-plan": "./src/shot-plan.ts",
+    "./scenario-shot-plan": "./src/scenario-shot-plan.ts",
+    "./scene-objects": "./src/scene-objects.ts",
+    "./scene-context": "./src/scene-context.ts",
+    "./board-contract": "./src/board-contract.ts",
+    "./board-diagnostics": "./src/board-diagnostics.ts",
+    "./generation-request": "./src/generation-request.ts",
+    "./execution-snapshot": "./src/execution-snapshot.ts",
+    "./media-title": "./src/media-title.ts",
+    "./media-retention": "./src/media-retention.ts",
+    "./official-leg-cost": "./src/official-leg-cost.ts",
+    "./relay-gateway": "./src/relay-gateway.ts",
+    "./select-route": "./src/select-route.ts",
+    "./route-engine-guards": "./src/route-engine-guards.ts",
+    "./preset-merge": "./src/preset-merge.ts",
+    "./subscription-tiers": "./src/subscription-tiers.ts",
+    "./sreda-folders": "./src/sreda-folders.ts",
+    "./pixel-mark": "./src/pixel-mark.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "echo 'no lint'",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
+  },
+  "dependencies": {
+    "@seed/db": "workspace:*",
+    "zod": "3.24.1"
+  }
+}

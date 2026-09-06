@@ -1,0 +1,7 @@
+scenario-final.vertov.space {
+  encode zstd gzip
+
+  @api path /api/* /v1/* /health /metrics
+  reverse_proxy @api final-api:4000
+  reverse_proxy final-web:3000
+}

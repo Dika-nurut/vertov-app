@@ -1,0 +1,89 @@
+# Seed edge / CDN front (BL-10).
+#
+# Public asset BYTES are served straight from the object store at the edge, so
+# the single Node API event loop never pipes thumbnail/video/poster fan-out
+# under unauthenticated traffic. Everything else routes to the API (JSON +
+# auth) or the web app.
+#
+# Site address: a real domain (auto-TLS) in production, or :8080 behind the
+# cloudflared tunnel. Override with SEED_SITE_ADDRESS.
+#
+#   ASSET_PUBLIC_URL must point at THIS edge origin (e.g. https://<domain>) so
+#   minted asset URLs (`${ASSET_PUBLIC_URL}/seed-assets/<key>`) resolve here and
+#   are served by Caddy -> MinIO, not by the API proxy. The API's `/<bucket>/*`
+#   proxy stays as an internal fallback only.
+#
+# Upstreams default to the docker-compose service names on `seed-net`; override
+# with SEED_API_UPSTREAM / SEED_WEB_UPSTREAM / SEED_MINIO_UPSTREAM when running
+# Caddy on the host against 127.0.0.1 ports.
+
+# Dedicated stable origin consumed by browsers and third-party AI vendors.
+# Do not expose application/auth routes on this hostname.
+assets.vertov.space {
+	@asset_host_media path /seed-assets/* /seed-preset-previews/*
+	handle @asset_host_media {
+		header Cache-Control "public, max-age=86400, immutable"
+		reverse_proxy {$SEED_MINIO_UPSTREAM:http://seed-minio:9000} {
+			header_up Host {$SEED_MINIO_HOST:seed-minio:9000}
+			flush_interval -1
+		}
+	}
+	handle {
+		respond 404
+	}
+}
+
+# Dedicated API origin for third-party callbacks. Caddy obtains a separate
+# certificate for this hostname; the application verifies Tochka's signed JWT
+# and therefore must receive the webhook without a browser/session auth layer.
+api.vertov.space {
+	@billing_webhook path /v1/billing/webhook
+	handle @billing_webhook {
+		reverse_proxy {$SEED_API_UPSTREAM:seed-api:4000} {
+			flush_interval -1
+		}
+	}
+	handle {
+		reverse_proxy {$SEED_API_UPSTREAM:seed-api:4000} {
+			flush_interval -1
+		}
+	}
+}
+
+{$SEED_SITE_ADDRESS::8080} {
+	# --- Public object store: STREAMED straight from Object Storage ---
+	# `flush_interval -1` disables proxy response buffering so large media (video
+	# range reads) stream at full speed; deliberately NO `encode` here — gzip/zstd
+	# on already-compressed video/images only adds buffering + CPU and throttled
+	# throughput from ~10 MB/s to ~1.7 MB/s.
+	@assets path /seed-assets/* /seed-preset-previews/* /seed-demo-assets/*
+	handle @assets {
+		header Cache-Control "public, max-age=86400, immutable"
+		reverse_proxy {$SEED_MINIO_UPSTREAM:http://seed-minio:9000} {
+			# Managed Object Storage is HTTPS path-style: the upstream carries the
+			# scheme (https://storage.yandexcloud.net) so Caddy uses TLS, and the
+			# Host header must be the S3 endpoint (not the public domain) or YC OS
+			# 400s ("plain HTTP sent to HTTPS port" / wrong virtual-host bucket).
+			# Local MinIO uses the plain-http default + its own host — both work.
+			header_up Host {$SEED_MINIO_HOST:seed-minio:9000}
+			flush_interval -1
+		}
+	}
+
+	# --- API: auth bridge + JSON + health/readiness + SSE ---
+	# `flush_interval -1` keeps the /v1/jobs/events Server-Sent-Events stream live
+	# (a buffering/compressing proxy stalls it → ERR_CONNECTION_RESET); no `encode`.
+	@api path /api/auth/* /v1 /v1/* /health /ready
+	handle @api {
+		reverse_proxy {$SEED_API_UPSTREAM:seed-api:4000} {
+			flush_interval -1
+		}
+	}
+
+	# --- Everything else: the Next.js web app. Compress text (HTML/JS/CSS) HERE
+	#     only, where it actually helps. ---
+	handle {
+		encode zstd gzip
+		reverse_proxy {$SEED_WEB_UPSTREAM:seed-web:3000}
+	}
+}

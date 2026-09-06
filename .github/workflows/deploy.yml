@@ -1,0 +1,212 @@
+# Deploy to production (Yandex Cloud) — MANUAL button only.
+#
+# You chose "deploy on a button" (not on every push). So this workflow runs only
+# when YOU click Run workflow in the GitHub Actions tab (workflow_dispatch).
+# Flow:  resolve the SHA -> build 3 images IN PARALLEL -> push to Container Registry
+#        -> SSH to the VM -> migration-gated, health-gated deploy (scripts/deploy.sh)
+#        -> if /ready never goes green, deploy.sh fails closed and restores the previous tag when available.
+#
+# Rollback = run this again with a previous SHA in the `ref` box, or on the VM:
+#   SEED_IMAGE_TAG=<old-sha> SEED_REGISTRY=cr.yandex/<id> \
+#     docker compose -f infra/compute/docker-compose.app.yml up -d
+# (see docs/ops/deploy-rollback-runbook.md). Images are immutable per SHA, so an old
+# tag is always re-deployable.
+#
+# Required GitHub repo secrets (Settings -> Secrets and variables -> Actions):
+#   YC_SA_KEY_JSON   authorized-key JSON of a service account with
+#                    container-registry.images.pusher (CI push) — the SAME key
+#                    can have .puller for the VM to pull.
+#   YC_REGISTRY_ID   the registry id -> images live at cr.yandex/<id>/seed-*
+#   DEPLOY_HOST      VM public IP / hostname
+#   DEPLOY_USER      ssh user on the VM (e.g. deploy)
+#   DEPLOY_SSH_KEY   private SSH key whose public half is on the VM
+#   DEPLOY_PATH      absolute path of the repo checkout on the VM (e.g. /opt/seed)
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref/SHA to deploy (default: main HEAD)'
+        required: false
+        default: 'main'
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # never interrupt an in-flight production deploy
+
+jobs:
+  # The image tag is resolved ONCE, here, and handed to everything downstream. A
+  # matrix job cannot own it: each shard would resolve its own value and the
+  # job-level output would be whichever shard happened to finish last.
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - name: Compute immutable image tag (full SHA)
+        id: meta
+        run: echo "tag=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
+
+  # The three images do not depend on each other, so they are built on three
+  # runners at once. Sequentially this step was the bulk of the deploy — web
+  # (~5m30) waited behind api (~3m15) and worker (~25s) for no reason. In
+  # parallel the stage costs whatever `web` costs, and `web` is unavoidable:
+  # it is a `next build`.
+  #
+  # fail-fast (the default) is what makes this safe: if any image fails, the
+  # whole job fails, and `deploy` never runs because it needs this job.
+  build-and-push:
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - app: web
+            dockerfile: apps/web/Dockerfile
+            # NEXT_PUBLIC_* are baked into the client bundle at build time. This is the
+            # single place that decides which provider buttons are live in prod — flip
+            # a flag to 1 here (the API side is cred-gated separately by env). Keep in
+            # sync with the creds actually present in /run/secrets/seed.env on the VM.
+            build_args: |
+              NEXT_PUBLIC_PHONE_ENABLED=1
+              NEXT_PUBLIC_YANDEX_ENABLED=1
+              NEXT_PUBLIC_VK_ENABLED=1
+              NEXT_PUBLIC_VK_APP_ID=54654115
+              NEXT_PUBLIC_YANDEX_CLIENT_ID=06c0d6082e8f4e78aaded99e6574a327
+          - app: api
+            dockerfile: apps/api/Dockerfile
+            build_args: |
+              SEED_COMMIT_SHA=${{ needs.resolve.outputs.tag }}
+          - app: worker
+            dockerfile: apps/worker/Dockerfile
+            build_args: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Yandex Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: cr.yandex
+          username: json_key
+          password: ${{ secrets.YC_SA_KEY_JSON }}
+
+      # Built from the repo root (each Dockerfile's context). The GHA layer cache
+      # is scoped per app, so the shards never evict one another. Tagged with the
+      # SHA (immutable, traceable).
+      - name: Build & push ${{ matrix.app }}
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: cr.yandex/${{ secrets.YC_REGISTRY_ID }}/seed-${{ matrix.app }}:${{ needs.resolve.outputs.tag }}
+          build-args: ${{ matrix.build_args }}
+          # Yandex Container Registry accepts the Docker v2 schema-2 image
+          # manifest, but rejects BuildKit's OCI provenance attachment as a
+          # second manifest for the SHA tag ("Cannot read manifest data").
+          # The commit SHA and the digest recorded below remain the immutable
+          # deployment identity; provenance is intentionally kept in the
+          # GitHub build record rather than pushed as a registry artifact.
+          provenance: false
+          sbom: false
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,scope=${{ matrix.app }},mode=max
+
+      - name: Record immutable artifact identity
+        run: |
+          {
+            echo "- \`${{ matrix.app }}\` @ \`${{ needs.resolve.outputs.tag }}\` → \`${{ steps.build.outputs.digest }}\`"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: [resolve, build-and-push]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Bind this job to a GitHub "production" environment to require a manual
+    # approval click and/or restrict who can deploy (Settings -> Environments).
+    environment: production
+    steps:
+      - name: Deploy over SSH (migration-gated, health-gated)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 15m
+          # Secrets passed into the remote shell (not echoed).
+          envs: SEED_TAG,YC_REGISTRY_ID,YC_SA_KEY_JSON,DEPLOY_PATH,SEED_SITE_ADDRESS
+          script: |
+            set -euo pipefail
+            cd "$DEPLOY_PATH"
+
+            # 1) Sync the repo to the exact commit we built — this gives the VM the
+            #    matching compose file + DB migrations for this image.
+            git fetch --depth=1 origin "$SEED_TAG" 2>/dev/null || git fetch origin
+            git checkout -q "$SEED_TAG"
+
+            # 2) Authenticate the VM's docker to the registry so it can PULL.
+            echo "$YC_SA_KEY_JSON" | docker login --username json_key --password-stdin cr.yandex
+
+            # 3) Run the existing migration-gated, health-gated deploy.
+            export SEED_REGISTRY="cr.yandex/${YC_REGISTRY_ID}"
+            export SEED_IMAGE_TAG="$SEED_TAG"
+            export SEED_ENV_FILE=/run/secrets/seed.env   # secrets live on the VM, never in git
+            export SEED_SITE_ADDRESS=$SEED_SITE_ADDRESS  # edge TLS hostname; deploy.sh fails closed without it
+            ./scripts/deploy.sh
+        env:
+          SEED_TAG: ${{ needs.resolve.outputs.tag }}
+          YC_REGISTRY_ID: ${{ secrets.YC_REGISTRY_ID }}
+          YC_SA_KEY_JSON: ${{ secrets.YC_SA_KEY_JSON }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SEED_SITE_ADDRESS: ${{ secrets.SEED_SITE_ADDRESS }}
+
+  # G-5: the worker runs on its own VM (worker-compose.yml), NOT in the app
+  # stack, so the app deploy above never touches it. This job bumps it in the
+  # same button-press, AFTER `deploy` (schema migrations are already applied
+  # before the new worker starts).
+  #
+  # Required extra repo secret:
+  #   WORKER_DEPLOY_HOST = vertov-worker public IP (currently <worker-host-via-secret-WORKER_DEPLOY_HOST>)
+  #
+  # VM prerequisite, already applied 2026-07-09:
+  #   /opt/seed/worker-compose.yml is owned by deploy:deploy, so this job does
+  #   not depend on non-interactive sudo.
+  deploy-worker:
+    needs: [resolve, build-and-push, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - name: Bump worker to the new image over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.WORKER_DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 10m
+          envs: SEED_TAG,YC_REGISTRY_ID,YC_SA_KEY_JSON
+          script: |
+            set -euo pipefail
+            echo "$YC_SA_KEY_JSON" | docker login --username json_key --password-stdin cr.yandex
+            W=/opt/seed/worker-compose.yml
+            test -w "$W"
+            sed -i "s#seed-worker:[^\"' ]*#seed-worker:${SEED_TAG}#" "$W"
+            export SEED_REGISTRY="cr.yandex/${YC_REGISTRY_ID}"
+            docker compose -f "$W" up -d
+        env:
+          SEED_TAG: ${{ needs.resolve.outputs.tag }}
+          YC_REGISTRY_ID: ${{ secrets.YC_REGISTRY_ID }}
+          YC_SA_KEY_JSON: ${{ secrets.YC_SA_KEY_JSON }}
