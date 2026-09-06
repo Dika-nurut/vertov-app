@@ -147,15 +147,19 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           command_timeout: 15m
           # Secrets passed into the remote shell (not echoed).
-          envs: SEED_TAG,YC_REGISTRY_ID,YC_SA_KEY_JSON,DEPLOY_PATH,SEED_SITE_ADDRESS
+          envs: SEED_TAG,SEED_REPO_URL,YC_REGISTRY_ID,YC_SA_KEY_JSON,DEPLOY_PATH,SEED_SITE_ADDRESS
           script: |
             set -euo pipefail
             cd "$DEPLOY_PATH"
 
-            # 1) Sync the repo to the exact commit we built — this gives the VM the
-            #    matching compose file + DB migrations for this image.
-            git fetch --depth=1 origin "$SEED_TAG" 2>/dev/null || git fetch origin
+            # 1) Sync the public deployment checkout to the exact commit we built —
+            #    this gives the VM the matching compose file + DB migrations for
+            #    this image. The VM used to point at the private repo, whose commit
+            #    IDs cannot exist in this clean public export.
+            git remote set-url origin "$SEED_REPO_URL"
+            git fetch --depth=1 origin "$SEED_TAG"
             git checkout -q "$SEED_TAG"
+            test "$(git rev-parse HEAD)" = "$SEED_TAG"
 
             # 2) Authenticate the VM's docker to the registry so it can PULL.
             echo "$YC_SA_KEY_JSON" | docker login --username json_key --password-stdin cr.yandex
@@ -168,6 +172,7 @@ jobs:
             ./scripts/deploy.sh
         env:
           SEED_TAG: ${{ needs.resolve.outputs.tag }}
+          SEED_REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
           YC_REGISTRY_ID: ${{ secrets.YC_REGISTRY_ID }}
           YC_SA_KEY_JSON: ${{ secrets.YC_SA_KEY_JSON }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}

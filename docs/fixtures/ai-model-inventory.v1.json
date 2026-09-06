@@ -1,0 +1,4061 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-14T10:12:20Z",
+  "baseline": {
+    "tag": "product-readiness-baseline",
+    "commit": "5d3db19e87d0fe85b5b5a570c881e5e0c694f844",
+    "sourceCommit": "697b451617e359ab0513e733300dab7499f93fc1"
+  },
+  "sources": [
+    "packages/db/seed/models.ts",
+    "https://vertov.space/v1/models",
+    "packages/shared/src/assist-tiers.ts",
+    "packages/providers/prompt-enhancer/src",
+    "packages/providers/byteplus/src",
+    "https://openrouter.ai/api/v1/videos/models",
+    "https://openrouter.ai/api/v1/images/models",
+    "https://openrouter.ai/api/v1/models",
+    "https://api.atlascloud.ai/api/v1/models",
+    "https://api.laozhang.ai/v1/models"
+  ],
+  "liveCatalog": {
+    "url": "https://vertov.space/v1/models",
+    "checkedAt": "2026-08-14T10:12:20Z",
+    "sha256": "20c660012fa3ab0321b3c10818c17f8dacdda2f666ce08257dc67790dc5a7bc8",
+    "bytes": 10938,
+    "modelCount": 22,
+    "sourceActiveMediaCount": 22,
+    "missingFromLive": [],
+    "unexpectedLive": [],
+    "health": {
+      "url": "https://vertov.space/health",
+      "version": "0.1.0",
+      "checkedAt": "2026-08-14T10:12:20Z",
+      "commit": "aa3126ac66082fbe1de2f8f9862e5ff36dc867d0"
+    },
+    "deployment": {
+      "workflow": ".github/workflows/deploy.yml",
+      "runId": "31790198287",
+      "commit": "aa3126ac66082fbe1de2f8f9862e5ff36dc867d0",
+      "completedAt": "2026-08-14T10:11:36Z"
+    }
+  },
+  "vendorCatalogs": {
+    "openrouter": {
+      "checkedAt": "2026-08-14T09:27:00Z",
+      "videoModelCount": 23,
+      "imageModelCount": 43,
+      "textModelCount": 411,
+      "snapshotSha256": {
+        "videos": "6e58ee4deee5b1cc35b3011b10e237d53406026a5673b1e31ac37959dead0d2a",
+        "images": "cc0a65afbfe080fcf8467d4ca920ed467494cd56108b12fe61981ae54fe959",
+        "all": "9fece485377d402025a28bf700bc8be3cadae4e26b28be063c2c3213318796b1"
+      },
+      "configuredTextSlugsMissing": [],
+      "paidRequests": 0
+    },
+    "atlascloud": {
+      "checkedAt": "2026-08-14T09:28:00Z",
+      "modelCount": 481,
+      "configuredFamiliesPresent": [
+        "seedream-4.5",
+        "seedance-2.0",
+        "gemini-omni-flash",
+        "gpt-image-2"
+      ],
+      "paidRequests": 0
+    },
+    "laozhang": {
+      "checkedAt": "2026-07-09T21:10:43Z",
+      "modelCount": 292,
+      "configuredIdsPresent": [
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-image",
+        "gemini-3.1-flash-image",
+        "gemini-3.1-flash-lite-image",
+        "gpt-image-2"
+      ],
+      "paidRequests": 0
+    },
+    "kie": {
+      "checkedAt": "2026-08-14T09:28:16Z",
+      "modelListStatus": "pricing_endpoint_available",
+      "pricingRecordCount": 413,
+      "configuredIdsSource": "https://api.kie.ai/client/v1/model-pricing/page plus adapter routing table",
+      "paidRequests": 0
+    }
+  },
+  "defects": [
+    {
+      "id": "INV-001",
+      "severity": "P2",
+      "category": "missing capability",
+      "modelIds": [
+        "kling-v3-0-std",
+        "wan-2-7",
+        "seedance-1-0-pro-fast",
+        "seedream-4-5",
+        "sora-2-pro"
+      ],
+      "summary": "Historical source/live release drift is resolved by deploy run 31784115606: Kling and Wan are present, while inactive Seedance 1.0, Seedream 4.5, and Sora 2 Pro are absent. Retained because the Board compatibility evidence still references this finding."
+    },
+    {
+      "id": "INV-002",
+      "severity": "P2",
+      "category": "false affordance",
+      "modelIds": ["seedance-2-0-fast", "seedance-2-0-fast-reference-to-video"],
+      "summary": "Resolved in source and production: Fast rows now sell only 480p/720p. Retained as a historical ledger entry because Board compatibility evidence references the original 1080p finding."
+    },
+    {
+      "id": "INV-003",
+      "severity": "P1",
+      "category": "wrong request mapping",
+      "modelIds": ["grok-imagine-video", "happyhorse-1-1"],
+      "summary": "Vendor schema and price snapshots refreshed 2026-08-14: Grok and HappyHorse rates match the signed workbook; the product intentionally sells a narrower duration/input envelope than the vendor APIs."
+    },
+    {
+      "id": "INV-004",
+      "severity": "P2",
+      "category": "ignored input",
+      "modelIds": ["recraft-v4", "recraft-v4-vector"],
+      "summary": "Resolved in source and clients: Recraft references are clamped to one. Retained as a historical ledger entry because Board compatibility evidence references the original ignored-input finding."
+    },
+    {
+      "id": "INV-005",
+      "severity": "P2",
+      "category": "false affordance",
+      "modelIds": ["gemini-omni-flash"],
+      "summary": "Resolved in source and Board compatibility evidence: Omni is explicitly a generic image-reference channel, not a positional first/last-frame model. Video/audio reference ports remain intentionally withheld because no signed product band exists; retained as historical evidence."
+    },
+    {
+      "id": "INV-006",
+      "severity": "P1",
+      "category": "wrong request mapping",
+      "modelIds": ["veo-3-1-fast", "veo-3-1-lite", "gemini-omni-flash"],
+      "summary": "Vendor snapshots refreshed 2026-08-14: Kie Veo Fast/Lite and Grok/HappyHorse records match the workbook; Atlas developer Omni remains $0.112 per second. No sellable rung change is required."
+    },
+    {
+      "id": "INV-007",
+      "severity": "P2",
+      "category": "ignored input",
+      "modelIds": [
+        "seedance-2-0",
+        "seedance-2-0-fast",
+        "seedance-2-0-reference-to-video",
+        "seedance-2-0-fast-reference-to-video"
+      ],
+      "summary": "Seedance routing/forceGateway metadata is now deployed and reconciled; negative_prompt remains intentionally unavailable because neither active route serializes it. Keep this contract ledger until a real negative-prompt route is wired."
+    },
+    {
+      "id": "INV-008",
+      "severity": "P1",
+      "category": "missing test",
+      "modelIds": [],
+      "summary": "Resolved by deploy run 31790198287: /health and /ready now return the immutable API image commit aa3126ac66082fbe1de2f8f9862e5ff36dc867d0, with DB/Redis readiness green."
+    },
+    {
+      "id": "INV-009",
+      "severity": "P2",
+      "category": "missing test",
+      "modelIds": ["recraft-v4-vector"],
+      "summary": "Resolved in source and regression tests: Board preserves outputFormat=vector and the worker lifecycle already stores SVG MIME/extension; retained as a historical ledger entry."
+    }
+  ],
+  "models": [
+    {
+      "canonicalId": "seedream-3-0",
+      "identity": {
+        "vertovId": "seedream-3-0",
+        "providerIds": ["seedream-3-0"],
+        "aliases": [],
+        "family": "seedream",
+        "version": "3.0"
+      },
+      "mediaPurpose": "image-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "free",
+        "uiEligibility": "ineligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["2048x2048"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "deployment-default",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "seedream-3-0",
+        "providerIdsByRoute": ["seedream-3-0"]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": null,
+        "basis": "not recorded"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "not_checked",
+          "date": null,
+          "source": null
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Source row is inactive and intentionally absent from product selectors."
+      }
+    },
+    {
+      "canonicalId": "seedream-4-5",
+      "identity": {
+        "vertovId": "seedream-4-5",
+        "providerIds": [
+          "doubao-seedream-4.5",
+          "bytedance-seed/seedream-4.5",
+          "bytedance/seedream-v4.5",
+          "bytedance/seedream-v4.5/edit"
+        ],
+        "aliases": ["Seedream 4.5"],
+        "family": "seedream",
+        "version": "4.5"
+      },
+      "mediaPurpose": "image-generation-edit",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "free",
+        "uiEligibility": "ineligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 14,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["2K", "4K"],
+        "aspectRatios": [
+          "1:1",
+          "1:2",
+          "2:1",
+          "2:3",
+          "3:2",
+          "3:4",
+          "4:3",
+          "4:5",
+          "5:4",
+          "9:16",
+          "16:9",
+          "9:19.5",
+          "19.5:9",
+          "9:20",
+          "20:9",
+          "9:21",
+          "21:9",
+          "auto"
+        ],
+        "extras": ["negativePrompt", "edit"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": ["atlascloud"],
+        "primaryProviderId": "doubao-seedream-4.5",
+        "providerIdsByRoute": [
+          "doubao-seedream-4.5",
+          "bytedance-seed/seedream-4.5",
+          "bytedance/seedream-v4.5",
+          "bytedance/seedream-v4.5/edit"
+        ]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.04,
+        "basis": "AtlasCloud /models origin price 2026-07-09; OpenRouter image schema exposes no price"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "documented_live",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Owner ruling 2026-08-10 retired Seedream 4.5; only the 5.0 family ships. The source row survives for job history and is absent from the deployed catalog."
+      }
+    },
+    {
+      "canonicalId": "seedream-5-0-lite",
+      "identity": {
+        "vertovId": "seedream-5-0-lite",
+        "providerIds": ["seedream-5-0-lite"],
+        "aliases": [],
+        "family": "seedream",
+        "version": "5.0-lite"
+      },
+      "mediaPurpose": "image-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "creator",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 10,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["2K", "3K", "4K"],
+        "aspectRatios": ["21:9", "16:9", "3:2", "4:3", "1:1", "3:4", "2:3", "9:16"],
+        "extras": []
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "seedream-5-0-lite",
+        "providerIdsByRoute": ["seedream-5-0-lite"]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.0275,
+        "basis": "kie price list, owner-confirmed 2026-07-24 (flat any quality)"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "not_checked",
+          "date": null,
+          "source": null
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "seededit-v3-0",
+      "identity": {
+        "vertovId": "seededit-v3-0",
+        "providerIds": ["seededit-v3-0"],
+        "aliases": [],
+        "family": "seedream",
+        "version": "seededit-v3.0"
+      },
+      "mediaPurpose": "image-generation-edit",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "image-edit"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "start",
+        "uiEligibility": "ineligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": null,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["2048x2048"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "deployment-default",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "seededit-v3-0",
+        "providerIdsByRoute": ["seededit-v3-0"]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": null,
+        "basis": "not recorded"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "not_checked",
+          "date": null,
+          "source": null
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Source row is inactive and intentionally absent from product selectors."
+      }
+    },
+    {
+      "canonicalId": "seedance-1-0-lite",
+      "identity": {
+        "vertovId": "seedance-1-0-lite",
+        "providerIds": ["seedance-1-0-lite"],
+        "aliases": [],
+        "family": "seedance",
+        "version": "1.0-lite"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "free",
+        "uiEligibility": "ineligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["720p"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "deployment-default",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "seedance-1-0-lite",
+        "providerIdsByRoute": ["seedance-1-0-lite"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": null,
+        "basis": "not recorded"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "not_checked",
+          "date": null,
+          "source": null
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Source row is inactive and intentionally absent from product selectors."
+      }
+    },
+    {
+      "canonicalId": "seedance-1-0-pro-fast",
+      "identity": {
+        "vertovId": "seedance-1-0-pro-fast",
+        "providerIds": ["seedance-2.0-fast-text-to-video"],
+        "aliases": [],
+        "family": "seedance",
+        "version": "1.0-pro-fast"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "start",
+        "uiEligibility": "ineligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1080p"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "deployment-default",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "seedance-2.0-fast-text-to-video",
+        "providerIdsByRoute": ["seedance-2.0-fast-text-to-video"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": null,
+        "basis": "not recorded"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "not_checked",
+          "date": null,
+          "source": null
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Source-inactive deprecated row is absent from the deployed catalog and retained only for job history."
+      }
+    },
+    {
+      "canonicalId": "seedance-1-0-pro",
+      "identity": {
+        "vertovId": "seedance-1-0-pro",
+        "providerIds": ["seedance-1-0-pro"],
+        "aliases": [],
+        "family": "seedance",
+        "version": "1.0-pro"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "creator",
+        "uiEligibility": "ineligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1080p"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "deployment-default",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "seedance-1-0-pro",
+        "providerIdsByRoute": ["seedance-1-0-pro"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": null,
+        "basis": "not recorded"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "not_checked",
+          "date": null,
+          "source": null
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Source row is inactive and intentionally absent from product selectors."
+      }
+    },
+    {
+      "canonicalId": "seedance-1-5-pro",
+      "identity": {
+        "vertovId": "seedance-1-5-pro",
+        "providerIds": ["seedance-1-5-pro"],
+        "aliases": [],
+        "family": "seedance",
+        "version": "1.5-pro"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "creator",
+        "uiEligibility": "ineligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1080p"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "deployment-default",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "seedance-1-5-pro",
+        "providerIdsByRoute": ["seedance-1-5-pro"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": null,
+        "basis": "not recorded"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "not_checked",
+          "date": null,
+          "source": null
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Source row is inactive and intentionally absent from product selectors."
+      }
+    },
+    {
+      "canonicalId": "seedance-2-0",
+      "identity": {
+        "vertovId": "seedance-2-0",
+        "providerIds": [
+          "seedance-2.0-text-to-video",
+          "bytedance/seedance-2.0",
+          "bytedance/seedance-2.0/text-to-video"
+        ],
+        "aliases": [],
+        "family": "seedance",
+        "version": "2.0"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "creator",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.frame.first", "image.frame.last"],
+        "outputs": ["video"],
+        "frames": ["first", "last"],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": false
+        },
+        "durations": [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        "resolutions": ["480p", "720p", "1080p", "4K"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": ["atlascloud"],
+        "primaryProviderId": "seedance-2.0-text-to-video",
+        "providerIdsByRoute": [
+          "seedance-2.0-text-to-video",
+          "bytedance/seedance-2.0",
+          "bytedance/seedance-2.0/text-to-video"
+        ]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.34,
+        "basis": "rev.16 «Сетка FX стр.15» / model-catalog.md §3 — ceiling from the dearest rung INCLUDING the parked 4K one, which rev.16 moved 2183->2108 when finance dropped the OpenRouter reserve R-11 forbids claiming, so ceil(2108/5)=422. The ROUTED leg is unchanged: OpenRouter, worst sold rung 1080p $0.340/s (kie fallback $0.51/s in capabilities.fallbackUsdPerUnit)"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "documented_live",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity, OpenRouter routing, and current adapter contract reconcile after the 2026-08-14 production deploy."
+      }
+    },
+    {
+      "canonicalId": "seedance-2-0-fast",
+      "identity": {
+        "vertovId": "seedance-2-0-fast",
+        "providerIds": [
+          "seedance-2-0-fast",
+          "bytedance/seedance-2.0-fast",
+          "bytedance/seedance-2.0-fast/text-to-video"
+        ],
+        "aliases": [],
+        "family": "seedance",
+        "version": "2.0-fast"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.frame.first", "image.frame.last"],
+        "outputs": ["video"],
+        "frames": ["first", "last"],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": false
+        },
+        "durations": [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        "resolutions": ["480p", "720p"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": ["atlascloud"],
+        "primaryProviderId": "seedance-2-0-fast",
+        "providerIdsByRoute": [
+          "seedance-2-0-fast",
+          "bytedance/seedance-2.0-fast",
+          "bytedance/seedance-2.0-fast/text-to-video"
+        ]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.121,
+        "basis": "model-catalog.md §3 — ROUTED OpenRouter leg, worst sold rung 720p $0.121/s (kie fallback $0.165/s)"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "documented_live",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Fast source and live contracts both sell 480p/720p and expose the pinned OpenRouter route after the 2026-08-14 production deploy."
+      }
+    },
+    {
+      "canonicalId": "seedance-2-0-reference-to-video",
+      "identity": {
+        "vertovId": "seedance-2-0-reference-to-video",
+        "providerIds": [
+          "seedance-2.0-reference-to-video",
+          "bytedance/seedance-2.0",
+          "bytedance/seedance-2.0/reference-to-video"
+        ],
+        "aliases": [],
+        "family": "seedance",
+        "version": "2.0-reference"
+      },
+      "mediaPurpose": "reference-video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "automatic-only",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "creator",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": [
+          "text.prompt",
+          "image.reference",
+          "image.reference",
+          "video.motionReference",
+          "audio.reference"
+        ],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": 9,
+          "video": 3,
+          "audio": 3
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": true
+        },
+        "durations": [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        "resolutions": ["480p", "720p", "1080p", "4K"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": ["atlascloud"],
+        "primaryProviderId": "seedance-2.0-reference-to-video",
+        "providerIdsByRoute": [
+          "seedance-2.0-reference-to-video",
+          "bytedance/seedance-2.0",
+          "bytedance/seedance-2.0/reference-to-video"
+        ]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.34,
+        "basis": "rev.16 «Сетка FX стр.66» / model-catalog.md:71 — ROUTED OpenRouter leg bills r2v output at the t2v ladder, worst sold rung 1080p $0.340/s (kie fallback $0.51/s). rev.16 made kie the PRIMARY on the parked 4K rung at $1.04/s, moving it 2910->2108, so ceil(2108/5)=422."
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "documented_live",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and pinned OpenRouter route reconcile; video-reference input remains intentionally capped at zero on the sold contract."
+      }
+    },
+    {
+      "canonicalId": "seedance-2-0-fast-reference-to-video",
+      "identity": {
+        "vertovId": "seedance-2-0-fast-reference-to-video",
+        "providerIds": [
+          "seedance-2.0-fast-reference-to-video",
+          "bytedance/seedance-2.0-fast",
+          "bytedance/seedance-2.0-fast/reference-to-video"
+        ],
+        "aliases": [],
+        "family": "seedance",
+        "version": "2.0-fast-reference"
+      },
+      "mediaPurpose": "reference-video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "automatic-only",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": [
+          "text.prompt",
+          "image.reference",
+          "image.reference",
+          "video.motionReference",
+          "audio.reference"
+        ],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": 9,
+          "video": 3,
+          "audio": 3
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": true
+        },
+        "durations": [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        "resolutions": ["480p", "720p"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": ["atlascloud"],
+        "primaryProviderId": "seedance-2.0-fast-reference-to-video",
+        "providerIdsByRoute": [
+          "seedance-2.0-fast-reference-to-video",
+          "bytedance/seedance-2.0-fast",
+          "bytedance/seedance-2.0-fast/reference-to-video"
+        ]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.121,
+        "basis": "model-catalog.md:71 — ROUTED OpenRouter leg, worst sold rung 720p $0.121/s (kie fallback $0.165/s)"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "documented_live",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Fast reference source and live contracts both sell 480p/720p with the pinned OpenRouter route; video-reference input remains intentionally capped at zero."
+      }
+    },
+    {
+      "canonicalId": "seedance-2-0-standard",
+      "identity": {
+        "vertovId": "seedance-2-0-standard",
+        "providerIds": ["seedance-2-0-standard"],
+        "aliases": [],
+        "family": "seedance",
+        "version": "2.0-standard"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "creator",
+        "uiEligibility": "ineligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1080p"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "deployment-default",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "seedance-2-0-standard",
+        "providerIdsByRoute": ["seedance-2-0-standard"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": null,
+        "basis": "not recorded"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "not_checked",
+          "date": null,
+          "source": null
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Source row is inactive and intentionally absent from product selectors."
+      }
+    },
+    {
+      "canonicalId": "veo-3-1-fast",
+      "identity": {
+        "vertovId": "veo-3-1-fast",
+        "providerIds": ["google/veo-3.1-fast"],
+        "aliases": [],
+        "family": "Veo",
+        "version": "3.1 Fast"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "creator",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.frame.first", "image.frame.last"],
+        "outputs": ["video"],
+        "frames": ["first", "last"],
+        "maxReferences": {
+          "image": 2,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": false
+        },
+        "durations": [4, 6, 8],
+        "resolutions": ["720p", "1080p"],
+        "aspectRatios": ["16:9", "9:16"],
+        "extras": []
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "google/veo-3.1-fast",
+        "providerIdsByRoute": ["google/veo-3.1-fast"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.040625,
+        "basis": "model-catalog.md §3 — ROUTED kie leg, $0.325/clip @1080p ÷ 8s = $0.040625/s"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-08-14",
+          "source": "Kie public model-pricing endpoint (Veo 3.1 Fast) plus committed Kie adapter contract"
+        },
+        "liveMediaProbe": {
+          "status": "documented_live",
+          "date": "2026-08-14"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Kie current pricing records match the signed 720p/1080p clip legs ($0.30/$0.325); the product envelope and first/last-frame adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "veo-3-1",
+      "identity": {
+        "vertovId": "veo-3-1",
+        "providerIds": ["google/veo-3.1"],
+        "aliases": [],
+        "family": "Veo",
+        "version": "3.1"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "creator",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.frame.first", "image.frame.last"],
+        "outputs": ["video"],
+        "frames": ["first", "last"],
+        "maxReferences": {
+          "image": 2,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": false
+        },
+        "durations": [4, 6, 8],
+        "resolutions": ["720p", "1080p"],
+        "aspectRatios": ["16:9", "9:16"],
+        "extras": []
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "google/veo-3.1",
+        "providerIdsByRoute": ["google/veo-3.1"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.159375,
+        "basis": "model-catalog.md §3 — ROUTED kie leg, $1.275/clip @1080p ÷ the 8s reference clip = $0.159375/s. Was 0.4, an OpenRouter rate this row never routes to."
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "veo-3-1-lite",
+      "identity": {
+        "vertovId": "veo-3-1-lite",
+        "providerIds": ["google/veo-3.1-lite"],
+        "aliases": [],
+        "family": "Veo",
+        "version": "3.1 Lite"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.frame.first", "image.frame.last"],
+        "outputs": ["video"],
+        "frames": ["first", "last"],
+        "maxReferences": {
+          "image": 2,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": false
+        },
+        "durations": [4, 6, 8],
+        "resolutions": ["720p", "1080p"],
+        "aspectRatios": ["16:9", "9:16"],
+        "extras": []
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "google/veo-3.1-lite",
+        "providerIdsByRoute": ["google/veo-3.1-lite"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.021875,
+        "basis": "model-catalog.md §3 — ROUTED kie leg, $0.175/clip @1080p ÷ 8s = $0.021875/s. rev.12 moved the 4K rung 305->304."
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-08-14",
+          "source": "Kie public model-pricing endpoint (Veo 3.1 Lite) plus committed Kie adapter contract"
+        },
+        "liveMediaProbe": {
+          "status": "documented_live",
+          "date": "2026-08-14"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Kie current pricing records match the signed 720p/1080p clip legs ($0.15/$0.175); the product envelope and first/last-frame adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "grok-imagine-video",
+      "identity": {
+        "vertovId": "grok-imagine-video",
+        "providerIds": ["x-ai/grok-imagine-video"],
+        "aliases": [],
+        "family": "Grok",
+        "version": "Imagine"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [6],
+        "resolutions": ["480p", "720p"],
+        "aspectRatios": ["16:9", "9:16"],
+        "extras": []
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "x-ai/grok-imagine-video",
+        "providerIdsByRoute": ["x-ai/grok-imagine-video"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.015,
+        "basis": "model-catalog.md §3 (owner list 2026-07-25) — ROUTED kie leg, worst sold rung 720p $0.015/s"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-08-14",
+          "source": "OpenRouter live video schema plus Kie public model-pricing endpoint"
+        },
+        "liveMediaProbe": {
+          "status": "documented_live",
+          "date": "2026-08-14"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "The provider supports a wider 1–15s/first-frame schema, while the product intentionally sells a 6s T2V envelope; Kie 480p/720p rates ($0.012/$0.0225 per second) match the signed workbook rows."
+      }
+    },
+    {
+      "canonicalId": "happyhorse-1-1",
+      "identity": {
+        "vertovId": "happyhorse-1-1",
+        "providerIds": ["alibaba/happyhorse-1.1"],
+        "aliases": [],
+        "family": "HappyHorse",
+        "version": "1.1"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.frame.first"],
+        "outputs": ["video"],
+        "frames": ["first"],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [4, 6, 8, 10],
+        "resolutions": ["720p", "1080p"],
+        "aspectRatios": ["16:9", "9:16", "1:1"],
+        "extras": []
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": "kie",
+        "supportedFallbacks": ["kie"],
+        "primaryProviderId": "alibaba/happyhorse-1.1",
+        "providerIdsByRoute": ["alibaba/happyhorse-1.1"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.1278,
+        "basis": "OpenRouter current pricing_skus: $0.1278/s at 1080p; Kie fallback current pricing: $0.145/s at 1080p"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-08-14",
+          "source": "OpenRouter live video schema plus Kie public model-pricing endpoint"
+        },
+        "liveMediaProbe": {
+          "status": "documented_live",
+          "date": "2026-08-14"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "OpenRouter confirms first-frame conditioning and the signed 720p/1080p rates; the narrower duration/aspect envelope is an intentional product boundary, and Kie fallback rates are confirmed."
+      }
+    },
+    {
+      "canonicalId": "happyhorse-1-0",
+      "identity": {
+        "vertovId": "happyhorse-1-0",
+        "providerIds": ["alibaba/happyhorse-1.0"],
+        "aliases": [],
+        "family": "HappyHorse",
+        "version": "1.0"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.frame.first", "image.frame.last"],
+        "outputs": ["video"],
+        "frames": ["first", "last"],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [4, 6, 8, 10],
+        "resolutions": ["720p", "1080p"],
+        "aspectRatios": ["16:9", "9:16", "1:1"],
+        "extras": ["negative_prompt", "prompt_extend"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "alibaba/happyhorse-1.0",
+        "providerIdsByRoute": ["alibaba/happyhorse-1.0"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.1694,
+        "basis": "OpenRouter free schema 2026-07-09"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Delisted 2026-08-03 per workbook v14 03_08 (dearer than 1.1 at the same result). Migration 0094 withdraws it from sale; row kept for job history."
+      }
+    },
+    {
+      "canonicalId": "sora-2-pro",
+      "identity": {
+        "vertovId": "sora-2-pro",
+        "providerIds": ["openai/sora-2-pro"],
+        "aliases": [],
+        "family": "Sora",
+        "version": "2 Pro"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": false,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "hidden",
+        "Scenario": "none",
+        "Boards": "hidden",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": false,
+        "tierEligibility": "creator",
+        "uiEligibility": "ineligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": false
+        },
+        "durations": [4, 8, 12, 16, 20],
+        "resolutions": ["720p", "1080p"],
+        "aspectRatios": ["16:9", "9:16"],
+        "extras": ["quality", "style"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "openai/sora-2-pro",
+        "providerIdsByRoute": ["openai/sora-2-pro"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.5,
+        "basis": "OpenRouter free schema 2026-07-09"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "documented_paid_2026-07-02",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "intentionally_excluded",
+        "reason": "Source-inactive Sora 2 Pro is absent from the deployed catalog and retained only for job history; its vendor cost remains an audit record."
+      }
+    },
+    {
+      "canonicalId": "kling-v3-0-std",
+      "identity": {
+        "vertovId": "kling-v3-0-std",
+        "providerIds": ["kwaivgi/kling-v3.0-std"],
+        "aliases": [],
+        "family": "Kling",
+        "version": "v3.0"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.frame.first", "image.frame.last"],
+        "outputs": ["video"],
+        "frames": ["first", "last"],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": false
+        },
+        "durations": [5, 10],
+        "resolutions": ["720p"],
+        "aspectRatios": ["16:9", "9:16", "1:1"],
+        "extras": ["negative_prompt", "cfg_scale"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "kwaivgi/kling-v3.0-std",
+        "providerIdsByRoute": ["kwaivgi/kling-v3.0-std"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.126,
+        "basis": "OpenRouter free schema 2026-07-09"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile after the 2026-08-14 production deploy."
+      }
+    },
+    {
+      "canonicalId": "wan-2-7",
+      "identity": {
+        "vertovId": "wan-2-7",
+        "providerIds": ["alibaba/wan-2.7"],
+        "aliases": [],
+        "family": "Wan",
+        "version": "2.7"
+      },
+      "mediaPurpose": "video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.frame.first", "image.frame.last"],
+        "outputs": ["video"],
+        "frames": ["first", "last"],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": false
+        },
+        "durations": [4, 6, 8, 10],
+        "resolutions": ["720p", "1080p"],
+        "aspectRatios": ["16:9", "9:16", "1:1"],
+        "extras": ["negative_prompt", "prompt_extend"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "alibaba/wan-2.7",
+        "providerIdsByRoute": ["alibaba/wan-2.7"]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.12,
+        "basis": "model-catalog.md §3 — ROUTED kie leg 1080p $0.12/s (OpenRouter reserve $0.15/s). Rev. 21: i2v joined t2v on kie, so the dearest rung is 244/5s and the flat ceiling is 49."
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile after the 2026-08-14 production deploy."
+      }
+    },
+    {
+      "canonicalId": "flux-2-pro",
+      "identity": {
+        "vertovId": "flux-2-pro",
+        "providerIds": ["black-forest-labs/flux.2-pro"],
+        "aliases": [],
+        "family": "FLUX",
+        "version": "2 Pro"
+      },
+      "mediaPurpose": "image-generation-edit",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "creator",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 8,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1K", "2K"],
+        "aspectRatios": ["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3"],
+        "extras": ["edit"]
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": null,
+        "supportedFallbacks": ["openrouter"],
+        "primaryProviderId": "flux-2/pro-text-to-image",
+        "providerIdsByRoute": ["flux-2/pro-text-to-image", "black-forest-labs/flux.2-pro"]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.03,
+        "basis": "rev14 «Сетка FX стр.43/79/104» — the ceiling of the two rungs this row now sells: 1K at 11 credits and 2K at 15, both on the ROUTED kie primary ($0.025 and a MEASURED $0.035). Was 13 against a single sizeless rung on the OpenRouter leg; rev. 13 signed the 2K rung and rev. 14 re-banded the cheap one `default` → `1K` so both could be declared."
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "recraft-v4",
+      "identity": {
+        "vertovId": "recraft-v4",
+        "providerIds": ["recraft/recraft-v4"],
+        "aliases": [],
+        "family": "Recraft",
+        "version": "4"
+      },
+      "mediaPurpose": "image-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 1,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1024x1024"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "recraft/recraft-v4",
+        "providerIdsByRoute": ["recraft/recraft-v4"]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.04,
+        "basis": "source capability metadata"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "documented_paid_2026-07-02",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source, registry, and Generate/Boards caps now agree on one image reference."
+      }
+    },
+    {
+      "canonicalId": "recraft-v4-vector",
+      "identity": {
+        "vertovId": "recraft-v4-vector",
+        "providerIds": ["recraft/recraft-v4-vector"],
+        "aliases": [],
+        "family": "Recraft",
+        "version": "4 Vector"
+      },
+      "mediaPurpose": "vector-image-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "creator",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.vector"],
+        "frames": [],
+        "maxReferences": {
+          "image": 1,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1024x1024"],
+        "aspectRatios": [],
+        "extras": ["vector"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "recraft/recraft-v4-vector",
+        "providerIdsByRoute": ["recraft/recraft-v4-vector"]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.08,
+        "basis": "source capability metadata"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/openrouter-adapter.ts",
+          "packages/shared/src/board-contract.ts"
+        ],
+        "mockTests": [
+          "packages/providers/byteplus/__tests__",
+          "packages/shared/src/board-contract.test.ts"
+        ],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-08-14",
+          "source": "OpenRouter model contract plus committed Board vector-output contract"
+        },
+        "liveMediaProbe": {
+          "status": "documented_paid_2026-07-02",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source, Generate/Boards caps, Board compiler outputFormat=vector, and worker SVG MIME/extension handling now agree; regression tests cover the downstream contract."
+      }
+    },
+    {
+      "canonicalId": "gemini-2-5-flash-image",
+      "identity": {
+        "vertovId": "gemini-2-5-flash-image",
+        "providerIds": ["gemini-2.5-flash-image", "nano-banana", "google/gemini-2.5-flash-image"],
+        "aliases": [],
+        "family": "Nano Banana",
+        "version": "2.5 Flash"
+      },
+      "mediaPurpose": "image-generation-edit",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 3,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1024x1024"],
+        "aspectRatios": [],
+        "extras": ["edit"]
+      },
+      "routing": {
+        "primary": "nanobanana",
+        "configuredFallback": null,
+        "supportedFallbacks": ["laozhang", "kie", "openrouter-official"],
+        "primaryProviderId": "gemini-2.5-flash-image",
+        "providerIdsByRoute": [
+          "gemini-2.5-flash-image",
+          "nano-banana",
+          "google/gemini-2.5-flash-image"
+        ]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.02,
+        "basis": "source capability metadata"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "gemini-3-pro-image",
+      "identity": {
+        "vertovId": "gemini-3-pro-image",
+        "providerIds": ["gemini-3-pro-image", "nano-banana-pro", "google/gemini-3-pro-image"],
+        "aliases": [],
+        "family": "Nano Banana",
+        "version": "3 Pro"
+      },
+      "mediaPurpose": "image-generation-edit",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "creator",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 8,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["4096x4096"],
+        "aspectRatios": [],
+        "extras": ["edit"]
+      },
+      "routing": {
+        "primary": "nanobanana",
+        "configuredFallback": null,
+        "supportedFallbacks": ["laozhang", "kie", "openrouter-official"],
+        "primaryProviderId": "gemini-3-pro-image",
+        "providerIdsByRoute": ["gemini-3-pro-image", "nano-banana-pro", "google/gemini-3-pro-image"]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.09,
+        "basis": "source capability metadata"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "documented_paid_2026-07-02",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "gemini-3-1-flash-image",
+      "identity": {
+        "vertovId": "gemini-3-1-flash-image",
+        "providerIds": ["gemini-3.1-flash-image", "nano-banana-2", "google/gemini-3.1-flash-image"],
+        "aliases": [],
+        "family": "Nano Banana",
+        "version": "3.1 Flash"
+      },
+      "mediaPurpose": "image-generation-edit",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 3,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["4096x4096"],
+        "aspectRatios": [],
+        "extras": ["edit"]
+      },
+      "routing": {
+        "primary": "nanobanana",
+        "configuredFallback": null,
+        "supportedFallbacks": ["laozhang", "kie", "openrouter-official"],
+        "primaryProviderId": "gemini-3.1-flash-image",
+        "providerIdsByRoute": [
+          "gemini-3.1-flash-image",
+          "nano-banana-2",
+          "google/gemini-3.1-flash-image"
+        ]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.055,
+        "basis": "source capability metadata"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "gemini-3-1-flash-lite-image",
+      "identity": {
+        "vertovId": "gemini-3-1-flash-lite-image",
+        "providerIds": [
+          "gemini-3.1-flash-lite-image",
+          "nano-banana-2-lite",
+          "google/gemini-3.1-flash-lite-image"
+        ],
+        "aliases": [],
+        "family": "Nano Banana",
+        "version": "3.1 Flash Lite"
+      },
+      "mediaPurpose": "image-generation-edit",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "free",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 3,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["2048x2048"],
+        "aspectRatios": [],
+        "extras": ["edit"]
+      },
+      "routing": {
+        "primary": "nanobanana",
+        "configuredFallback": null,
+        "supportedFallbacks": ["laozhang", "kie", "openrouter-official"],
+        "primaryProviderId": "gemini-3.1-flash-lite-image",
+        "providerIdsByRoute": [
+          "gemini-3.1-flash-lite-image",
+          "nano-banana-2-lite",
+          "google/gemini-3.1-flash-lite-image"
+        ]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.025,
+        "basis": "source capability metadata"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "gpt-image-2",
+      "identity": {
+        "vertovId": "gpt-image-2",
+        "providerIds": ["gpt-image-2", "openai/gpt-5.4-image-2"],
+        "aliases": [],
+        "family": "GPT Image",
+        "version": "2"
+      },
+      "mediaPurpose": "image-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1536x1024"],
+        "aspectRatios": [],
+        "extras": []
+      },
+      "routing": {
+        "primary": "nanobanana",
+        "configuredFallback": null,
+        "supportedFallbacks": ["laozhang", "kie", "openrouter-official"],
+        "primaryProviderId": "gpt-image-2",
+        "providerIdsByRoute": ["gpt-image-2", "openai/gpt-5.4-image-2"]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.05,
+        "basis": "source capability metadata"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter free model/schema endpoints plus Vertov /v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "documented_paid_2026-07",
+          "date": "see source comments/research"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile."
+      }
+    },
+    {
+      "canonicalId": "gemini-omni-flash",
+      "identity": {
+        "vertovId": "gemini-omni-flash",
+        "providerIds": [
+          "gemini-omni-flash-text-to-video",
+          "gemini-omni-video",
+          "google/gemini-omni-flash/text-to-video-developer",
+          "google/gemini-omni-flash/image-to-video-developer",
+          "google/gemini-omni-flash/reference-to-video-developer"
+        ],
+        "aliases": [],
+        "family": "Gemini Omni",
+        "version": "Flash"
+      },
+      "mediaPurpose": "multimodal-video-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "video"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "start",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["video"],
+        "frames": [],
+        "maxReferences": {
+          "image": null,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": true,
+          "reference": false
+        },
+        "durations": [4, 6, 8, 10],
+        "resolutions": [],
+        "aspectRatios": ["16:9", "9:16"],
+        "extras": []
+      },
+      "routing": {
+        "primary": "geminiomni",
+        "configuredFallback": null,
+        "supportedFallbacks": ["kie", "atlascloud"],
+        "primaryProviderId": "gemini-omni-flash-text-to-video",
+        "providerIdsByRoute": [
+          "gemini-omni-flash-text-to-video",
+          "gemini-omni-video",
+          "google/gemini-omni-flash/text-to-video-developer",
+          "google/gemini-omni-flash/image-to-video-developer",
+          "google/gemini-omni-flash/reference-to-video-developer"
+        ]
+      },
+      "cost": {
+        "billingUnit": "second",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.079,
+        "basis": "model-catalog.md §3 (PAID 2026-07-25) — ROUTED kie leg $0.079/s (AtlasCloud fallback $0.112/s). Was 0.112, the fallback rate. rev.12 moved the signed rung 257->273, so ceil(273/8)=35."
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/index.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-08-14",
+          "source": "Kie public model-pricing endpoint and AtlasCloud live model catalog/schema"
+        },
+        "liveMediaProbe": {
+          "status": "documented_atlascloud_live",
+          "date": "2026-08-14"
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Migration 0061, source comments, and Board evidence now agree on generic image references (no positional frames); Kie pricing is conservatively signed at $0.079/s and Atlas developer fallback remains $0.112/s."
+      }
+    },
+    {
+      "canonicalId": "deepseek/deepseek-v4-flash",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["deepseek/deepseek-v4-flash"],
+        "aliases": [],
+        "family": "deepseek",
+        "version": "deepseek-v4-flash"
+      },
+      "mediaPurpose": "screenplay-assist",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/shared/src/assist-tiers.ts",
+        "active": true,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "structurize-primary-and-candidate",
+        "Boards": "none",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": ["economy"],
+        "uiEligibility": ["scenario:economy-candidate", "internal:structurize"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:1048576"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "deepseek/deepseek-v4-flash",
+        "providerIdsByRoute": ["deepseek/deepseek-v4-flash"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.09,
+          "output": 0.18
+        },
+        "basis": "OpenRouter /api/v1/models 2026-07-09"
+      },
+      "proof": {
+        "staticContract": ["packages/shared/src/assist-tiers.ts", "OpenRouter /api/v1/models"],
+        "mockTests": ["apps/api/__tests__/script-assist.test.ts"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Configured slug exists in the live OpenRouter catalog."
+      }
+    },
+    {
+      "canonicalId": "google/gemini-2.5-flash-lite",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["google/gemini-2.5-flash-lite"],
+        "aliases": [],
+        "family": "google",
+        "version": "gemini-2.5-flash-lite"
+      },
+      "mediaPurpose": "screenplay-assist",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/shared/src/assist-tiers.ts",
+        "active": false,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "candidate-only",
+        "Boards": "none",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": true,
+        "tierEligibility": ["economy"],
+        "uiEligibility": ["scenario:economy-candidate"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:1048576"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "google/gemini-2.5-flash-lite",
+        "providerIdsByRoute": ["google/gemini-2.5-flash-lite"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.1,
+          "output": 0.4
+        },
+        "basis": "OpenRouter /api/v1/models 2026-07-09"
+      },
+      "proof": {
+        "staticContract": ["packages/shared/src/assist-tiers.ts", "OpenRouter /api/v1/models"],
+        "mockTests": ["apps/api/__tests__/script-assist.test.ts"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "hidden_pending_proof",
+        "reason": "Configured candidate exists live but is not currently selected by a tier."
+      }
+    },
+    {
+      "canonicalId": "qwen/qwen3.5-plus-02-15",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["qwen/qwen3.5-plus-02-15"],
+        "aliases": [],
+        "family": "qwen",
+        "version": "qwen3.5-plus-02-15"
+      },
+      "mediaPurpose": "screenplay-assist",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/shared/src/assist-tiers.ts",
+        "active": true,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "economy-primary",
+        "Boards": "none",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": ["economy"],
+        "uiEligibility": [
+          "scenario:economy-primary",
+          "internal:material-compaction",
+          "internal:thread-conspect"
+        ]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:1000000"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "qwen/qwen3.5-plus-02-15",
+        "providerIdsByRoute": ["qwen/qwen3.5-plus-02-15"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.26,
+          "output": 1.56
+        },
+        "basis": "OpenRouter catalog and paid certification 2026-07-16"
+      },
+      "proof": {
+        "staticContract": ["packages/shared/src/assist-tiers.ts", "OpenRouter /api/v1/models"],
+        "mockTests": ["apps/api/__tests__/script-assist.test.ts"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-16",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Selected after two paid 7-case x 3-sample quality rounds, a 6-call concurrency probe, and cost comparison."
+      }
+    },
+    {
+      "canonicalId": "google/gemini-3-flash-preview",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["google/gemini-3-flash-preview"],
+        "aliases": [],
+        "family": "google",
+        "version": "gemini-3-flash-preview"
+      },
+      "mediaPurpose": "screenplay-assist, prompt-drafting",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/shared/src/assist-tiers.ts",
+        "active": true,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "visible-tier-primary",
+        "Boards": "visible-prompt-studio",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": ["standard"],
+        "uiEligibility": ["scenario:standard-primary", "boards:ai-prompt"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:1048576"]
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": "openrouter",
+        "supportedFallbacks": ["openrouter"],
+        "primaryProviderId": "gemini-3-flash",
+        "providerIdsByRoute": ["gemini-3-flash", "google/gemini-3-flash-preview"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.15,
+          "output": 0.9
+        },
+        "basis": "Owner Kie pricing 2026-07-24; OpenRouter fallback documented in model catalog"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/shared/src/assist-tiers.ts",
+          "packages/providers/prompt-enhancer/src/prompt-studio.ts"
+        ],
+        "mockTests": [
+          "apps/api/__tests__/script-assist-kie.test.ts",
+          "packages/providers/prompt-enhancer/__tests__/prompt-studio.test.ts"
+        ],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Kie-primary, OpenRouter-fallback route used by Scenario and Boards Prompt Studio."
+      }
+    },
+    {
+      "canonicalId": "deepseek/deepseek-v3.2",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["deepseek/deepseek-v3.2"],
+        "aliases": [],
+        "family": "deepseek",
+        "version": "deepseek-v3.2"
+      },
+      "mediaPurpose": "screenplay-assist",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/shared/src/assist-tiers.ts",
+        "active": false,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "candidate-only",
+        "Boards": "none",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": true,
+        "tierEligibility": ["standard"],
+        "uiEligibility": ["scenario:standard-candidate"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:131072"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "deepseek/deepseek-v3.2",
+        "providerIdsByRoute": ["deepseek/deepseek-v3.2"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.2288,
+          "output": 0.3432
+        },
+        "basis": "OpenRouter /api/v1/models 2026-07-09"
+      },
+      "proof": {
+        "staticContract": ["packages/shared/src/assist-tiers.ts", "OpenRouter /api/v1/models"],
+        "mockTests": ["apps/api/__tests__/script-assist.test.ts"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "hidden_pending_proof",
+        "reason": "Configured candidate exists live but is not currently selected by a tier."
+      }
+    },
+    {
+      "canonicalId": "openai/gpt-5-mini",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["openai/gpt-5-mini"],
+        "aliases": [],
+        "family": "openai",
+        "version": "gpt-5-mini"
+      },
+      "mediaPurpose": "screenplay-assist",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/shared/src/assist-tiers.ts",
+        "active": false,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "candidate-only",
+        "Boards": "none",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": true,
+        "tierEligibility": ["standard"],
+        "uiEligibility": ["scenario:standard-candidate"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:400000"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "openai/gpt-5-mini",
+        "providerIdsByRoute": ["openai/gpt-5-mini"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.25,
+          "output": 2
+        },
+        "basis": "OpenRouter /api/v1/models 2026-07-09"
+      },
+      "proof": {
+        "staticContract": ["packages/shared/src/assist-tiers.ts", "OpenRouter /api/v1/models"],
+        "mockTests": ["apps/api/__tests__/script-assist.test.ts"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "hidden_pending_proof",
+        "reason": "Configured candidate exists live but is not currently selected by a tier."
+      }
+    },
+    {
+      "canonicalId": "anthropic/claude-sonnet-5",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["anthropic/claude-sonnet-5"],
+        "aliases": [],
+        "family": "anthropic",
+        "version": "claude-sonnet-5"
+      },
+      "mediaPurpose": "screenplay-assist",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/shared/src/assist-tiers.ts",
+        "active": true,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "visible-tier-primary",
+        "Boards": "visible-prompt-studio",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": ["max"],
+        "uiEligibility": ["scenario:max-primary", "boards:ai-prompt"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:1000000", "thinking:disabled"]
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": "openrouter",
+        "supportedFallbacks": ["openrouter"],
+        "primaryProviderId": "claude-sonnet-5",
+        "providerIdsByRoute": ["claude-sonnet-5", "anthropic/claude-sonnet-5"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.85,
+          "output": 4.275
+        },
+        "basis": "Owner Kie pricing 2026-07-26; OpenRouter fallback documented in model catalog"
+      },
+      "proof": {
+        "staticContract": ["packages/shared/src/assist-tiers.ts", "OpenRouter /api/v1/models"],
+        "mockTests": ["apps/api/__tests__/script-assist.test.ts"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Kie-primary, OpenRouter-fallback route used by Scenario and Boards Prompt Studio."
+      }
+    },
+    {
+      "canonicalId": "openai/gpt-5.6-terra",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["openai/gpt-5.6-terra"],
+        "aliases": ["gpt-5-6-terra"],
+        "family": "openai",
+        "version": "gpt-5.6-terra"
+      },
+      "mediaPurpose": "prompt-drafting",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/providers/prompt-enhancer/src/prompt-studio.ts",
+        "active": true,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "none",
+        "Boards": "visible-prompt-studio",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": [],
+        "uiEligibility": ["boards:ai-prompt"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "responses-api", "reasoning:low", "tools:none"]
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": "openrouter",
+        "supportedFallbacks": ["openrouter"],
+        "primaryProviderId": "gpt-5-6-terra",
+        "providerIdsByRoute": ["gpt-5-6-terra", "openai/gpt-5.6-terra"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.7,
+          "output": 4.2
+        },
+        "basis": "Owner Kie pricing 2026-07-26; OpenRouter fallback documented in model catalog"
+      },
+      "proof": {
+        "staticContract": ["packages/providers/prompt-enhancer/src/prompt-studio.ts"],
+        "mockTests": ["packages/providers/prompt-enhancer/__tests__/prompt-studio.test.ts"],
+        "liveSchema": {
+          "status": "not_checked",
+          "date": null,
+          "source": null
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Boards Prompt Studio Kie-primary, OpenRouter-fallback route."
+      }
+    },
+    {
+      "canonicalId": "openai/gpt-5.1",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["openai/gpt-5.1"],
+        "aliases": [],
+        "family": "openai",
+        "version": "gpt-5.1"
+      },
+      "mediaPurpose": "screenplay-assist",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/shared/src/assist-tiers.ts",
+        "active": false,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "candidate-only",
+        "Boards": "none",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": true,
+        "tierEligibility": ["max"],
+        "uiEligibility": ["scenario:max-candidate"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:400000"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "openai/gpt-5.1",
+        "providerIdsByRoute": ["openai/gpt-5.1"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 1.25,
+          "output": 10
+        },
+        "basis": "OpenRouter /api/v1/models 2026-07-09"
+      },
+      "proof": {
+        "staticContract": ["packages/shared/src/assist-tiers.ts", "OpenRouter /api/v1/models"],
+        "mockTests": ["apps/api/__tests__/script-assist.test.ts"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "hidden_pending_proof",
+        "reason": "Configured candidate exists live but is not currently selected by a tier."
+      }
+    },
+    {
+      "canonicalId": "google/gemini-2.5-pro",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["google/gemini-2.5-pro"],
+        "aliases": [],
+        "family": "google",
+        "version": "gemini-2.5-pro"
+      },
+      "mediaPurpose": "screenplay-assist",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/shared/src/assist-tiers.ts",
+        "active": false,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "candidate-only",
+        "Boards": "none",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": false,
+        "liveActive": true,
+        "tierEligibility": ["max"],
+        "uiEligibility": ["scenario:max-candidate"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:1048576"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "google/gemini-2.5-pro",
+        "providerIdsByRoute": ["google/gemini-2.5-pro"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 1.25,
+          "output": 10
+        },
+        "basis": "OpenRouter /api/v1/models 2026-07-09"
+      },
+      "proof": {
+        "staticContract": ["packages/shared/src/assist-tiers.ts", "OpenRouter /api/v1/models"],
+        "mockTests": ["apps/api/__tests__/script-assist.test.ts"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "hidden_pending_proof",
+        "reason": "Configured candidate exists live but is not currently selected by a tier."
+      }
+    },
+    {
+      "canonicalId": "openai/gpt-4o-mini",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["openai/gpt-4o-mini"],
+        "aliases": [],
+        "family": "openai",
+        "version": "gpt-4o-mini"
+      },
+      "mediaPurpose": "prompt-drafting",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/providers/prompt-enhancer/src",
+        "active": true,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "internal-helper",
+        "Scenario": "none",
+        "Boards": "visible-helper",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": [],
+        "uiEligibility": ["boards:aiprompt-gpt", "internal:prompt-enhancer"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:128000"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "openai/gpt-4o-mini",
+        "providerIdsByRoute": ["openai/gpt-4o-mini"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.15,
+          "output": 0.6
+        },
+        "basis": "OpenRouter /api/v1/models 2026-07-09"
+      },
+      "proof": {
+        "staticContract": ["packages/providers/prompt-enhancer/src", "OpenRouter /api/v1/models"],
+        "mockTests": ["packages/providers/prompt-enhancer/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Configured slug exists in the live OpenRouter catalog."
+      }
+    },
+    {
+      "canonicalId": "anthropic/claude-sonnet-4.6",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["anthropic/claude-sonnet-4.6"],
+        "aliases": [],
+        "family": "anthropic",
+        "version": "claude-sonnet-4.6"
+      },
+      "mediaPurpose": "prompt-drafting",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/providers/prompt-enhancer/src",
+        "active": true,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "none",
+        "Boards": "visible-or-helper",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": [],
+        "uiEligibility": ["boards:aiprompt-claude"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:1000000"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "anthropic/claude-sonnet-4.6",
+        "providerIdsByRoute": ["anthropic/claude-sonnet-4.6"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 3,
+          "output": 15
+        },
+        "basis": "OpenRouter /api/v1/models 2026-07-09"
+      },
+      "proof": {
+        "staticContract": ["packages/providers/prompt-enhancer/src", "OpenRouter /api/v1/models"],
+        "mockTests": ["packages/providers/prompt-enhancer/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Configured slug exists in the live OpenRouter catalog."
+      }
+    },
+    {
+      "canonicalId": "google/gemini-2.5-flash",
+      "identity": {
+        "vertovId": null,
+        "providerIds": ["google/gemini-2.5-flash"],
+        "aliases": [],
+        "family": "google",
+        "version": "gemini-2.5-flash"
+      },
+      "mediaPurpose": "prompt-drafting",
+      "source": {
+        "type": "hard-coded-text-model",
+        "path": "packages/providers/prompt-enhancer/src",
+        "active": true,
+        "kind": "text"
+      },
+      "exposure": {
+        "Generate": "none",
+        "Scenario": "none",
+        "Boards": "visible-or-helper",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": ["economy"],
+        "uiEligibility": ["scenario:economy-candidate", "boards:aiprompt-gemini"]
+      },
+      "capabilities": {
+        "inputs": ["text.prompt"],
+        "outputs": ["text"],
+        "frames": [],
+        "maxReferences": {
+          "image": 0,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 1
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": [],
+        "aspectRatios": [],
+        "extras": ["structured-output", "context:1048576"]
+      },
+      "routing": {
+        "primary": "openrouter",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "google/gemini-2.5-flash",
+        "providerIdsByRoute": ["google/gemini-2.5-flash"]
+      },
+      "cost": {
+        "billingUnit": "million_tokens",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": {
+          "input": 0.3,
+          "output": 2.5
+        },
+        "basis": "OpenRouter /api/v1/models 2026-07-09"
+      },
+      "proof": {
+        "staticContract": ["packages/providers/prompt-enhancer/src", "OpenRouter /api/v1/models"],
+        "mockTests": ["packages/providers/prompt-enhancer/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-09",
+          "source": "OpenRouter /api/v1/models"
+        },
+        "liveMediaProbe": {
+          "status": "not_applicable",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Configured slug exists in the live OpenRouter catalog."
+      }
+    },
+    {
+      "canonicalId": "seedream-5-0-pro",
+      "identity": {
+        "vertovId": "seedream-5-0-pro",
+        "providerIds": ["seedream-5-0-pro"],
+        "aliases": [],
+        "family": "seedream",
+        "version": "5.0-pro"
+      },
+      "mediaPurpose": "image-generation",
+      "source": {
+        "type": "db-seed",
+        "path": "packages/db/seed/models.ts",
+        "active": true,
+        "kind": "image"
+      },
+      "exposure": {
+        "Generate": "visible",
+        "Scenario": "none",
+        "Boards": "visible",
+        "internalOnly": false
+      },
+      "visibility": {
+        "sourceActive": true,
+        "liveActive": true,
+        "tierEligibility": "creator",
+        "uiEligibility": "eligible"
+      },
+      "capabilities": {
+        "inputs": ["text.prompt", "image.reference"],
+        "outputs": ["image.raster"],
+        "frames": [],
+        "maxReferences": {
+          "image": 10,
+          "video": 0,
+          "audio": 0
+        },
+        "outputCount": {
+          "min": 1,
+          "max": 4
+        },
+        "audio": {
+          "generate": false,
+          "reference": false
+        },
+        "durations": [],
+        "resolutions": ["1K", "2K"],
+        "aspectRatios": ["21:9", "16:9", "3:2", "4:3", "1:1", "3:4", "2:3", "9:16"],
+        "extras": []
+      },
+      "routing": {
+        "primary": "kie",
+        "configuredFallback": null,
+        "supportedFallbacks": [],
+        "primaryProviderId": "seedream-5-0-pro",
+        "providerIdsByRoute": ["seedream-5-0-pro"]
+      },
+      "cost": {
+        "billingUnit": "image",
+        "creditsPerUnit": null,
+        "providerUsdPerUnit": 0.07,
+        "basis": "kie live-verified 2026-07-16: $0.035/1K, $0.07/2K (worst SKU recorded); parametric rows 15cr/30cr pending operator activation in prod"
+      },
+      "proof": {
+        "staticContract": [
+          "packages/db/seed/models.ts",
+          "packages/providers/byteplus/src/kie-adapter.ts"
+        ],
+        "mockTests": ["packages/providers/byteplus/__tests__"],
+        "liveSchema": {
+          "status": "checked",
+          "date": "2026-07-16",
+          "source": "kie.ai published OpenAPI docs (docs.kie.ai) — schema only, no live call"
+        },
+        "liveMediaProbe": {
+          "status": "not_recorded",
+          "date": null
+        }
+      },
+      "decision": {
+        "status": "supported",
+        "reason": "Source/live identity and current adapter contract reconcile."
+      }
+    }
+  ]
+}

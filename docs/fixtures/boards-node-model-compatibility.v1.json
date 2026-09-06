@@ -1,0 +1,1799 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T22:30:00Z",
+  "generatedFrom": [
+    "docs/fixtures/boards-node-model-compatibility.v1.json",
+    "docs/fixtures/ai-model-inventory.v1.json",
+    "scripts/boards-compatibility-matrix.mjs"
+  ],
+  "controlContracts": [
+    {
+      "id": "model",
+      "appliesTo": ["image", "video"],
+      "legalUpstreamNodes": ["active /v1/models row of the matching broad kind"],
+      "defectIds": ["BRD-006", "BRD-014"],
+      "evidenceIds": ["graph-board", "jobs-api", "worker", "model-inventory"],
+      "defaultOutcome": {
+        "image": {
+          "visibleControl": "all active image and image-edit rows, with no Board-side tier filter",
+          "persistedNodeData": "generate.data.modelId",
+          "clientRequest": "top-level modelId",
+          "apiValidation": "active-row and user-tier checks occur only on submit",
+          "providerAdapter": "worker resolves providerModelId, capabilities, gateway override, and fallback from the DB row",
+          "behavior": "accepted, but model switching does not revalidate existing edges",
+          "defectIds": [],
+          "evidenceIds": []
+        },
+        "video": {
+          "visibleControl": "all active video rows, including reference variants, with no Board-side tier filter",
+          "persistedNodeData": "generate.data.modelId",
+          "clientRequest": "top-level modelId, except cast can silently replace it before submit",
+          "apiValidation": "active-row and user-tier checks occur only on submit",
+          "providerAdapter": "worker resolves providerModelId, capabilities, gateway override, and fallback from the DB row",
+          "behavior": "accepted, but model switching does not revalidate existing edges",
+          "defectIds": ["BRD-007"],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "duration",
+      "appliesTo": ["video"],
+      "legalUpstreamNodes": [],
+      "defectIds": ["BRD-022"],
+      "evidenceIds": ["node-settings", "jobs-api", "openrouter", "atlascloud"],
+      "defaultOutcome": {
+        "video": {
+          "visibleControl": "capability-derived discrete list, else static 4..15 seconds",
+          "persistedNodeData": "generate.data.durationSeconds",
+          "clientRequest": "params.duration_seconds after client clamp/snap",
+          "apiValidation": "required positive number for billing, capped only by maxDurationSeconds; no discrete-option validation",
+          "providerAdapter": "duration or duration_seconds, with an additional route-specific clamp/snap",
+          "behavior": "accepted from the Board client; a crafted API request can quote a different duration than the adapter delivers",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "resolution",
+      "appliesTo": ["video"],
+      "legalUpstreamNodes": [],
+      "defectIds": ["BRD-022"],
+      "evidenceIds": ["node-settings", "jobs-api", "openrouter", "atlascloud"],
+      "defaultOutcome": {
+        "video": {
+          "visibleControl": "capability-derived 480p/720p/1080p subset, else all three",
+          "persistedNodeData": "generate.data.videoResolution",
+          "clientRequest": "params.resolution",
+          "apiValidation": "none beyond generic params payload size",
+          "providerAdapter": "resolution or quality; unsupported tiers are silently replaced",
+          "behavior": "accepted or adapter-clamped; source/live option drift can make the visible choice false",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "aspectRatio",
+      "appliesTo": ["image", "video"],
+      "legalUpstreamNodes": [],
+      "defectIds": [],
+      "evidenceIds": ["node-settings", "openrouter", "atlascloud", "nanobanana"],
+      "defaultOutcome": {
+        "image": {
+          "visibleControl": "static image ratio selector",
+          "persistedNodeData": "generate.data.imageAspect",
+          "clientRequest": "params.size",
+          "apiValidation": "none",
+          "providerAdapter": "model-specific mapping",
+          "behavior": "must be supplied by model currentBoard.imageParameters",
+          "defectIds": ["BRD-008"],
+          "evidenceIds": []
+        },
+        "video": {
+          "visibleControl": "capability-derived ratio list plus adaptive, else static list",
+          "persistedNodeData": "generate.data.videoAspect",
+          "clientRequest": "params.aspect_ratio",
+          "apiValidation": "none beyond generic params payload size",
+          "providerAdapter": "aspect_ratio or ratio; adaptive/disallowed values are omitted or replaced",
+          "behavior": "accepted or converted to provider inference",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "quality",
+      "appliesTo": ["image"],
+      "legalUpstreamNodes": [],
+      "defectIds": ["BRD-008"],
+      "evidenceIds": ["node-settings", "openrouter", "atlascloud", "nanobanana"],
+      "defaultOutcome": {
+        "image": {
+          "visibleControl": "static 1K/2K/4K selector",
+          "persistedNodeData": "generate.data.imageQuality",
+          "clientRequest": "params.quality",
+          "apiValidation": "none",
+          "providerAdapter": "model-specific mapping",
+          "behavior": "must be supplied by model currentBoard.imageParameters",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "count",
+      "appliesTo": ["image", "video"],
+      "legalUpstreamNodes": [],
+      "defectIds": [],
+      "evidenceIds": [
+        "graph-board",
+        "node-settings",
+        "jobs-api",
+        "openrouter",
+        "atlascloud",
+        "nanobanana"
+      ],
+      "defaultOutcome": {
+        "image": {
+          "visibleControl": "tries stepper 1..4",
+          "persistedNodeData": "generate.data.count",
+          "clientRequest": "params.n",
+          "apiValidation": "n is used for billing but is not bounded by a model schema",
+          "providerAdapter": "normally fan-out/max_images/n",
+          "behavior": "accepted",
+          "defectIds": [],
+          "evidenceIds": []
+        },
+        "video": {
+          "visibleControl": "tries stepper 1..4",
+          "persistedNodeData": "generate.data.count",
+          "clientRequest": "count is omitted from video params",
+          "apiValidation": "none",
+          "providerAdapter": "one video job/output",
+          "behavior": "ignored",
+          "defectIds": ["BRD-009"],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "seed",
+      "appliesTo": ["image", "video"],
+      "legalUpstreamNodes": [],
+      "defectIds": ["BRD-011"],
+      "evidenceIds": ["graph-board", "node-settings", "openrouter", "atlascloud"],
+      "defaultOutcome": {
+        "image": {
+          "visibleControl": "not exposed",
+          "persistedNodeData": "no GenerateData field",
+          "clientRequest": "not compiled",
+          "apiValidation": "generic params would accept a crafted seed",
+          "providerAdapter": "some adapters forward numeric seed",
+          "behavior": "unimplemented",
+          "defectIds": [],
+          "evidenceIds": []
+        },
+        "video": {
+          "visibleControl": "not exposed",
+          "persistedNodeData": "no GenerateData field",
+          "clientRequest": "not compiled",
+          "apiValidation": "generic params would accept a crafted seed",
+          "providerAdapter": "some adapters forward numeric seed",
+          "behavior": "unimplemented",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "audioGeneration",
+      "appliesTo": ["video"],
+      "legalUpstreamNodes": [],
+      "defectIds": [],
+      "evidenceIds": ["graph-board", "node-settings", "openrouter", "atlascloud", "nanobanana"],
+      "defaultOutcome": {
+        "video": {
+          "visibleControl": "audio switch",
+          "persistedNodeData": "generate.data.generateAudio",
+          "clientRequest": "params.generate_audio",
+          "apiValidation": "none",
+          "providerAdapter": "model-specific mapping",
+          "behavior": "must be supplied by model currentBoard.audioGeneration",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "audioReference",
+      "appliesTo": ["video"],
+      "legalUpstreamNodes": [],
+      "defectIds": ["BRD-011"],
+      "evidenceIds": [
+        "graph-board",
+        "node-settings",
+        "gateway-routing",
+        "openrouter",
+        "atlascloud"
+      ],
+      "defaultOutcome": {
+        "video": {
+          "visibleControl": "not exposed; no audio node or port exists",
+          "persistedNodeData": "none",
+          "clientRequest": "buildJobParams supports audios internally, but GraphBoard never supplies them",
+          "apiValidation": "generic params would accept audioUrls",
+          "providerAdapter": "reference adapters can carry up to three audio references",
+          "behavior": "unimplemented",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "negativePrompt",
+      "appliesTo": ["image", "video"],
+      "legalUpstreamNodes": [],
+      "defectIds": ["BRD-011", "INV-007"],
+      "evidenceIds": ["graph-board", "node-settings", "openrouter", "evolink", "model-inventory"],
+      "defaultOutcome": {
+        "image": {
+          "visibleControl": "not exposed",
+          "persistedNodeData": "no GenerateData field",
+          "clientRequest": "not compiled",
+          "apiValidation": "generic params would accept negative_prompt",
+          "providerAdapter": "only selected adapters/models forward it",
+          "behavior": "unimplemented",
+          "defectIds": [],
+          "evidenceIds": []
+        },
+        "video": {
+          "visibleControl": "not exposed",
+          "persistedNodeData": "no GenerateData field",
+          "clientRequest": "not compiled",
+          "apiValidation": "generic params would accept negative_prompt",
+          "providerAdapter": "OpenRouter video serializer does not forward it",
+          "behavior": "unimplemented",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "shotGrammar",
+      "appliesTo": ["image", "video"],
+      "legalUpstreamNodes": [],
+      "defectIds": [],
+      "evidenceIds": ["graph-board", "node-settings", "openrouter", "atlascloud", "nanobanana"],
+      "defaultOutcome": {
+        "image": {
+          "visibleControl": "shot size, lens, light, color temperature, genre, energy, and camera movement controls",
+          "persistedNodeData": "generate.data.shot",
+          "clientRequest": "natural-language prefix in prompt plus params.shotGrammar metadata",
+          "apiValidation": "no schema for shotGrammar; prompt length only",
+          "providerAdapter": "natural-language prompt is consumed; metadata is ignored intentionally for future routing",
+          "behavior": "converted to prompt text",
+          "defectIds": [],
+          "evidenceIds": []
+        },
+        "video": {
+          "visibleControl": "shot size, lens, light, color temperature, genre, energy, and camera movement controls",
+          "persistedNodeData": "generate.data.shot",
+          "clientRequest": "natural-language prefix in prompt plus params.shotGrammar metadata",
+          "apiValidation": "no schema for shotGrammar; prompt length only",
+          "providerAdapter": "natural-language prompt is consumed; metadata is ignored intentionally for future routing",
+          "behavior": "converted to prompt text",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "id": "imageReference",
+      "appliesTo": ["image", "video"],
+      "legalUpstreamNodes": ["media:image", "cast bundle", "generate:image"],
+      "defectIds": [],
+      "evidenceIds": [
+        "graph-board",
+        "node-settings",
+        "ref-ports",
+        "openrouter",
+        "atlascloud",
+        "nanobanana"
+      ],
+      "defaultOutcome": {}
+    },
+    {
+      "id": "videoReference",
+      "appliesTo": ["video"],
+      "legalUpstreamNodes": ["media:video", "cast:location motion reference"],
+      "defectIds": [],
+      "evidenceIds": [
+        "graph-board",
+        "node-settings",
+        "gateway-routing",
+        "openrouter",
+        "atlascloud"
+      ],
+      "defaultOutcome": {}
+    },
+    {
+      "id": "gatewayReferenceRouting",
+      "appliesTo": ["video"],
+      "legalUpstreamNodes": ["video/audio reference presence", "development gateway policy"],
+      "defectIds": [],
+      "evidenceIds": [
+        "graph-board",
+        "gateway-routing",
+        "jobs-api",
+        "worker",
+        "openrouter",
+        "atlascloud"
+      ],
+      "defaultOutcome": {
+        "video": {
+          "visibleControl": "automatic routing plus development-only policy widget",
+          "persistedNodeData": "policy in localStorage, not board state",
+          "clientRequest": "provider=openrouter|atlascloud",
+          "apiValidation": "may be superseded by model gateway metadata",
+          "providerAdapter": "resolved by worker",
+          "behavior": "not applicable without typed motion/audio references",
+          "defectIds": [],
+          "evidenceIds": []
+        }
+      }
+    }
+  ],
+  "scope": {
+    "product": "Boards",
+    "boardDocumentVersion": null,
+    "modelPopulation": "every source-active image, image-edit, and video row",
+    "ignoredInputPolicy": "A current ignored input is an audit defect, never an acceptable target behavior."
+  },
+  "evidence": {
+    "graph-board": ["apps/web/app/boards/[id]/GraphBoard.tsx"],
+    "edge-payload": ["apps/web/lib/edge-payload.ts", "apps/web/lib/edge-payload.test.ts"],
+    "node-settings": ["apps/web/lib/node-settings.ts", "apps/web/lib/node-settings.test.ts"],
+    "ref-ports": ["apps/web/lib/ref-ports.ts", "apps/web/lib/ref-ports.test.ts"],
+    "cast": ["apps/web/lib/cast.ts", "apps/web/lib/cast.test.ts"],
+    "gateway-routing": ["apps/web/lib/gateway-routing.ts", "apps/web/lib/gateway-routing.test.ts"],
+    "board-browser": ["apps/web/e2e/board-graph.spec.ts"],
+    "boards-api": ["apps/api/src/boards.ts", "apps/api/__tests__/boards-rev.test.ts"],
+    "jobs-api": [
+      "apps/api/src/jobs-routes.ts",
+      "apps/api/src/units.ts",
+      "apps/api/__tests__/jobs-routes.test.ts",
+      "apps/api/__tests__/units-for-model.test.ts"
+    ],
+    "worker": ["apps/worker/src/job-runner.ts", "apps/worker/src/lifecycle.integration.test.ts"],
+    "openrouter": [
+      "packages/providers/byteplus/src/openrouter-adapter.ts",
+      "packages/providers/byteplus/__tests__/openrouter-adapter.test.ts"
+    ],
+    "atlascloud": [
+      "packages/providers/byteplus/src/atlascloud-adapter.ts",
+      "packages/providers/byteplus/__tests__/atlascloud-adapter.test.ts"
+    ],
+    "evolink": [
+      "packages/providers/byteplus/src/evolink-adapter.ts",
+      "packages/providers/byteplus/__tests__/evolink-adapter.test.ts"
+    ],
+    "nanobanana": [
+      "packages/providers/byteplus/src/nano-banana-adapter.ts",
+      "packages/providers/byteplus/src/laozhang-adapter.ts",
+      "packages/providers/byteplus/src/kie-adapter.ts",
+      "packages/providers/byteplus/__tests__/laozhang-adapter.test.ts",
+      "packages/providers/byteplus/__tests__/kie-adapter.test.ts"
+    ],
+    "model-inventory": [
+      "docs/fixtures/ai-model-inventory.v1.json",
+      "apps/api/__tests__/ai-model-inventory.test.ts"
+    ]
+  },
+  "nodeContracts": [
+    {
+      "id": "prompt@unversioned",
+      "operation": "Persist editable generation-prompt text.",
+      "inputPorts": [],
+      "outputPorts": ["text:text.prompt; cardinality=fan-out; exists=always"],
+      "legalUpstreamNodes": [],
+      "legalDownstreamNodes": [
+        "generate:image@unversioned.prompt",
+        "generate:video@unversioned.prompt"
+      ],
+      "modelRequirement": "Any Board-compatible image or video model accepting text.prompt.",
+      "parameterMapping": {
+        "persisted": "board.state.nodes[].data.text",
+        "client": "top-level POST /v1/jobs prompt; a non-empty wired value wins over generate.data.prompt",
+        "api": "prompt string 1..8000; whitespace is accepted",
+        "adapter": "WorkflowSpec.prompt"
+      },
+      "unsupportedBehavior": "Empty text is accepted as a wire; run either falls back to inline text or proceeds reference-only.",
+      "defectIds": ["BRD-013"],
+      "evidenceIds": ["graph-board", "jobs-api", "board-browser"]
+    },
+    {
+      "id": "aiprompt@unversioned",
+      "operation": "Draft generation-prompt text from a brief through one of three helper-model labels.",
+      "inputPorts": [],
+      "outputPorts": [
+        "text:text.prompt; cardinality=fan-out; exists=only after a successful draft"
+      ],
+      "legalUpstreamNodes": [],
+      "legalDownstreamNodes": [
+        "generate:image@unversioned.prompt",
+        "generate:video@unversioned.prompt"
+      ],
+      "modelRequirement": "Explicit Claude, GPT, or Gemini helper slug plus any downstream media model accepting text.prompt.",
+      "parameterMapping": {
+        "persisted": "brief, text?, model?, mode?, status?, view?",
+        "client": "POST /v1/prompt-studio/draft, then data.text becomes the downstream job prompt",
+        "api": "prompt-studio validates the helper request; /v1/jobs sees only the drafted text",
+        "adapter": "helper adapter first, then WorkflowSpec.prompt for media generation"
+      },
+      "unsupportedBehavior": "A connection is valid before text exists; edge typing and drag-to-empty offers omit aiprompt even though run reads it as text.",
+      "defectIds": ["BRD-001", "BRD-013"],
+      "evidenceIds": ["graph-board", "edge-payload", "board-browser"]
+    },
+    {
+      "id": "note@unversioned",
+      "operation": "Non-executable canvas annotation.",
+      "inputPorts": [],
+      "outputPorts": [],
+      "legalUpstreamNodes": [],
+      "legalDownstreamNodes": [],
+      "modelRequirement": "none",
+      "parameterMapping": {
+        "persisted": "board.state.nodes[].data.text",
+        "client": "none",
+        "api": "opaque board state only",
+        "adapter": "none"
+      },
+      "unsupportedBehavior": "Connections are rejected because no handles exist.",
+      "defectIds": [],
+      "evidenceIds": ["graph-board", "boards-api", "board-browser"]
+    },
+    {
+      "id": "media:image@unversioned",
+      "operation": "Hold one raster reference URL.",
+      "inputPorts": [],
+      "outputPorts": [
+        "image:image.reference; cardinality=fan-out; exists=visually before url is ready"
+      ],
+      "legalUpstreamNodes": [],
+      "legalDownstreamNodes": [
+        "generate:image@unversioned.images[i] when selected model accepts image references",
+        "generate:video@unversioned frame/reference input when selected model accepts it"
+      ],
+      "modelRequirement": "edit/reference capability for image models; first/last-frame or reference capability for video models.",
+      "parameterMapping": {
+        "persisted": "url + mediaKind=image",
+        "client": "params.imageUrls after slot sorting, grouping, de-duplication, and slicing",
+        "api": "params is opaque; only payload size and URL safety are checked",
+        "adapter": "image content, frame_images, input_references, image_urls, images, image, or last_image by route"
+      },
+      "unsupportedBehavior": "Current validator accepts empty and model-incompatible image sources; later compiler/adapter may ignore, truncate, or reject them.",
+      "defectIds": ["BRD-002", "BRD-013"],
+      "evidenceIds": [
+        "graph-board",
+        "node-settings",
+        "jobs-api",
+        "openrouter",
+        "atlascloud",
+        "nanobanana"
+      ]
+    },
+    {
+      "id": "media:video@unversioned",
+      "operation": "Hold one motion-reference video URL.",
+      "inputPorts": [],
+      "outputPorts": [
+        "video:video.motionReference; cardinality=fan-out; exists=when mediaKind=video"
+      ],
+      "legalUpstreamNodes": [],
+      "legalDownstreamNodes": [
+        "generate:video@unversioned reference input only when the selected model and route accept video references"
+      ],
+      "modelRequirement": "video-reference capability and a route carrying typed video references.",
+      "parameterMapping": {
+        "persisted": "url + mediaKind=video",
+        "client": "params.videoUrls only for provider ids matching /reference/",
+        "api": "params is opaque; provider override may be superseded by model gateway metadata",
+        "adapter": "input_references.video_url, reference_videos, or video_urls"
+      },
+      "unsupportedBehavior": "The node renders video but its uploader accepts image/* only; generic video targets accept the edge and then drop it.",
+      "defectIds": ["BRD-003", "BRD-016"],
+      "evidenceIds": ["graph-board", "gateway-routing", "jobs-api", "openrouter", "atlascloud"]
+    },
+    {
+      "id": "cast:character@unversioned",
+      "operation": "Named identity pack of one to four stills.",
+      "inputPorts": [],
+      "outputPorts": [
+        "cast:cast.identityPack; visually typed as image; exists=always but manual connection requires at least one still"
+      ],
+      "legalUpstreamNodes": [],
+      "legalDownstreamNodes": [
+        "generate:image@unversioned reference input",
+        "generate:video@unversioned reference-model input"
+      ],
+      "modelRequirement": "image-reference model, or video reference-to-video model with up to nine stills.",
+      "parameterMapping": {
+        "persisted": "castKind=character, name, imageUrls[0..4], characterId?",
+        "client": "name becomes prompt prefix; stills lead params.imageUrls",
+        "api": "semantic role is lost inside opaque params",
+        "adapter": "ordered image-reference array without per-reference roles"
+      },
+      "unsupportedBehavior": "A video target silently auto-switches to the cheapest /reference/ model after displayed cost is calculated.",
+      "defectIds": ["BRD-007"],
+      "evidenceIds": ["graph-board", "cast", "node-settings", "board-browser"]
+    },
+    {
+      "id": "cast:location@unversioned",
+      "operation": "Named location pack of one to four stills plus an optional motion-reference video.",
+      "inputPorts": [],
+      "outputPorts": [
+        "cast:cast.locationPack; visually typed as image; optional video is hidden inside the bundle"
+      ],
+      "legalUpstreamNodes": [],
+      "legalDownstreamNodes": [
+        "generate:image@unversioned reference input for stills only",
+        "generate:video@unversioned reference-model input for stills and motion"
+      ],
+      "modelRequirement": "image-reference capability for stills; video-reference capability for motion.",
+      "parameterMapping": {
+        "persisted": "castKind=location, name, imageUrls[0..4], videoUrl?",
+        "client": "name becomes prompt prefix; stills become imageUrls; motion becomes videoUrls only for /reference/ models",
+        "api": "semantic role is lost inside opaque params",
+        "adapter": "ordered still references plus optional typed motion reference"
+      },
+      "unsupportedBehavior": "The same bundle is accepted by image generation, where its motion reference is silently ignored.",
+      "defectIds": ["BRD-019", "BRD-007"],
+      "evidenceIds": ["graph-board", "cast", "node-settings", "gateway-routing"]
+    },
+    {
+      "id": "generate:image@unversioned",
+      "operation": "Compile and execute an image-generation/edit job.",
+      "inputPorts": [
+        "prompt:text.prompt; UI says required; cardinality=0..1 at runtime",
+        "images[i]:image.reference or cast bundle; UI cardinality=0..14 regardless of selected model"
+      ],
+      "outputPorts": [
+        "image:image.generated; cardinality=fan-out; lazy before run and concrete after success"
+      ],
+      "legalUpstreamNodes": [
+        "prompt",
+        "aiprompt with drafted text",
+        "media:image with a URL",
+        "cast with stills when model accepts references",
+        "generate:image"
+      ],
+      "legalDownstreamNodes": [
+        "generate:image@unversioned.images[i]",
+        "generate:video@unversioned frame/reference input"
+      ],
+      "modelRequirement": "kind=image or image-edit; reference inputs additionally require an edit/reference contract.",
+      "parameterMapping": {
+        "persisted": "GenerateData + NodeSettings inside opaque board state",
+        "client": "modelId, prompt, params={size,quality,n,imageUrls,shotGrammar?}",
+        "api": "model active/tier and generic params size only; n affects billing",
+        "adapter": "route-specific image request"
+      },
+      "unsupportedBehavior": "Model-specific reference limits and image parameter schemas are not enforced before Run.",
+      "defectIds": ["BRD-002", "BRD-008", "BRD-011", "BRD-012", "BRD-022"],
+      "evidenceIds": [
+        "graph-board",
+        "node-settings",
+        "boards-api",
+        "jobs-api",
+        "worker",
+        "openrouter",
+        "atlascloud",
+        "nanobanana"
+      ]
+    },
+    {
+      "id": "generate:video@unversioned",
+      "operation": "Compile and execute a video-generation job.",
+      "inputPorts": [
+        "prompt:text.prompt; UI says required; cardinality=0..1 at runtime",
+        "images[i]:visually image.reference; UI cardinality=0..2 regardless of selected model"
+      ],
+      "outputPorts": [
+        "video:video.generated; cardinality=fan-out visually, but no legal reference consumer in the current validator after success"
+      ],
+      "legalUpstreamNodes": [
+        "prompt",
+        "aiprompt with drafted text",
+        "media:image when frame/reference capable",
+        "media:video only when video-reference capable",
+        "cast only through a reference model",
+        "generate:image when frame/reference capable"
+      ],
+      "legalDownstreamNodes": [],
+      "modelRequirement": "kind=video plus per-input frame/reference/audio capabilities.",
+      "parameterMapping": {
+        "persisted": "GenerateData + NodeSettings inside opaque board state",
+        "client": "modelId, prompt, params={duration_seconds,resolution,aspect_ratio,generate_audio,return_last_frame,imageUrls?,videoUrls?,shotGrammar?}",
+        "api": "duration is required only for billing; other params remain opaque",
+        "adapter": "route-specific video request; worker may extract a last frame"
+      },
+      "unsupportedBehavior": "Video count is ignored; model-specific inputs are accepted too broadly; pre-run video outputs can be serialized as image URLs; cycles are executable-looking but unsafe.",
+      "defectIds": ["BRD-002", "BRD-004", "BRD-005", "BRD-009", "BRD-010", "BRD-015", "BRD-022"],
+      "evidenceIds": [
+        "graph-board",
+        "node-settings",
+        "ref-ports",
+        "jobs-api",
+        "worker",
+        "openrouter",
+        "atlascloud"
+      ]
+    }
+  ],
+  "connectionContracts": [
+    {
+      "id": "prompt-to-image",
+      "sourcePort": "prompt.text:text.prompt",
+      "targetNode": "generate:image@unversioned",
+      "targetPort": "prompt:text.prompt; 0..1",
+      "legalUpstreamNodes": ["prompt"],
+      "modelRequirement": "kind=image|image-edit",
+      "parameterMapping": "data.text -> POST prompt -> WorkflowSpec.prompt",
+      "currentBehavior": "accepted",
+      "defectIds": ["BRD-013"],
+      "evidenceIds": ["graph-board", "jobs-api"]
+    },
+    {
+      "id": "prompt-to-video",
+      "sourcePort": "prompt.text:text.prompt",
+      "targetNode": "generate:video@unversioned",
+      "targetPort": "prompt:text.prompt; 0..1",
+      "legalUpstreamNodes": ["prompt"],
+      "modelRequirement": "kind=video",
+      "parameterMapping": "data.text -> POST prompt -> WorkflowSpec.prompt",
+      "currentBehavior": "accepted",
+      "defectIds": ["BRD-013"],
+      "evidenceIds": ["graph-board", "jobs-api"]
+    },
+    {
+      "id": "aiprompt-to-image",
+      "sourcePort": "aiprompt.text:text.prompt",
+      "targetNode": "generate:image@unversioned",
+      "targetPort": "prompt:text.prompt; 0..1",
+      "legalUpstreamNodes": ["aiprompt after successful draft"],
+      "modelRequirement": "helper slug resolves and downstream kind=image|image-edit",
+      "parameterMapping": "draft response -> data.text -> POST prompt",
+      "currentBehavior": "accepted before output exists; edge payload type is missing",
+      "defectIds": ["BRD-001", "BRD-013"],
+      "evidenceIds": ["graph-board", "edge-payload", "board-browser"]
+    },
+    {
+      "id": "aiprompt-to-video",
+      "sourcePort": "aiprompt.text:text.prompt",
+      "targetNode": "generate:video@unversioned",
+      "targetPort": "prompt:text.prompt; 0..1",
+      "legalUpstreamNodes": ["aiprompt after successful draft"],
+      "modelRequirement": "helper slug resolves and downstream kind=video",
+      "parameterMapping": "draft response -> data.text -> POST prompt",
+      "currentBehavior": "accepted before output exists; edge payload type is missing",
+      "defectIds": ["BRD-001", "BRD-013"],
+      "evidenceIds": ["graph-board", "edge-payload", "board-browser"]
+    },
+    {
+      "id": "media-image-to-image",
+      "sourcePort": "media:image.out:image.reference",
+      "targetNode": "generate:image@unversioned",
+      "targetPort": "images[i]:image.reference; UI 0..14",
+      "legalUpstreamNodes": ["media:image with non-empty URL"],
+      "modelRequirement": "image edit/reference capability with provider-specific cap",
+      "parameterMapping": "url -> params.imageUrls -> provider reference content",
+      "currentBehavior": "accepted for every image model; excess or unsupported refs are ignored, truncated, or provider-rejected",
+      "defectIds": ["BRD-002"],
+      "evidenceIds": ["graph-board", "node-settings", "openrouter", "nanobanana"]
+    },
+    {
+      "id": "media-image-to-video",
+      "sourcePort": "media:image.out:image.reference",
+      "targetNode": "generate:video@unversioned",
+      "targetPort": "images[i]:image.frame|image.reference; UI 0..2",
+      "legalUpstreamNodes": ["media:image with non-empty URL"],
+      "modelRequirement": "first/last-frame or image-reference capability",
+      "parameterMapping": "url -> params.imageUrls -> frame_images or reference arrays",
+      "currentBehavior": "accepted for every video model; compiler later drops unsupported or excess inputs",
+      "defectIds": ["BRD-002", "BRD-005"],
+      "evidenceIds": ["graph-board", "node-settings", "openrouter", "atlascloud"]
+    },
+    {
+      "id": "media-video-to-video",
+      "sourcePort": "media:video.out:video.motionReference",
+      "targetNode": "generate:video@unversioned",
+      "targetPort": "images[i]:visually image.reference",
+      "legalUpstreamNodes": ["media:video with non-empty URL only for video-reference models"],
+      "modelRequirement": "provider video-reference capability",
+      "parameterMapping": "url -> params.videoUrls only when selected provider id matches /reference/",
+      "currentBehavior": "accepted for all video models; ignored for ordinary frame/text models",
+      "defectIds": ["BRD-003", "BRD-016"],
+      "evidenceIds": ["graph-board", "node-settings", "gateway-routing"]
+    },
+    {
+      "id": "media-video-to-image",
+      "sourcePort": "media:video.out:video.motionReference",
+      "targetNode": "generate:image@unversioned",
+      "targetPort": "images[i]:image.reference",
+      "legalUpstreamNodes": [],
+      "modelRequirement": "none in the current image catalog",
+      "parameterMapping": "none",
+      "currentBehavior": "rejected",
+      "defectIds": [],
+      "evidenceIds": ["graph-board"]
+    },
+    {
+      "id": "cast-character-to-image",
+      "sourcePort": "cast:character.out:cast.identityPack",
+      "targetNode": "generate:image@unversioned",
+      "targetPort": "images[i]:image.reference",
+      "legalUpstreamNodes": ["ready cast:character"],
+      "modelRequirement": "image-reference capability and sufficient cap for the expanded pack",
+      "parameterMapping": "name -> prompt prefix; 1..4 stills -> params.imageUrls",
+      "currentBehavior": "accepted for every image model; one visual slot can expand beyond the provider cap",
+      "defectIds": ["BRD-002"],
+      "evidenceIds": ["graph-board", "cast"]
+    },
+    {
+      "id": "cast-character-to-video",
+      "sourcePort": "cast:character.out:cast.identityPack",
+      "targetNode": "generate:video@unversioned",
+      "targetPort": "images[i]:cast.identityPack",
+      "legalUpstreamNodes": ["ready cast:character"],
+      "modelRequirement": "reference-to-video with image reference cap >= expanded pack",
+      "parameterMapping": "name -> prompt prefix; stills -> params.imageUrls",
+      "currentBehavior": "accepted broadly; runner silently replaces a non-reference selected model before submit",
+      "defectIds": ["BRD-007"],
+      "evidenceIds": ["graph-board", "cast", "node-settings"]
+    },
+    {
+      "id": "cast-location-to-image",
+      "sourcePort": "cast:location.out:cast.locationPack",
+      "targetNode": "generate:image@unversioned",
+      "targetPort": "images[i]:image.reference",
+      "legalUpstreamNodes": ["ready cast:location without a required motion semantic"],
+      "modelRequirement": "image-reference capability",
+      "parameterMapping": "name -> prompt prefix; stills -> params.imageUrls; videoUrl has no mapping",
+      "currentBehavior": "accepted; optional motion reference is ignored",
+      "defectIds": ["BRD-019"],
+      "evidenceIds": ["graph-board", "cast", "node-settings"]
+    },
+    {
+      "id": "cast-location-to-video",
+      "sourcePort": "cast:location.out:cast.locationPack",
+      "targetNode": "generate:video@unversioned",
+      "targetPort": "images[i]:cast.locationPack",
+      "legalUpstreamNodes": ["ready cast:location"],
+      "modelRequirement": "reference-to-video; video-reference capability when videoUrl is present",
+      "parameterMapping": "name -> prompt; stills -> imageUrls; motion -> videoUrls",
+      "currentBehavior": "runner silently replaces non-reference selected model; gateway selection may be overridden",
+      "defectIds": ["BRD-007", "BRD-016"],
+      "evidenceIds": ["graph-board", "cast", "gateway-routing", "jobs-api"]
+    },
+    {
+      "id": "generated-image-to-image",
+      "sourcePort": "generate:image.out:image.generated",
+      "targetNode": "generate:image@unversioned",
+      "targetPort": "images[i]:image.reference",
+      "legalUpstreamNodes": ["generate:image"],
+      "modelRequirement": "downstream image-reference capability",
+      "parameterMapping": "upstream result URL -> params.imageUrls; upstream runs first when needed",
+      "currentBehavior": "accepted; cycles are not rejected",
+      "defectIds": ["BRD-002", "BRD-015"],
+      "evidenceIds": ["graph-board", "node-settings"]
+    },
+    {
+      "id": "generated-image-to-video",
+      "sourcePort": "generate:image.out:image.generated",
+      "targetNode": "generate:video@unversioned",
+      "targetPort": "images[i]:image.frame|image.reference",
+      "legalUpstreamNodes": ["generate:image"],
+      "modelRequirement": "downstream first/last-frame or image-reference capability",
+      "parameterMapping": "upstream result URL -> params.imageUrls; upstream runs first when needed",
+      "currentBehavior": "accepted for every video model; unsupported refs may be ignored",
+      "defectIds": ["BRD-002", "BRD-015"],
+      "evidenceIds": ["graph-board", "node-settings"]
+    },
+    {
+      "id": "generated-video-to-image",
+      "sourcePort": "generate:video.out:video.generated",
+      "targetNode": "generate:image@unversioned",
+      "targetPort": "images[i]:image.reference",
+      "legalUpstreamNodes": [],
+      "modelRequirement": "none",
+      "parameterMapping": "incorrect current path treats the returned video URL as params.imageUrls",
+      "currentBehavior": "rejected only after resultKind=video; incorrectly accepted before run",
+      "defectIds": ["BRD-004", "BRD-015"],
+      "evidenceIds": ["graph-board", "edge-payload"]
+    },
+    {
+      "id": "generated-video-to-video",
+      "sourcePort": "generate:video.out:video.generated",
+      "targetNode": "generate:video@unversioned",
+      "targetPort": "images[i]:video.motionReference",
+      "legalUpstreamNodes": [],
+      "modelRequirement": "would require explicit video-reference semantics not represented by generate output",
+      "parameterMapping": "incorrect current pre-run path treats the returned video URL as params.imageUrls",
+      "currentBehavior": "rejected only after resultKind=video; incorrectly accepted before run",
+      "defectIds": ["BRD-004", "BRD-015"],
+      "evidenceIds": ["graph-board", "edge-payload"]
+    }
+  ],
+  "modelCompatibility": [
+    {
+      "id": "seedance-2-0",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.frame.first+last",
+        "providerImageMax": 2,
+        "providerVideoMax": 0,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "slot order compacted to first then last frame",
+          "clientMax": 2,
+          "providerMax": 2,
+          "providerField": "OpenRouter frame_images[].frame_type",
+          "behavior": "accepted, but an isolated slot 1 is converted to first frame",
+          "defectIds": ["BRD-005"],
+          "evidenceIds": ["node-settings", "openrouter"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none for non-reference model",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003"],
+          "evidenceIds": ["node-settings"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter generate_audio",
+          "behavior": "accepted",
+          "defectIds": [],
+          "evidenceIds": ["openrouter"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-003", "BRD-005", "BRD-009", "INV-007"]
+    },
+    {
+      "id": "seedance-2-0-fast",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.frame.first+last",
+        "providerImageMax": 2,
+        "providerVideoMax": 0,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "slot order compacted to first then last frame",
+          "clientMax": 2,
+          "providerMax": 2,
+          "providerField": "OpenRouter frame_images[].frame_type",
+          "behavior": "accepted, but an isolated slot 1 is converted to first frame",
+          "defectIds": ["BRD-005"],
+          "evidenceIds": ["node-settings", "openrouter"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none for non-reference model",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003"],
+          "evidenceIds": ["node-settings"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter generate_audio",
+          "behavior": "accepted",
+          "defectIds": [],
+          "evidenceIds": ["openrouter"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-003", "BRD-005", "BRD-009", "INV-002", "INV-007"]
+    },
+    {
+      "id": "seedance-2-0-reference-to-video",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 9,
+        "providerVideoMax": 3,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "generic ordered references; cast can expand one slot to four stills",
+          "clientMax": 9,
+          "providerMax": 9,
+          "providerField": "OpenRouter input_references or AtlasCloud reference_images",
+          "behavior": "accepted, but the UI exposes only two generic source slots",
+          "defectIds": ["BRD-002"],
+          "evidenceIds": ["node-settings", "openrouter", "atlascloud"]
+        },
+        "videoInput": {
+          "clientMax": 3,
+          "providerMax": 3,
+          "providerField": "OpenRouter input_references.video_url or AtlasCloud reference_videos",
+          "behavior": "accepted, but carried through a visually image-typed port",
+          "defectIds": ["BRD-002"],
+          "evidenceIds": ["openrouter", "atlascloud"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter or AtlasCloud generate_audio",
+          "behavior": "accepted",
+          "defectIds": [],
+          "evidenceIds": ["openrouter", "atlascloud"]
+        },
+        "gatewayRouting": {
+          "providerAdapter": "source capabilities.forceGateway=openrouter can override the Board's provider=atlascloud selection; live DB drift differs",
+          "behavior": "wrong request mapping",
+          "defectIds": ["BRD-016", "INV-005", "INV-007"],
+          "evidenceIds": ["gateway-routing", "jobs-api", "openrouter", "atlascloud"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-007", "BRD-009", "BRD-016", "INV-005", "INV-007"]
+    },
+    {
+      "id": "seedance-2-0-fast-reference-to-video",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 9,
+        "providerVideoMax": 3,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "generic ordered references; cast can expand one slot to four stills",
+          "clientMax": 9,
+          "providerMax": 9,
+          "providerField": "OpenRouter input_references or AtlasCloud reference_images",
+          "behavior": "accepted, but the UI exposes only two generic source slots",
+          "defectIds": ["BRD-002"],
+          "evidenceIds": ["node-settings", "openrouter", "atlascloud"]
+        },
+        "videoInput": {
+          "clientMax": 3,
+          "providerMax": 3,
+          "providerField": "OpenRouter input_references.video_url or AtlasCloud reference_videos",
+          "behavior": "accepted, but carried through a visually image-typed port",
+          "defectIds": ["BRD-002"],
+          "evidenceIds": ["openrouter", "atlascloud"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter or AtlasCloud generate_audio",
+          "behavior": "accepted",
+          "defectIds": [],
+          "evidenceIds": ["openrouter", "atlascloud"]
+        },
+        "gatewayRouting": {
+          "providerAdapter": "source capabilities.forceGateway=openrouter can override the Board's provider=atlascloud selection; live DB drift differs",
+          "behavior": "wrong request mapping",
+          "defectIds": ["BRD-016", "INV-005", "INV-007"],
+          "evidenceIds": ["gateway-routing", "jobs-api", "openrouter", "atlascloud"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-007", "BRD-009", "BRD-016", "INV-002", "INV-005", "INV-007"]
+    },
+    {
+      "id": "veo-3-1-fast",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.frame.first+last",
+        "providerImageMax": 2,
+        "providerVideoMax": 0,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "slot order compacted to first then last frame",
+          "clientMax": 2,
+          "providerMax": 2,
+          "providerField": "OpenRouter frame_images[].frame_type",
+          "behavior": "accepted, but an isolated slot 1 is converted to first frame",
+          "defectIds": ["BRD-005"],
+          "evidenceIds": ["openrouter"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003"],
+          "evidenceIds": ["node-settings"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter generate_audio",
+          "behavior": "accepted",
+          "defectIds": [],
+          "evidenceIds": ["openrouter"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-003", "BRD-005", "BRD-009", "INV-006"]
+    },
+    {
+      "id": "veo-3-1",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.frame.first+last",
+        "providerImageMax": 2,
+        "providerVideoMax": 0,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "slot order compacted to first then last frame",
+          "clientMax": 2,
+          "providerMax": 2,
+          "providerField": "OpenRouter frame_images[].frame_type",
+          "behavior": "accepted, but an isolated slot 1 is converted to first frame",
+          "defectIds": ["BRD-005"],
+          "evidenceIds": ["openrouter"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003"],
+          "evidenceIds": ["node-settings"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter generate_audio",
+          "behavior": "accepted",
+          "defectIds": [],
+          "evidenceIds": ["openrouter"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-003", "BRD-005", "BRD-009"]
+    },
+    {
+      "id": "veo-3-1-lite",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.frame.first+last",
+        "providerImageMax": 2,
+        "providerVideoMax": 0,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "slot order compacted to first then last frame",
+          "clientMax": 2,
+          "providerMax": 2,
+          "providerField": "OpenRouter frame_images[].frame_type",
+          "behavior": "accepted, but an isolated slot 1 is converted to first frame",
+          "defectIds": ["BRD-005"],
+          "evidenceIds": ["openrouter"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003"],
+          "evidenceIds": ["node-settings"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter generate_audio",
+          "behavior": "accepted",
+          "defectIds": [],
+          "evidenceIds": ["openrouter"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-003", "BRD-005", "BRD-009", "INV-006"]
+    },
+    {
+      "id": "grok-imagine-video",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.frame.first",
+        "providerImageMax": 1,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "source metadata currently claims first+last; vendor schema supports fewer",
+          "clientMax": 2,
+          "providerMax": 1,
+          "providerField": "OpenRouter frame_images",
+          "behavior": "excess input is provider-rejected or ignored because catalog metadata is stale",
+          "defectIds": ["BRD-002", "INV-003"],
+          "evidenceIds": ["openrouter", "model-inventory"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003"],
+          "evidenceIds": ["node-settings"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter omits generate_audio when capabilities.audio=false",
+          "behavior": "ignored",
+          "defectIds": ["BRD-010"],
+          "evidenceIds": ["openrouter"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-003", "BRD-009", "BRD-010", "INV-003"]
+    },
+    {
+      "id": "happyhorse-1-1",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.frame.first",
+        "providerImageMax": 1,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "source metadata currently claims first+last; vendor schema supports fewer",
+          "clientMax": 2,
+          "providerMax": 1,
+          "providerField": "OpenRouter frame_images",
+          "behavior": "excess input is provider-rejected or ignored because catalog metadata is stale",
+          "defectIds": ["BRD-002", "INV-003"],
+          "evidenceIds": ["openrouter", "model-inventory"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003"],
+          "evidenceIds": ["node-settings"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter omits generate_audio when capabilities.audio=false",
+          "behavior": "ignored",
+          "defectIds": ["BRD-010"],
+          "evidenceIds": ["openrouter"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-003", "BRD-009", "BRD-010", "INV-003"]
+    },
+
+    {
+      "id": "kling-v3-0-std",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.frame.first+last",
+        "providerImageMax": 2,
+        "providerVideoMax": 0,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "slot order compacted to first then last frame",
+          "clientMax": 2,
+          "providerMax": 2,
+          "providerField": "OpenRouter frame_images",
+          "behavior": "source contract is compilable and the row is present in the deployed live catalog",
+          "defectIds": ["BRD-005", "INV-001"],
+          "evidenceIds": ["openrouter", "model-inventory"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003"],
+          "evidenceIds": ["node-settings"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter generate_audio when row becomes live",
+          "behavior": "OpenRouter generate_audio is available on the deployed live row",
+          "defectIds": ["INV-001"],
+          "evidenceIds": ["model-inventory"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-003", "BRD-005", "BRD-009", "INV-001"]
+    },
+    {
+      "id": "wan-2-7",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.frame.first+last",
+        "providerImageMax": 2,
+        "providerVideoMax": 0,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "slot order compacted to first then last frame",
+          "clientMax": 2,
+          "providerMax": 2,
+          "providerField": "OpenRouter frame_images",
+          "behavior": "source contract is compilable and the row is present in the deployed live catalog",
+          "defectIds": ["BRD-005", "INV-001"],
+          "evidenceIds": ["openrouter", "model-inventory"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003"],
+          "evidenceIds": ["node-settings"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "OpenRouter generate_audio when row becomes live",
+          "behavior": "OpenRouter generate_audio is available on the deployed live row",
+          "defectIds": ["INV-001"],
+          "evidenceIds": ["model-inventory"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-003", "BRD-005", "BRD-009", "INV-001"]
+    },
+    {
+      "id": "flux-2-pro",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 8,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.raster"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 8,
+          "providerField": "OpenRouter messages[].content[].image_url",
+          "behavior": "excess input is provider-rejected or ignored",
+          "defectIds": ["BRD-002"],
+          "evidenceIds": ["openrouter", "model-inventory"]
+        },
+        "imageParameters": {
+          "providerAdapter": "OpenRouter image body omits both params.size and params.quality",
+          "aspectBehavior": "ignored",
+          "qualityBehavior": "ignored",
+          "defectIds": ["BRD-008"],
+          "evidenceIds": ["openrouter"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-008"]
+    },
+    {
+      "id": "recraft-v4",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 1,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.raster"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 1,
+          "providerField": "OpenRouter messages[].content[].image_url",
+          "behavior": "excess input is provider-rejected or ignored",
+          "defectIds": ["BRD-002", "INV-004"],
+          "evidenceIds": ["openrouter", "model-inventory"]
+        },
+        "imageParameters": {
+          "providerAdapter": "OpenRouter image body omits both params.size and params.quality",
+          "aspectBehavior": "ignored",
+          "qualityBehavior": "ignored",
+          "defectIds": ["BRD-008"],
+          "evidenceIds": ["openrouter"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-008", "INV-004"]
+    },
+    {
+      "id": "recraft-v4-vector",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 1,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.vector"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 1,
+          "providerField": "OpenRouter messages[].content[].image_url",
+          "behavior": "excess input is provider-rejected or ignored",
+          "defectIds": ["BRD-002", "INV-004"],
+          "evidenceIds": ["openrouter", "model-inventory"]
+        },
+        "imageParameters": {
+          "providerAdapter": "OpenRouter image body omits params.size/quality; the shared Board compiler preserves outputFormat=vector and the worker stores the returned SVG MIME/extension",
+          "aspectBehavior": "ignored",
+          "qualityBehavior": "ignored",
+          "defectIds": ["BRD-008"],
+          "evidenceIds": ["openrouter", "model-inventory", "board-contract", "worker-lifecycle"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-008", "INV-004"]
+    },
+    {
+      "id": "gemini-2-5-flash-image",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 3,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.raster"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 3,
+          "providerField": "Laozhang content parts capped at 8; Kie image_input capped at 8",
+          "behavior": "inputs beyond adapter/provider caps are ignored or provider-rejected",
+          "defectIds": ["BRD-002"],
+          "evidenceIds": ["nanobanana", "model-inventory"]
+        },
+        "imageParameters": {
+          "providerAdapter": "Board sends size=<ratio> and quality=<tier>; Laozhang/Kie derive resolution from resolution??size and never read quality",
+          "aspectBehavior": "ignored",
+          "qualityBehavior": "ignored",
+          "defectIds": ["BRD-008"],
+          "evidenceIds": ["nanobanana"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-008"]
+    },
+    {
+      "id": "gemini-3-pro-image",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 8,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.raster"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 8,
+          "providerField": "Laozhang content parts or Kie image_input capped at 8",
+          "behavior": "references after the first eight are ignored",
+          "defectIds": ["BRD-002"],
+          "evidenceIds": ["nanobanana"]
+        },
+        "imageParameters": {
+          "providerAdapter": "Board sends size=<ratio> and quality=<tier>; Laozhang/Kie derive resolution from resolution??size and never read quality",
+          "aspectBehavior": "ignored",
+          "qualityBehavior": "ignored",
+          "defectIds": ["BRD-008"],
+          "evidenceIds": ["nanobanana"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-008"]
+    },
+    {
+      "id": "gemini-3-1-flash-image",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 3,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.raster"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 3,
+          "providerField": "Laozhang content parts capped at 8; Kie image_input capped at 8",
+          "behavior": "inputs beyond adapter/provider caps are ignored or provider-rejected",
+          "defectIds": ["BRD-002"],
+          "evidenceIds": ["nanobanana", "model-inventory"]
+        },
+        "imageParameters": {
+          "providerAdapter": "Board sends size=<ratio> and quality=<tier>; Laozhang/Kie derive resolution from resolution??size and never read quality",
+          "aspectBehavior": "ignored",
+          "qualityBehavior": "ignored",
+          "defectIds": ["BRD-008"],
+          "evidenceIds": ["nanobanana"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-008"]
+    },
+    {
+      "id": "gemini-3-1-flash-lite-image",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 3,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.raster"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 3,
+          "providerField": "Laozhang content parts capped at 8; Kie image_input capped at 8",
+          "behavior": "inputs beyond adapter/provider caps are ignored or provider-rejected",
+          "defectIds": ["BRD-002"],
+          "evidenceIds": ["nanobanana", "model-inventory"]
+        },
+        "imageParameters": {
+          "providerAdapter": "Board sends size=<ratio> and quality=<tier>; Laozhang/Kie derive resolution from resolution??size and never read quality",
+          "aspectBehavior": "ignored",
+          "qualityBehavior": "ignored",
+          "defectIds": ["BRD-008"],
+          "evidenceIds": ["nanobanana"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-008"]
+    },
+    {
+      "id": "gpt-image-2",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "none on primary route",
+        "providerImageMax": 0,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.raster"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 0,
+          "providerField": "Laozhang primary images/generations path does not receive imageUrls; Kie fallback changes to an image-to-image slug",
+          "behavior": "ignored on primary route and semantically different on fallback",
+          "defectIds": ["BRD-002", "BRD-020"],
+          "evidenceIds": ["nanobanana"]
+        },
+        "imageParameters": {
+          "providerAdapter": "Board ratio strings are forwarded as OpenAI size and 1K/2K/4K strings as OpenAI quality without translation",
+          "aspectBehavior": "wrong request mapping",
+          "qualityBehavior": "wrong request mapping",
+          "defectIds": ["BRD-008"],
+          "evidenceIds": ["nanobanana"]
+        },
+        "count": {
+          "clientRequest": "params.n",
+          "apiValidation": "n is billed",
+          "providerAdapter": "Laozhang generateOpenAIImage makes one call and never reads n",
+          "behavior": "ignored after billing",
+          "defectIds": ["BRD-020"],
+          "evidenceIds": ["nanobanana", "jobs-api"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "BRD-008", "BRD-020"]
+    },
+    {
+      "id": "gemini-omni-flash",
+      "kind": "video",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": null,
+        "providerVideoMax": 0,
+        "audioGenerate": true,
+        "output": "video"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 2,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 2,
+          "providerMax": null,
+          "providerField": "Kie or AtlasCloud images[]; input presence changes provider mode",
+          "behavior": "references are forwarded as a generic image array; no positional first/last mapping is claimed",
+          "defectIds": [],
+          "evidenceIds": ["node-settings", "nanobanana", "atlascloud", "model-inventory"]
+        },
+        "videoInput": {
+          "clientMax": 0,
+          "providerMax": 0,
+          "providerField": "none in current Board/compiler path",
+          "behavior": "ignored",
+          "defectIds": ["BRD-003", "INV-005"],
+          "evidenceIds": ["node-settings", "nanobanana", "atlascloud"]
+        },
+        "audioGeneration": {
+          "providerAdapter": "Kie and AtlasCloud Gemini Omni builders do not map params.generate_audio",
+          "behavior": "ignored",
+          "defectIds": ["BRD-010"],
+          "evidenceIds": ["nanobanana", "atlascloud"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-003", "BRD-009", "BRD-010"]
+    },
+    {
+      "id": "seedream-5-0-pro",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 10,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.raster"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 10,
+          "providerField": "kie image_urls capped at 10",
+          "behavior": "references after the first ten are ignored; row is absent live",
+          "defectIds": ["BRD-002", "INV-001"],
+          "evidenceIds": ["nanobanana", "model-inventory"]
+        },
+        "imageParameters": {
+          "providerAdapter": "kie quality enum basic=1K/high=2K derived from resolution (no 4K); aspect_ratio forwarded",
+          "aspectBehavior": "accepted",
+          "qualityBehavior": "mapped to the kie quality enum",
+          "defectIds": [],
+          "evidenceIds": ["nanobanana"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "INV-001"]
+    },
+    {
+      "id": "seedream-5-0-lite",
+      "kind": "image",
+      "boardExposure": "visible_live",
+      "requiredCapabilities": {
+        "imageInputRole": "image.reference",
+        "providerImageMax": 10,
+        "providerVideoMax": 0,
+        "audioGenerate": false,
+        "output": "image.raster"
+      },
+      "currentBoard": {
+        "uiReferenceSlots": 14,
+        "imageInput": {
+          "clientRole": "generic image reference",
+          "clientMax": 14,
+          "providerMax": 10,
+          "providerField": "kie image_urls capped at 10",
+          "behavior": "references after the first ten are ignored; row is absent live",
+          "defectIds": ["BRD-002", "INV-001"],
+          "evidenceIds": ["nanobanana", "model-inventory"]
+        },
+        "imageParameters": {
+          "providerAdapter": "kie quality enum basic=2K/high=3K/ultra=4K derived from resolution; aspect_ratio forwarded",
+          "aspectBehavior": "accepted",
+          "qualityBehavior": "mapped to the kie quality enum",
+          "defectIds": [],
+          "evidenceIds": ["nanobanana"]
+        }
+      },
+      "controlOutcomes": {},
+      "defectIds": ["BRD-002", "INV-001"]
+    }
+  ],
+  "defects": [
+    {
+      "id": "BRD-001",
+      "severity": "P1",
+      "category": "missing capability",
+      "summary": "aiprompt has a text handle but edgePayloadType and drag-to-empty connect offers do not recognize it; a wire can also exist before a drafted output exists."
+    },
+    {
+      "id": "BRD-002",
+      "severity": "P0",
+      "category": "invalid wire",
+      "summary": "Reference handles and validator limits are based on image/video mode (14/2), not the selected model's role and cardinality, so visually valid edges can be dropped, truncated, or rejected."
+    },
+    {
+      "id": "BRD-003",
+      "severity": "P0",
+      "category": "ignored input",
+      "summary": "A video media source is accepted by every video generate node, but non-reference models omit videoUrls; the direct media uploader also accepts image/* only despite rendering video."
+    },
+    {
+      "id": "BRD-004",
+      "severity": "P0",
+      "category": "wrong request mapping",
+      "summary": "A generate:video source is accepted before resultKind exists, then resolveRefs unconditionally puts its returned MP4 URL into imageUrls."
+    },
+    {
+      "id": "BRD-005",
+      "severity": "P1",
+      "category": "wrong request mapping",
+      "summary": "Reference-slot identity is compacted during assembly: a lone images[1] edge becomes array index 0 and is serialized as first_frame rather than last_frame."
+    },
+    {
+      "id": "BRD-006",
+      "severity": "P0",
+      "category": "invalid wire",
+      "summary": "Changing the selected model neither previews affected inputs nor revalidates/removes incompatible stored edges."
+    },
+    {
+      "id": "BRD-007",
+      "severity": "P0",
+      "category": "wrong request mapping",
+      "summary": "Any wired cast on a video node silently replaces the selected model with the cheapest reference variant after displayed cost and Run-All preview are calculated."
+    },
+    {
+      "id": "BRD-008",
+      "severity": "P0",
+      "category": "ignored input",
+      "summary": "Board image aspect and 1K/2K/4K quality controls do not match active adapter contracts: OpenRouter drops both, Nano Banana reads neither Board key correctly, and GPT Image receives untransformed enums."
+    },
+    {
+      "id": "BRD-009",
+      "severity": "P1",
+      "category": "false affordance",
+      "summary": "The 1..4 tries control is visible on video nodes, but count is omitted from the request, cost, and provider job."
+    },
+    {
+      "id": "BRD-010",
+      "severity": "P1",
+      "category": "false affordance",
+      "summary": "The audio switch is visible for every video model; unsupported OpenRouter models omit it and Gemini Omni adapters ignore it."
+    },
+    {
+      "id": "BRD-011",
+      "severity": "P1",
+      "category": "missing capability",
+      "summary": "Boards has no seed, negative-prompt, or audio-reference data/controls even though model metadata and some adapters expose those capabilities."
+    },
+    {
+      "id": "BRD-012",
+      "severity": "P0",
+      "category": "missing capability",
+      "summary": "Board documents and node data are unversioned, opaque JSON at the API boundary with no runtime node/edge/settings schema or migration contract."
+    },
+    {
+      "id": "BRD-013",
+      "severity": "P1",
+      "category": "false affordance",
+      "summary": "The prompt port is marked required while reference-only execution is allowed; empty prompt/media/aiprompt sources can remain wired and contribute nothing."
+    },
+    {
+      "id": "BRD-014",
+      "severity": "P1",
+      "category": "false affordance",
+      "summary": "Boards lists every active model for every user and defers tier rejection until the credit-spending submit call."
+    },
+    {
+      "id": "BRD-015",
+      "severity": "P0",
+      "category": "invalid wire",
+      "summary": "Generate-to-generate cycles are accepted; Run-All appends cyclic nodes and resolveRefs can recursively execute the same cycle."
+    },
+    {
+      "id": "BRD-016",
+      "severity": "P1",
+      "category": "wrong request mapping",
+      "summary": "Board gateway policy says motion refs require AtlasCloud, while current OpenRouter supports typed refs and API model gateway metadata can override the explicit provider selection."
+    },
+    {
+      "id": "BRD-017",
+      "severity": "P1",
+      "category": "missing test",
+      "summary": "Connection validation is embedded in GraphBoard and lacks a generated per-model contract suite; browser tests prove broad modes rather than every active model/control/input combination."
+    },
+    {
+      "id": "BRD-019",
+      "severity": "P1",
+      "category": "ignored input",
+      "summary": "A location cast with a motion reference is legal on generate:image, where videoUrl is assembled and then discarded."
+    },
+    {
+      "id": "BRD-020",
+      "severity": "P0",
+      "category": "ignored input",
+      "summary": "GPT Image 2 primary routing ignores Board references and n while the API bills n; its fallback chooses a different edit mode."
+    },
+    {
+      "id": "BRD-022",
+      "severity": "P0",
+      "category": "missing capability",
+      "summary": "POST /v1/jobs and /estimate accept generic params and do not share a model-capability normalization schema, allowing quote/delivery and Board/adapter divergence."
+    }
+  ],
+  "reestimate": {
+    "auditCompletion": "BRD-0B evidence package: 2.5-3.5 engineering days total, consistent with the BRD-0A estimate.",
+    "structuralImplementation": {
+      "BRD-1 central registry and versioned schemas": "5-7 engineering days",
+      "BRD-2 model-aware ports, switching, graph validation, and migration UX": "5-7 engineering days",
+      "BRD-3 normalized request, quote/submit parity, adapter conformance": "6-8 engineering days",
+      "browser, migration, and release regression evidence": "3-4 engineering days",
+      "total": "19-26 engineering days for one engineer before the separate UX sanity iterations"
+    },
+    "assumptions": [
+      "No provider sourcing, pricing strategy, payment activation, or moderation-operations work is added.",
+      "Existing React Flow rendering is retained; this is a contract extraction and validation refactor, not a canvas rewrite.",
+      "Paid vendor probes remain outside this estimate unless static/mock evidence cannot settle a contract."
+    ]
+  }
+}

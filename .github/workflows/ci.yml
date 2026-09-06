@@ -1,6 +1,8 @@
-# CI gate — runs on every push to main and every PR.
+# CI gate — the fast code gate runs on every push to main and every PR.
 # This NEVER deploys. It only proves the code is green so that a later, manual
 # "Deploy" (see deploy.yml) is pushing something that already passed checks.
+# The heavyweight Boards release floor is manual-only (`workflow_dispatch`) so a
+# normal public-repo push stays inside the free runner's practical time budget.
 #
 # Infra: scripts/test-all.mjs expects postgres :5434 / redis :6380 / minio
 # :9000 (locally provided by docker/docker-compose.yml, which needs the VM-only
@@ -17,6 +19,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 # A newer push to the same branch/PR cancels the older in-flight run.
 concurrency:
@@ -123,8 +126,9 @@ jobs:
 
   boards-release:
     name: Boards release gate
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -150,6 +154,7 @@ jobs:
         run: pnpm test:boards:quick
 
       - name: Boards large-graph performance
+        if: ${{ success() }}
         env:
           BOARDS_RELEASE_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}-perf
           BOARDS_RELEASE_EVIDENCE_DIR: docs/evidence/product-testing/boards/ci/${{ github.run_id }}-${{ github.run_attempt }}/perf
@@ -170,7 +175,7 @@ jobs:
           exit "$status"
 
       - name: Boards production browser matrix
-        if: ${{ !cancelled() }}
+        if: ${{ success() }}
         env:
           BOARDS_RELEASE_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}-e2e
           BOARDS_RELEASE_EVIDENCE_DIR: docs/evidence/product-testing/boards/ci/${{ github.run_id }}-${{ github.run_attempt }}/e2e

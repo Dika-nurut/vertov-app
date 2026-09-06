@@ -1,0 +1,109 @@
+# Prometheus alerting rules for Seed (INF-17).
+# Every series below is actually exported by apps/{api,worker}/src/metrics.ts.
+# Load with: rule_files: [ "alerts.yml" ] in prometheus.yml. Tune thresholds to
+# observed baselines after the first week (the comments give starting points).
+groups:
+  - name: seed-availability
+    rules:
+      - alert: SeedTargetDown
+        expr: up{job=~"seed-.*"} == 0
+        for: 2m
+        labels: { severity: page }
+        annotations:
+          summary: '{{ $labels.job }} target down'
+          description: 'Prometheus cannot scrape {{ $labels.instance }} for 2m. Check the process + /health.'
+
+      - alert: SeedApiHighErrorRate
+        # >5% 5xx over 5m, only once there's meaningful traffic.
+        expr: |
+          sum(rate(seed_http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(seed_http_requests_total[5m])), 0.01) > 0.05
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: 'API 5xx rate >5%'
+          description: '5xx share is {{ $value | humanizePercentage }} over 5m. Check logs + DB/Redis readiness (/ready).'
+
+      - alert: SeedApiLatencyHigh
+        # p95 request latency > 2s for 10m.
+        expr: histogram_quantile(0.95, sum(rate(seed_http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: 'API p95 latency >2s'
+          description: 'p95 is {{ $value }}s. Suspect DB contention (render spike starving the pool) or pool exhaustion.'
+
+  - name: seed-queues
+    rules:
+      - alert: SeedQueueBacklog
+        # Sustained waiting backlog on any queue (incl. studio.render, now gauged).
+        expr: seed_queue_depth{state="wait"} > 100
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: 'Queue {{ $labels.queue }} backlog >100 waiting'
+          description: '{{ $labels.queue }} has {{ $value }} jobs waiting for 10m. Scale workers or investigate a stall.'
+
+      - alert: SeedQueueStuckActive
+        # Active jobs but nothing completing → a stuck worker / mid-render hang.
+        expr: |
+          seed_queue_depth{state="active"} > 0
+            and on(queue) increase(seed_jobs_completed_total[15m]) == 0
+        for: 15m
+        labels: { severity: page }
+        annotations:
+          summary: 'Queue {{ $labels.queue }} stuck (active, none completing)'
+          description: 'Active jobs on {{ $labels.queue }} but zero completions in 15m. Likely a wedged job; reapers should recover — verify.'
+
+      - alert: SeedOutboxBacklog
+        # The credit outbox must drain; a sustained backlog means money ops are stuck.
+        expr: seed_outbox_pending_total > 0
+        for: 10m
+        labels: { severity: page }
+        annotations:
+          summary: 'Credit outbox not draining'
+          description: '{{ $value }} outbox rows unprocessed for 10m. Check the worker outbox drainer + Redis.'
+
+  - name: seed-spend
+    rules:
+      - alert: SeedDailySpendApproaching
+        # >80% of the daily cap (only when a cap is configured).
+        expr: |
+          seed_daily_spend_cap_credits > 0
+            and seed_daily_spend_credits / seed_daily_spend_cap_credits > 0.8
+        for: 1m
+        labels: { severity: page }
+        annotations:
+          summary: 'Daily spend >80% of cap'
+          description: 'Spend {{ $value | humanizePercentage }} of the daily cap. New generation will be refused at 100%. Investigate for abuse / pricing bug.'
+
+  - name: seed-scenario
+    rules:
+      - alert: SeedScenarioAssistFailureRateHigh
+        expr: |
+          sum(rate(seed_scenario_assist_requests_total{outcome!="completed"}[10m]))
+            / clamp_min(sum(rate(seed_scenario_assist_requests_total[10m])), 0.01) > 0.10
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: 'Scenario assist failure/refund rate >10%'
+          description: 'Inspect outcomes by tier/scope, provider health, validation failures, and credit settlements.'
+
+      - alert: SeedScenarioAssistTimeouts
+        # A non-zero in-flight gauge is normal under sustained traffic and
+        # cannot identify one old request. Page on the terminal timeout outcome
+        # emitted by the route's hard 120s deadline instead.
+        expr: sum(increase(seed_scenario_assist_requests_total{outcome="aborted_refunded"}[5m])) > 0
+        for: 1m
+        labels: { severity: page }
+        annotations:
+          summary: 'Scenario assist request hit the hard deadline'
+          description: '{{ $value }} Scenario requests timed out and were refunded in the last 5m.'
+
+      - alert: SeedScenarioValidationFailures
+        expr: sum(increase(seed_scenario_assist_validation_failures_total[15m])) > 5
+        for: 1m
+        labels: { severity: ticket }
+        annotations:
+          summary: 'Scenario provider output validation failures spiking'
+          description: 'More than five unusable model responses were refunded in 15m. Break down by tier and scope.'
