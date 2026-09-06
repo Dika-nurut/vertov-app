@@ -128,11 +128,13 @@ function finish(ctx) {
     const result = run(ctx, {
       SEED_SITE_ADDRESS: 'staging.invalid',
       SEED_IMAGE_TAG: 'new-sha',
+      SEED_COMPOSE_OVERRIDE: 'vm-override.yml',
       SEED_LAST_DEPLOYED_TAG_FILE: '.last-deployed-tag',
       DEPLOY_READY_ATTEMPTS: '2',
       DEPLOY_READY_INTERVAL_SECONDS: '0',
     });
     assert.notEqual(result.status, 0);
+    assert.match(readFileSync(ctx.log, 'utf8'), /-f vm-override\.yml build/);
     assert.doesNotMatch(readFileSync(ctx.log, 'utf8'), /args=.* up /);
     assert.equal(readFileSync(resolve(ctx.root, '.last-deployed-tag'), 'utf8'), 'old-sha\n');
   } finally {

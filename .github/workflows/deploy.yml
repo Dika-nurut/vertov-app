@@ -169,6 +169,12 @@ jobs:
             export SEED_IMAGE_TAG="$SEED_TAG"
             export SEED_ENV_FILE=/run/secrets/seed.env   # secrets live on the VM, never in git
             export SEED_SITE_ADDRESS=$SEED_SITE_ADDRESS  # edge TLS hostname; deploy.sh fails closed without it
+            # The current solo VM keeps its local pg/valkey stack on an external
+            # shared network. Managed-state VMs have no override and use the
+            # default stateless compose topology.
+            if [ -f /opt/seed-state/solo-app-override.yml ]; then
+              export SEED_COMPOSE_OVERRIDE=/opt/seed-state/solo-app-override.yml
+            fi
             ./scripts/deploy.sh
         env:
           SEED_TAG: ${{ needs.resolve.outputs.tag }}

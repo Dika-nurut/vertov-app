@@ -17,6 +17,9 @@
 #                    registry instead of building on the host, and run migrations
 #                    inside the api image (no host pnpm/toolchain needed). This is
 #                    the CI/CD path; unset keeps the local `--build` path.
+#   SEED_COMPOSE_OVERRIDE optional additional compose file for VM-local topology
+#                    (for example, a local state network override); unset on
+#                    managed-state hosts.
 set -euo pipefail
 
 # The edge must have a real site address before migrations or a rollout begin.
@@ -24,7 +27,11 @@ set -euo pipefail
 # healthy, but the public hostname had no TLS site and browser traffic failed.
 : "${SEED_SITE_ADDRESS:?SEED_SITE_ADDRESS is required for production edge TLS (e.g. vertov.space)}"
 
-COMPOSE="docker compose -f infra/compute/docker-compose.app.yml"
+COMPOSE_ARGS=(docker compose -f infra/compute/docker-compose.app.yml)
+if [[ -n "${SEED_COMPOSE_OVERRIDE:-}" ]]; then
+  COMPOSE_ARGS+=(-f "$SEED_COMPOSE_OVERRIDE")
+fi
+compose() { "${COMPOSE_ARGS[@]}" "$@"; }
 TAG="${SEED_IMAGE_TAG:-$(git rev-parse HEAD)}"
 export SEED_IMAGE_TAG="${TAG}"
 LAST_DEPLOYED_TAG_FILE="${SEED_LAST_DEPLOYED_TAG_FILE:-.last-deployed-tag}"
@@ -86,12 +93,12 @@ rollback_previous() {
   export SEED_IMAGE_TAG="${PREVIOUS_TAG}"
   if [ -n "${SEED_REGISTRY:-}" ]; then
     log "pulling previous images for rollback…"
-    if ! ${COMPOSE} pull api web; then
+    if ! compose pull api web; then
       log "FATAL: could not pull rollback images for ${PREVIOUS_TAG}"
       return 1
     fi
   fi
-  if ! ${COMPOSE} up -d --remove-orphans; then
+  if ! compose up -d --remove-orphans; then
     log "FATAL: could not start rollback tag ${PREVIOUS_TAG}"
     return 1
   fi
@@ -124,10 +131,10 @@ fi
 # 1) Get the images for this tag — pull from the registry (CI/CD) or build locally.
 if [ -n "${SEED_REGISTRY:-}" ]; then
   log "pulling images…"
-  ${COMPOSE} pull api web
+  compose pull api web
 else
   log "building images…"
-  ${COMPOSE} build
+  compose build
 fi
 
 # 2) MIGRATION GATE — apply migrations before any new container serves traffic.
@@ -135,7 +142,7 @@ fi
 #    On the registry path the host has no toolchain, so migrate inside the image.
 log "applying DB migrations (gate)…"
 if [ -n "${SEED_REGISTRY:-}" ]; then
-  migrate() { ${COMPOSE} run --rm --no-deps api pnpm db:migrate; }
+  migrate() { compose run --rm --no-deps api pnpm db:migrate; }
 else
   migrate() { pnpm db:migrate; }
 fi
@@ -148,7 +155,7 @@ fi
 #    the edge depends_on api/web service_healthy, so traffic shifts only when
 #    /health passes (INF-16).
 log "starting new containers…"
-if ! ${COMPOSE} up -d --remove-orphans; then
+if ! compose up -d --remove-orphans; then
   log "FATAL: new tag ${TAG} failed to start"
   if rollback_previous; then
     log "service restored to ${PREVIOUS_TAG}; deploy remains failed"
