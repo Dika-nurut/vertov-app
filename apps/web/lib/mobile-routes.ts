@@ -1,6 +1,6 @@
-// Known app routes for the mobile gate (MobileRouteGate): the desktop notice
-// applies to THESE on small screens. Anything else (typos, dead deep links)
-// falls through so not-found.tsx can render instead of the notice.
+// Known app routes for the mobile gate (MobileRouteGate). Anything else (typos,
+// dead deep links) falls through so not-found.tsx can render instead of a
+// mobile desktop notice.
 const KNOWN_MOBILE_ROUTES = [
   /^\/$/u,
   /^\/generate(?:\/|$)/u,
@@ -23,6 +23,18 @@ const KNOWN_MOBILE_ROUTES = [
   /^\/i(?:\/|$)/u,
 ];
 
+// These products are intentionally desktop-only on phones. Their dense canvas,
+// timeline, and project-desk interactions are not being squeezed into a touch UI.
+const MOBILE_DESKTOP_ONLY_ROUTES = [
+  /^\/boards(?:\/|$)/u,
+  /^\/studio(?:\/|$)/u,
+  /^\/workspace(?:\/|$)/u,
+];
+
 export function isKnownMobileRoute(pathname: string): boolean {
   return KNOWN_MOBILE_ROUTES.some((re) => re.test(pathname));
+}
+
+export function isMobileDesktopOnlyRoute(pathname: string): boolean {
+  return MOBILE_DESKTOP_ONLY_ROUTES.some((re) => re.test(pathname));
 }

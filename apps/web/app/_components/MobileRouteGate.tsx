@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getOnboardingCopy } from '@/lib/onboarding-copy';
-import { isKnownMobileRoute } from '@/lib/mobile-routes';
+import { isKnownMobileRoute, isMobileDesktopOnlyRoute } from '@/lib/mobile-routes';
 import { readClientLocale, type Locale } from '@/lib/locale';
 import { useEffect, useState } from 'react';
 
@@ -26,15 +26,6 @@ function useRouteLocale(): Locale {
   const [locale, setLocale] = useState<Locale>('ru');
   useEffect(() => setLocale(readClientLocale()), [pathname]);
   return locale;
-}
-
-function isMobileAllowed(pathname: string): boolean {
-  return (
-    /^\/generate(?:\/|$)/u.test(pathname) ||
-    /^\/login(?:\/|$)/u.test(pathname) ||
-    /^\/auth(?:\/|$)/u.test(pathname) ||
-    /^\/legal(?:\/|$)/u.test(pathname)
-  );
 }
 
 function MobileDesktopNotice({ locale }: { locale: Locale }) {
@@ -70,7 +61,7 @@ export function MobileRouteGate({ children }: { children: React.ReactNode }) {
   const mobile = useMobileViewport();
   const locale = useRouteLocale();
 
-  if (isMobileAllowed(pathname) || mobile === false) return children;
+  if (!isMobileDesktopOnlyRoute(pathname) || mobile === false) return children;
   if (mobile === null) return null;
   // Unknown paths are not gated: let not-found.tsx answer "page doesn't exist"
   // instead of "open on desktop".
