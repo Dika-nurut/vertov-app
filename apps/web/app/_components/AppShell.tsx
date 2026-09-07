@@ -215,9 +215,7 @@ export async function AppShell({
               Вопросы и ответы
             </Link>
             <SupportLink
-              href="mailto:support@vertov.space"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/support"
               className="transition-colors hover:text-[color:var(--color-accent)]"
               data-testid="support-link"
             >

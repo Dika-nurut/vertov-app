@@ -11,7 +11,7 @@ const LINKS: [string, string][] = [
   ['Реквизиты', '/legal/requisites'],
 ];
 
-const SUPPORT_HREF = 'mailto:support@vertov.space';
+const SUPPORT_HREF = '/support';
 
 export function LandingFooter() {
   return (

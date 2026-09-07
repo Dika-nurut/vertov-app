@@ -32,12 +32,10 @@ export default async function RequisitesPage({
         <p className="mt-4 text-sm text-[color:var(--color-muted-foreground)]">
           Поддержка пользователей:
           <SupportLink
-            href="mailto:support@vertov.space"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/support"
             className="font-bold text-[color:var(--color-accent)] underline"
           >
-            support@vertov.space
+            форма поддержки
           </SupportLink>
           . Ответим в течение 5 рабочих дней.
         </p>

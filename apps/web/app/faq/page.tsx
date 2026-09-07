@@ -69,14 +69,12 @@ export default async function FaqPage({
         >
           <LegalPageContent page="faq" searchParams={searchParams} />
           <p className="mt-6 text-[13px] text-[color:var(--color-muted-foreground)]">
-            Не нашли ответ? Напишите в поддержку:
+            Не нашли ответ? Откройте форму поддержки:
             <SupportLink
-              href="mailto:support@vertov.space"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/support"
               className="font-bold text-[color:var(--color-accent)] underline"
             >
-              support@vertov.space
+              Открыть форму
             </SupportLink>
             . Ответим в течение 5 рабочих дней.
           </p>

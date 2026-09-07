@@ -637,14 +637,10 @@ function FailedState({
   message,
   onRetry,
   stillRunning = false,
-  jobId,
-  modelId,
 }: {
   message: string;
   onRetry: () => void;
   stillRunning?: boolean;
-  jobId?: string;
-  modelId?: string;
 }) {
   // `stillRunning` = the client stopped watching at its deadline, but the job is
   // NOT failed — it keeps rendering server-side and lands in «Архив» + the tray.
@@ -682,12 +678,10 @@ function FailedState({
       </button>
       {!stillRunning && (
         <SupportLink
-          href={`mailto:support@vertov.space?subject=Vertov+issue&body=Job:+${jobId ?? ''}%0AModel:+${modelId ?? ''}`}
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/support"
           className="mt-2 block text-center text-[13px] text-[color:var(--color-muted-foreground)] underline transition-colors hover:text-[color:var(--color-accent)]"
         >
-          Не помогло? Напишите в поддержку — приложим логи. Ответим в течение 5 рабочих дней.
+          Не помогло? Опишите проблему в форме поддержки. Ответим в течение 5 рабочих дней.
         </SupportLink>
       )}
     </div>

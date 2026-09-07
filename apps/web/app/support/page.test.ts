@@ -22,14 +22,13 @@ describe('Wave 1.1 public /support page', () => {
     expect(JSON.stringify(disallow ?? null)).not.toContain('/support');
   });
 
-  it('page exposes support contacts via SupportLink with canonical /support', () => {
-    expect(PAGE_SOURCE).toContain('support@vertov.space');
+  it('page exposes a support form with canonical /support', () => {
     expect(PAGE_SOURCE).toContain('5 рабочих дней');
-    expect(PAGE_SOURCE).toContain('SupportLink');
-    expect(PAGE_SOURCE).toContain("'/support'");
+    expect(PAGE_SOURCE).toContain('SupportForm');
+    expect(PAGE_SOURCE).not.toContain('SupportLink');
     expect(PAGE_SOURCE).toContain('canonical');
-    expect(PAGE_SOURCE).toContain('subject=');
-    expect(PAGE_SOURCE).toContain('mailto:');
+    expect(PAGE_SOURCE).toContain("'/support'");
+    expect(PAGE_SOURCE).not.toContain('mailto:');
   });
 
   it('middleware allows public /support', () => {

@@ -41,7 +41,7 @@ export default function GlobalError({
           <h1 style={{ fontSize: 24, marginBottom: 12 }}>Что-то пошло не так</h1>
           <p style={{ fontSize: 14, opacity: 0.7, marginBottom: 16 }}>
             Попробуйте обновить страницу. Если ошибка повторится — напишите в{' '}
-            <SupportLink href="mailto:support@vertov.space" style={{ color: 'inherit' }}>
+            <SupportLink href="/support" style={{ color: 'inherit' }}>
               поддержку
             </SupportLink>
             . Ответим в течение 5 рабочих дней.

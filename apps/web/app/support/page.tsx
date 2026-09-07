@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { Wordmark } from '@/components/ui/wordmark';
 import { Suspense } from 'react';
 import { LanguageToggle } from '../_components/LanguageToggle';
-import { SupportLink } from '../_components/SupportLink';
 import { LandingFooter } from '../_components/landing/LandingFooter';
+import { apiBaseUrl, apiGet } from '../../lib/server-api';
+import { SupportForm } from './SupportForm';
 
 export const metadata: Metadata = {
   title: 'Поддержка — Vertov',
@@ -14,7 +15,14 @@ export const metadata: Metadata = {
 };
 export const dynamic = 'force-dynamic';
 
-export default function SupportPage() {
+interface MeResponse {
+  user: { email: string; isAnonymous?: boolean };
+}
+
+export default async function SupportPage() {
+  const me = await apiGet<MeResponse>('/v1/me');
+  const initialEmail = me.data?.user.isAnonymous ? '' : (me.data?.user.email ?? '');
+
   return (
     <div className="min-h-screen">
       <header className="bg-transparent">
@@ -36,86 +44,22 @@ export default function SupportPage() {
         >
           <h1 className="text-h1 text-[color:var(--color-fg)]">Поддержка</h1>
           <p className="mt-4 text-[13px] leading-relaxed text-[color:var(--color-muted-foreground)]">
-            Напишите на{' '}
-            <SupportLink
-              href="mailto:support@vertov.space"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-[color:var(--color-accent)] underline"
-            >
-              support@vertov.space
-            </SupportLink>
-            . Ответим в течение 5 рабочих дней.
+            Опишите вопрос в форме ниже. Обращение попадёт в очередь поддержки, а ответ придёт на
+            указанный email.
           </p>
 
-          <h2 className="mt-8 text-h2 text-[color:var(--color-fg)]">Общие вопросы</h2>
+          <SupportForm apiUrl={apiBaseUrl()} initialEmail={initialEmail} />
+
+          <h2 className="mt-8 text-h2 text-[color:var(--color-fg)]">Что приложить</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[color:var(--color-muted-foreground)]">
-            По общим вопросам напишите в{' '}
-            <SupportLink
-              href="mailto:support@vertov.space"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-[color:var(--color-accent)] underline"
-            >
-              поддержку
-            </SupportLink>
-            . Ответим в течение 5 рабочих дней.
+            Для оплаты и возврата укажите Order ID и время операции. Для технической проблемы
+            добавьте шаги, которые привели к ошибке. Данные карты и CVC не нужны.
           </p>
 
-          <h2 className="mt-8 text-h2 text-[color:var(--color-fg)]">Возвраты и оплата</h2>
+          <h2 className="mt-8 text-h2 text-[color:var(--color-fg)]">Срок ответа</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[color:var(--color-muted-foreground)]">
-            Для возврата напишите на{' '}
-            <SupportLink
-              href="mailto:support@vertov.space?subject=Возврат"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-[color:var(--color-accent)] underline"
-            >
-              support@vertov.space
-            </SupportLink>{' '}
-            с темой «Возврат». Ответим в течение 5 рабочих дней.
-          </p>
-
-          <h2 className="mt-8 text-h2 text-[color:var(--color-fg)]">Технические сбои</h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-[color:var(--color-muted-foreground)]">
-            Если генерация завершилась ошибкой, напишите на{' '}
-            <SupportLink
-              href="mailto:support@vertov.space?subject=Vertov+issue"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-[color:var(--color-accent)] underline"
-            >
-              support@vertov.space
-            </SupportLink>
-            . Ответим в течение 5 рабочих дней.
-          </p>
-
-          <h2 className="mt-8 text-h2 text-[color:var(--color-fg)]">Персональные данные</h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-[color:var(--color-muted-foreground)]">
-            По вопросам персональных данных напишите на{' '}
-            <SupportLink
-              href="mailto:privacy@vertov.space"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-[color:var(--color-accent)] underline"
-            >
-              privacy@vertov.space
-            </SupportLink>
-            . Ответим в течение 5 рабочих дней.
-          </p>
-
-          <h2 className="mt-8 text-h2 text-[color:var(--color-fg)]">Юридические вопросы</h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-[color:var(--color-muted-foreground)]">
-            По юридическим вопросам напишите на{' '}
-            <SupportLink
-              href="mailto:legal@vertov.space"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-[color:var(--color-accent)] underline"
-            >
-              legal@vertov.space
-            </SupportLink>
-            . Ответим в течение 5 рабочих дней.
+            Ответим в течение 5 рабочих дней. Если вопрос связан с возвратом, сначала проверим
+            статус операции в платёжной системе.
           </p>
 
           <h2 className="mt-8 text-h2 text-[color:var(--color-fg)]">Полезные ссылки</h2>

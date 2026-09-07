@@ -29,10 +29,7 @@ export default function RouteError({
       <h1 className="text-h1 text-[color:var(--color-fg)]">Что-то пошло не так</h1>
       <p className="max-w-md text-sm leading-relaxed text-[color:var(--color-muted-foreground)]">
         Мы уже разбираемся. Попробуйте обновить страницу — если ошибка повторится, напишите в
-        <SupportLink
-          href={`mailto:support@vertov.space?subject=Vertov+issue${error.digest ? `&body=Error+ID:+${encodeURIComponent(error.digest)}` : ''}`}
-          className="underline underline-offset-2"
-        >
+        <SupportLink href="/support" className="underline underline-offset-2">
           поддержку
         </SupportLink>
         . Ответим в течение 5 рабочих дней.
