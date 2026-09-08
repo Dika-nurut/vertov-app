@@ -77,3 +77,12 @@ finish in-window complete; jobs cut off by the deadline are re-reaped.
   instances scale without hitting PG `max_connections` under the load smoke.
 - **INF-12:** ✅ coded + unit-tested + deploy-failure contract-tested + documented;
   a live rolling-restart drill is folded into the load smoke (INF-21).
+
+## Support attachments
+
+The support form stores files in the private `seed-support-attachments` bucket
+under `support/`. Managed object storage must provision that bucket and a
+one-day lifecycle rule for the `support/` prefix before the API is deployed.
+The API and worker require only data-plane access: API `PutObject`/`DeleteObject`,
+worker `GetObject`/`DeleteObject`. Keep `SUPPORT_ATTACHMENT_BOOTSTRAP` unset or
+`false` in production; `true` is only for an explicitly bootstrapped local MinIO.

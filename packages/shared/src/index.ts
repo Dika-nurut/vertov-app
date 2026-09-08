@@ -392,3 +392,4 @@ export {
 export * from './ai-usage';
 export * from './scenario-assist-pricing';
 export * from './delivered-rank';
+export * from './support-attachments';

@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type IORedis from 'ioredis';
+import type { EventEmitter } from 'node:events';
 import { existsSync } from 'node:fs';
 import PDFDocument from 'pdfkit';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -63,7 +64,7 @@ async function fetchFrame(url: string): Promise<Buffer | null> {
     });
     // An aborted/undrained body emits 'error' asynchronously — without a
     // listener that is an uncaught event and KILLS the process.
-    res.body.on('error', () => {});
+    (res.body as unknown as EventEmitter).on('error', () => {});
     if (res.statusCode >= 400) {
       await res.body.dump().catch(() => {});
       return null;

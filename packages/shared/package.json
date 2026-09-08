@@ -26,7 +26,8 @@
     "./preset-merge": "./src/preset-merge.ts",
     "./subscription-tiers": "./src/subscription-tiers.ts",
     "./sreda-folders": "./src/sreda-folders.ts",
-    "./pixel-mark": "./src/pixel-mark.ts"
+    "./pixel-mark": "./src/pixel-mark.ts",
+    "./support-attachments": "./src/support-attachments.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",

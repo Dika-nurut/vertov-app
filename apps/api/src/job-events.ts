@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { EventEmitter } from 'node:events';
 import IORedis from 'ioredis';
 import { redisTlsOptions } from '@seed/credits';
 
@@ -117,7 +118,7 @@ export function setupJobEventsRoute(
         if (set.size === 0) clients.delete(userId);
       }
     };
-    req.raw.on('close', cleanup);
+    (req.raw as unknown as EventEmitter).on('close', cleanup);
   });
 
   return {

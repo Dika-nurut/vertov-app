@@ -83,7 +83,7 @@ import { startBoardTrashReaper } from './board-trash-reaper';
 import { startRouteMarginAlarm } from './route-margin-alarm-poller';
 import { drainWorkers } from './shutdown';
 import { probeReadiness } from './readiness';
-import { sendAuthEmailJob } from './auth-email';
+import { createAuthEmailSender } from './auth-email';
 import {
   creditsCommitTotal,
   creditsRefundTotal,
@@ -153,6 +153,7 @@ const authEmailQueue = new Queue<AuthEmailJob>(AUTH_EMAIL_QUEUE, {
     },
   },
 });
+const sendAuthEmailJob = createAuthEmailSender();
 
 const commitProcessor: Processor<CreditCommitJob, unknown> = async (job) => {
   const reqId = (job.data as { _reqId?: string })._reqId;

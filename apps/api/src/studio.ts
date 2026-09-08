@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import type { EventEmitter } from 'node:events';
 import { createWriteStream } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -595,8 +596,8 @@ async function decodePeaks(minio: MinioClient, bucket: string, key: string): Pro
         ['-v', 'error', '-i', file, '-vn', '-ac', '1', '-ar', '8000', '-f', 'f32le', 'pipe:1'],
         { stdio: ['ignore', 'pipe', 'pipe'] },
       );
-      ff.stdout.on('data', (c: Buffer) => out.push(c));
-      ff.stderr.on('data', (c: Buffer) => err.push(c));
+      (ff.stdout as unknown as EventEmitter).on('data', (c: Buffer) => out.push(c));
+      (ff.stderr as unknown as EventEmitter).on('data', (c: Buffer) => err.push(c));
       ff.on('error', reject); // ffmpeg missing / spawn failure → 502
       ff.on('close', (c) =>
         resolve({
@@ -638,7 +639,7 @@ function ffprobeDuration(file: string): Promise<number> {
       ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file],
       { stdio: ['ignore', 'pipe', 'ignore'] },
     );
-    ff.stdout.on('data', (c: Buffer) => (out += c.toString()));
+    (ff.stdout as unknown as EventEmitter).on('data', (c: Buffer) => (out += c.toString()));
     ff.on('error', () => resolve(0));
     ff.on('close', () => {
       const d = Number.parseFloat(out.trim());
@@ -680,7 +681,7 @@ async function renderFilmstrip(minio: MinioClient, bucket: string, key: string):
           ],
           { stdio: ['ignore', 'ignore', 'pipe'] },
         );
-        ff.stderr.on('data', (c: Buffer) => err.push(c));
+        (ff.stderr as unknown as EventEmitter).on('data', (c: Buffer) => err.push(c));
         ff.on('error', reject);
         ff.on('close', (c) => resolve({ code: c, stderr: Buffer.concat(err).toString('utf8') }));
       },

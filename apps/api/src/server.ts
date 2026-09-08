@@ -79,6 +79,7 @@ declare module 'fastify' {
 }
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import IORedis from 'ioredis';
 import { Queue } from 'bullmq';
@@ -169,6 +170,14 @@ import { OCTET_STREAM_PARSER_OPTIONS } from './upload-limits';
 import { unitsForModel } from './units';
 import { resolveDevHelpersEnabled } from './dev-helpers-config';
 import { setGalleryItemFeatured } from './gallery-feature';
+import { limitMultipartPayload } from './multipart-request-limit';
+import {
+  SUPPORT_ATTACHMENT_MAX_FILE_BYTES,
+  SUPPORT_ATTACHMENT_MAX_FILES,
+  SUPPORT_ATTACHMENT_MAX_PARTS,
+  SUPPORT_ATTACHMENT_MAX_REQUEST_BYTES,
+  SUPPORT_ATTACHMENT_MAX_TEXT_BYTES,
+} from '@seed/shared/support-attachments';
 import {
   creditsGrantTotal,
   freeGrantsIssuedTotal,
@@ -255,7 +264,7 @@ const app = Fastify({
       // control chars would otherwise smuggle into pino's reqId
       // field and response header.
       const sanitized = inbound.replace(/[^A-Za-z0-9._-]/g, '');
-      if (sanitized.length > 0) return sanitized;
+      if (sanitized.length > 0 && !sanitized.includes('..')) return sanitized;
     }
     return randomUUID();
   },
@@ -293,6 +302,15 @@ app.addHook('onRequest', async (req, reply) => {
 // The preParsing hook receives the raw Node IncomingMessage stream; we
 // collect chunks and attach them to req.rawBody for downstream use.
 app.addHook('preParsing', async (req, _reply, payload) => {
+  // Multipart support consumes the stream itself. Capturing it here would
+  // duplicate every attachment in memory before @fastify/multipart sees it.
+  if (
+    String(req.headers['content-type'] ?? '')
+      .toLowerCase()
+      .includes('multipart/form-data')
+  ) {
+    return limitMultipartPayload(req, payload as Readable, SUPPORT_ATTACHMENT_MAX_REQUEST_BYTES);
+  }
   const chunks: Buffer[] = [];
   const readable = payload as NodeJS.ReadableStream;
   for await (const chunk of readable) {
@@ -336,6 +354,18 @@ app.addContentTypeParser(
   OCTET_STREAM_PARSER_OPTIONS,
   (_req, body, done) => done(null, body),
 );
+await app.register(multipart, {
+  throwFileSizeLimit: true,
+  limits: {
+    // Allow one extra file through so the route can return its own 413 instead
+    // of Busboy closing the current stream before the limit error is observed.
+    files: SUPPORT_ATTACHMENT_MAX_FILES + 1,
+    fileSize: SUPPORT_ATTACHMENT_MAX_FILE_BYTES,
+    fields: 5,
+    parts: SUPPORT_ATTACHMENT_MAX_PARTS,
+    fieldSize: SUPPORT_ATTACHMENT_MAX_TEXT_BYTES,
+  },
+});
 await app.register(rateLimit, {
   // In dev/e2e every request (browser + the web server's own SSR fetches +
   // Playwright API calls) arrives from ONE ip — 100/min trips constantly and

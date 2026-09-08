@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type IORedis from 'ioredis';
 import { createHash } from 'node:crypto';
+import type { EventEmitter } from 'node:events';
 import { and, asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import {
@@ -943,7 +944,7 @@ export function setupScriptAssistRoutes(
 
     const abort = new AbortController();
     const deadline = setTimeout(() => abort.abort(), options.deadlineMs ?? ASSIST_DEADLINE_MS);
-    req.raw.on('close', () => abort.abort());
+    (req.raw as unknown as EventEmitter).on('close', () => abort.abort());
 
     // Complete the request durably AND ownership-fenced, all in ONE transaction:
     // fence the claim to 'completed' (the reaper may have refunded an aged claim

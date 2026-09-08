@@ -1,6 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import {
+  SUPPORT_ATTACHMENT_ALLOWED_CONTENT_TYPES,
+  SUPPORT_ATTACHMENT_MAX_FILE_BYTES,
+  SUPPORT_ATTACHMENT_MAX_FILES,
+  SUPPORT_ATTACHMENT_MAX_TOTAL_BYTES,
+} from '@seed/shared/support-attachments';
 
 type Topic = 'general' | 'billing' | 'refund' | 'technical' | 'privacy' | 'legal';
 
@@ -13,27 +19,84 @@ const TOPICS: { value: Topic; label: string }[] = [
   { value: 'legal', label: 'Юридический вопрос' },
 ];
 
+const ATTACHMENT_ACCEPT = SUPPORT_ATTACHMENT_ALLOWED_CONTENT_TYPES.join(',');
+
+function isBrowserAttachmentTypeAllowed(file: File): boolean {
+  if (
+    SUPPORT_ATTACHMENT_ALLOWED_CONTENT_TYPES.includes(
+      file.type as (typeof SUPPORT_ATTACHMENT_ALLOWED_CONTENT_TYPES)[number],
+    )
+  ) {
+    return true;
+  }
+  return /\.(?:pdf|jpe?g|png|gif|webp)$/i.test(file.name);
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} КБ`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
 export function SupportForm({ apiUrl, initialEmail }: { apiUrl: string; initialEmail: string }) {
   const [email, setEmail] = useState(initialEmail);
   const [topic, setTopic] = useState<Topic>('general');
   const [orderId, setOrderId] = useState('');
   const [message, setMessage] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [website, setWebsite] = useState('');
   const [state, setState] = useState<{ kind: 'idle' | 'success' | 'error'; text?: string }>({
     kind: 'idle',
   });
   const [busy, setBusy] = useState(false);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
+
+  function onAttachmentsChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(event.currentTarget.files ?? []);
+    const totalBytes = selected.reduce((sum, file) => sum + file.size, 0);
+    const invalidType = selected.some((file) => !isBrowserAttachmentTypeAllowed(file));
+    const tooLarge = selected.some((file) => file.size > SUPPORT_ATTACHMENT_MAX_FILE_BYTES);
+    const tooMany = selected.length > SUPPORT_ATTACHMENT_MAX_FILES;
+    const totalTooLarge = totalBytes > SUPPORT_ATTACHMENT_MAX_TOTAL_BYTES;
+
+    if (tooMany || tooLarge || totalTooLarge || invalidType) {
+      setAttachments([]);
+      event.currentTarget.value = '';
+      setAttachmentError(
+        tooMany
+          ? `Можно прикрепить не больше ${SUPPORT_ATTACHMENT_MAX_FILES} файлов.`
+          : tooLarge || totalTooLarge
+            ? 'Размер вложений должен быть не больше 10 МБ на файл и 30 МБ суммарно.'
+            : 'Поддерживаются только изображения JPG, PNG, GIF, WEBP и PDF.',
+      );
+      return;
+    }
+
+    setAttachments(selected);
+    setAttachmentError(null);
+  }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (attachmentError) {
+      setState({ kind: 'error', text: attachmentError });
+      return;
+    }
     setBusy(true);
     setState({ kind: 'idle' });
     try {
+      const formData = new FormData();
+      formData.set('email', email);
+      formData.set('topic', topic);
+      formData.set('orderId', orderId);
+      formData.set('message', message);
+      formData.set('website', website);
+      for (const file of attachments) formData.append('attachments', file, file.name);
+
       const response = await fetch(`${apiUrl}/v1/support`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, topic, orderId, message, website }),
+        body: formData,
       });
       const body = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) {
@@ -44,9 +107,11 @@ export function SupportForm({ apiUrl, initialEmail }: { apiUrl: string; initialE
               ? 'Слишком много обращений. Попробуйте позже.'
               : response.status === 503
                 ? 'Поддержка временно недоступна. Попробуйте позже.'
-                : body.error === 'invalid_body'
-                  ? 'Проверьте email и заполните сообщение.'
-                  : 'Не удалось отправить обращение.',
+                : response.status === 413 || body.error === 'invalid_attachments'
+                  ? 'Проверьте формат и размер вложений.'
+                  : body.error === 'invalid_body'
+                    ? 'Проверьте email и заполните сообщение.'
+                    : 'Не удалось отправить обращение.',
         });
         return;
       }
@@ -56,6 +121,9 @@ export function SupportForm({ apiUrl, initialEmail }: { apiUrl: string; initialE
       });
       setOrderId('');
       setMessage('');
+      setAttachments([]);
+      setAttachmentError(null);
+      if (attachmentInputRef.current) attachmentInputRef.current.value = '';
       setWebsite('');
     } catch {
       setState({ kind: 'error', text: 'Сетевая ошибка. Попробуйте ещё раз.' });
@@ -132,6 +200,43 @@ export function SupportForm({ apiUrl, initialEmail }: { apiUrl: string; initialE
           className="resize-y border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-card)] px-3 py-2.5 text-sm outline-none focus:shadow-[3px_3px_0_0_var(--color-accent)]"
           placeholder="Опишите, что произошло и какой результат вы ожидали."
         />
+      </label>
+      <label className="grid gap-1.5">
+        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">
+          Вложения{' '}
+          <span className="font-normal normal-case tracking-normal text-faint">
+            (необязательно, до 3 файлов)
+          </span>
+        </span>
+        <input
+          ref={attachmentInputRef}
+          data-testid="support-attachments"
+          type="file"
+          multiple
+          accept={ATTACHMENT_ACCEPT}
+          onChange={onAttachmentsChange}
+          className="block w-full border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-card)] px-3 py-2.5 text-sm file:mr-3 file:border-0 file:bg-transparent file:font-bold"
+        />
+        <span className="text-[11px] leading-relaxed text-[color:var(--color-faint)]">
+          JPG, PNG, GIF, WEBP или PDF; максимум 10 МБ на файл, 30 МБ суммарно.
+        </span>
+        {attachmentError && (
+          <span
+            data-testid="support-attachment-error"
+            className="text-[13px] font-bold text-destructive"
+          >
+            {attachmentError}
+          </span>
+        )}
+        {attachments.length > 0 && (
+          <ul data-testid="support-attachment-list" className="grid gap-1 text-sm">
+            {attachments.map((file) => (
+              <li key={`${file.name}-${file.lastModified}`}>
+                {file.name} <span className="text-faint">({formatFileSize(file.size)})</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </label>
       <label aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
         Website

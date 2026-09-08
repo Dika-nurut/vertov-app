@@ -6,6 +6,8 @@
  * dedicated packages — colocating the constants keeps API and worker aligned.
  */
 
+import type { SupportAttachmentRef } from '@seed/shared/support-attachments';
+
 export const CREDIT_COMMIT_QUEUE = 'credits.commit' as const;
 export const CREDIT_REFUND_QUEUE = 'credits.refund' as const;
 export const JOB_RUN_QUEUE = 'jobs.run' as const;
@@ -126,6 +128,8 @@ export interface StudioRenderPayload {
   _reqId?: string;
 }
 
+export type AuthEmailAttachment = SupportAttachmentRef;
+
 /**
  * The worker receives the already-rendered message so the API request only
  * needs to persist an outbox row.  This payload intentionally contains no
@@ -135,6 +139,8 @@ export interface AuthEmailJob {
   to: string;
   subject: string;
   text: string;
+  /** Private object-store references for support email attachments. */
+  attachments?: SupportAttachmentRef[];
   /** Correlation id propagated from the API request. */
   _reqId?: string;
 }

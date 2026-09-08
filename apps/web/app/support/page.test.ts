@@ -5,6 +5,7 @@ import robots from '../robots';
 import sitemap from '../sitemap';
 
 const PAGE_SOURCE = readFileSync(join(__dirname, 'page.tsx'), 'utf8');
+const FORM_SOURCE = readFileSync(join(__dirname, 'SupportForm.tsx'), 'utf8');
 const MIDDLEWARE_SOURCE = readFileSync(join(__dirname, '../../middleware.ts'), 'utf8');
 
 describe('Wave 1.1 public /support page', () => {
@@ -29,6 +30,13 @@ describe('Wave 1.1 public /support page', () => {
     expect(PAGE_SOURCE).toContain('canonical');
     expect(PAGE_SOURCE).toContain("'/support'");
     expect(PAGE_SOURCE).not.toContain('mailto:');
+  });
+
+  it('form exposes constrained file attachments', () => {
+    expect(FORM_SOURCE).toContain('data-testid="support-attachments"');
+    expect(FORM_SOURCE).toContain('FormData');
+    expect(FORM_SOURCE).toContain('SUPPORT_ATTACHMENT_MAX_FILE_BYTES');
+    expect(FORM_SOURCE).toContain('SUPPORT_ATTACHMENT_MAX_FILES');
   });
 
   it('middleware allows public /support', () => {
