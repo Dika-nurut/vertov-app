@@ -229,6 +229,10 @@ export function BillingClient({
         <h2 className="font-display text-lg font-extrabold uppercase tracking-tight">
           История платежей
         </h2>
+        <p className="mt-2 text-sm text-[color:var(--color-muted-foreground)]">
+          Номер каждой покупки указан под её названием. Для оплаты или возврата скопируйте номер из
+          строки с нужной датой и суммой.
+        </p>
         {history.length === 0 ? (
           <p className="mt-3 text-sm text-[color:var(--color-muted-foreground)]">
             Платежей ещё не было.
@@ -254,7 +258,18 @@ export function BillingClient({
                     className="border-b-[2.5px] border-[color:var(--color-line-soft)] transition-colors last:border-0 hover:bg-[color:var(--color-surface2)]"
                   >
                     <td className="py-2 tnum">{formatDate(row.paidAt ?? row.createdAt)}</td>
-                    <td className="py-2">{row.title}</td>
+                    <td className="py-2">
+                      <div>{row.title}</div>
+                      <div className="mt-1 text-xs text-[color:var(--color-muted-foreground)]">
+                        Номер заказа:{' '}
+                        <code
+                          data-testid="history-order-id"
+                          className="select-all break-all font-mono text-[color:var(--color-fg)]"
+                        >
+                          {row.id}
+                        </code>
+                      </div>
+                    </td>
                     <td className="tnum py-2 text-right">
                       {row.amountRub.toLocaleString('ru-RU')} ₽
                     </td>

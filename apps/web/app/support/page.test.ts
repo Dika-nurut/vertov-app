@@ -39,6 +39,13 @@ describe('Wave 1.1 public /support page', () => {
     expect(FORM_SOURCE).toContain('SUPPORT_ATTACHMENT_MAX_FILES');
   });
 
+  it('explains where a payment order id comes from', () => {
+    expect(FORM_SOURCE).toContain('Настройки → Биллинг → История платежей');
+    expect(FORM_SOURCE).toContain('выберите строку по дате и сумме');
+    expect(FORM_SOURCE).toContain('Для технических вопросов оставьте');
+    expect(FORM_SOURCE).toContain('Один номер заказа = одна покупка');
+  });
+
   it('middleware allows public /support', () => {
     expect(MIDDLEWARE_SOURCE).toContain('/support');
     expect(MIDDLEWARE_SOURCE).toContain(String.raw`/^\/support$/`);

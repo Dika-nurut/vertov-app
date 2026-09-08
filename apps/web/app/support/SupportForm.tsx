@@ -172,17 +172,22 @@ export function SupportForm({ apiUrl, initialEmail }: { apiUrl: string; initialE
       </div>
       <label className="grid gap-1.5">
         <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">
-          Order ID{' '}
+          Номер заказа (Order ID){' '}
           <span className="font-normal normal-case tracking-normal text-faint">
-            (если вопрос об оплате)
+            (только для оплаты или возврата)
           </span>
+        </span>
+        <span className="text-[11px] leading-relaxed text-[color:var(--color-faint)]">
+          Откройте «Настройки → Биллинг → История платежей» и скопируйте номер под нужной покупкой.
+          Если покупок несколько, выберите строку по дате и сумме. Для технических вопросов оставьте
+          поле пустым.
         </span>
         <input
           data-testid="support-order-id"
           value={orderId}
           onChange={(event) => setOrderId(event.target.value)}
           className="border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-card)] px-3 py-2.5 text-sm outline-none focus:shadow-[3px_3px_0_0_var(--color-accent)]"
-          placeholder="например, IGyTnGFPxCUOzU73TxJuR"
+          placeholder="Вставьте номер из истории платежей"
         />
       </label>
       <label className="grid gap-1.5">
@@ -257,7 +262,7 @@ export function SupportForm({ apiUrl, initialEmail }: { apiUrl: string; initialE
           {busy ? 'Отправляем…' : 'Отправить обращение'}
         </button>
         <span className="text-[11px] leading-relaxed text-[color:var(--color-faint)]">
-          Не указывайте номер карты, срок действия или CVC. Для платежей достаточно Order ID.
+          Не указывайте номер карты, срок действия или CVC. Один номер заказа = одна покупка.
         </span>
       </div>
       {state.text && (
