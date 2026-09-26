@@ -57,7 +57,7 @@ const FORMAT_PLAYBOOKS = [
   '  · Синопсис в brief (3–5 предложений) через goal/tone/constraints.',
   '  · Биты — это СЦЕНЫ (kind=scene): сцена = событие + перемена состояния,',
   '    а не «локация». title = что происходит, summary = суть сцены.',
-  '  · Тайминг постраничный/опциональный: durationSeconds можно опустить.',
+  '  · Тайминг — оценка экранного времени сцены (примерно минута на страницу).',
   '',
   '«sketch» (Скетч):',
   '  · Одна посылка (premise), без побочных линий.',
@@ -73,7 +73,9 @@ const UNIVERSAL_RULES = [
   'title всегда говорит ЧТО происходит, summary — 1–2 предложения по сути.',
   'Тайминг задаёт число битов и ОБЯЗАН суммироваться в цель: если пользователь дал',
   'длительность — уложись в неё; если нет — выбери типичную для формата и держи сумму',
-  'durationSeconds битов равной этой цели (± пара секунд). Для film тайминг опционален.',
+  'durationSeconds битов равной этой цели (± пара секунд). durationSeconds есть у КАЖДОГО бита.',
+  'Каждый бит станет сценой черновика: visual (что в кадре, конкретно и снимаемо) есть',
+  'всегда; spokenText — реплика или закадровый голос, onScreenText — титр, если нужны.',
   'Пробелы в брифе заполняй нейтральным предположением и ставь brief.inferred=true —',
   'не выдумывай смелых фактов. Задай РОВНО ОДИН вопрос (поле "question") ТОЛЬКО если',
   'недостающий факт реально меняет структуру; иначе поля "question" быть не должно.',
@@ -123,8 +125,9 @@ export function buildStructurizePrompt(input: { source: string; kind: Structuriz
   const system = [
     'Ты — структуратор замысла в приложении «Вертов · Сценарий». Из сырой идеи или',
     'вставленного текста ты собираешь рабочую структуру для одного из четырёх форматов:',
-    'Фильм, Короткое видео, Реклама/бренд, Скетч. Ты НЕ пишешь готовый сценарий —',
-    'ты выдаёшь бриф-предположение и упорядоченные биты, которые автор потом правит.',
+    'Фильм, Короткое видео, Реклама/бренд, Скетч. Ты выдаёшь бриф-предположение и',
+    'упорядоченные биты — из них Вертов собирает первый черновик сценария по сценам,',
+    'который автор потом правит. Поэтому каждый бит должен читаться как готовая сцена.',
     '',
     'Сначала определи формат по идее (film/social/ad/sketch), затем применяй правила',
     'ИМЕННО этого формата. Правила — это как отвечать хорошо, а не шаблон для заполнения.',
@@ -289,4 +292,43 @@ export function parseStructurizeOutput(raw: string): ScenarioStructurizeResult {
     throw new StructurizeSchemaError(result.error.issues.map((issue) => issue.message).join('; '));
   }
   return result.data;
+}
+
+/** Keep one Fountain line: no line breaks, and no leading marks that re-type it. */
+function oneLine(text: string): string {
+  return text
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^[.!@~>=#]+\s*/, '');
+}
+
+/**
+ * The first draft the author opens: one Fountain scene per beat, in order.
+ * Pure text — seconds travel separately as Vertov timing suggestions, so the
+ * sheet stays a normal screenplay the writer can edit and export.
+ */
+export function structurizeDraftFountain(result: ScenarioStructurizeResult): string {
+  const scenes = result.outline.beats.map((beat, index) => {
+    const title = oneLine(beat.title) || `Сцена ${index + 1}`;
+    const lines = [`.${title.toLocaleUpperCase('ru-RU')}`];
+    const summary = oneLine(beat.summary);
+    if (summary) lines.push(`= ${summary}`);
+    lines.push('', oneLine(beat.visual ?? '') || summary || title);
+    if (beat.onScreenText) lines.push('', `ТИТР: ${oneLine(beat.onScreenText)}`);
+    if (beat.spokenText) {
+      const cue = result.format === 'film' ? 'ГОЛОС' : 'ГОЛОС ЗА КАДРОМ';
+      lines.push('', cue, oneLine(beat.spokenText));
+    }
+    return lines.join('\n');
+  });
+  return `${scenes.join('\n\n')}\n`;
+}
+
+/** A working title from the idea's first line, cut on a word near 60 chars. */
+export function draftTitle(idea: string): string {
+  const line = idea.trim().split('\n')[0]!.replace(/\s+/g, ' ').trim();
+  if (line.length <= 60) return line.replace(/[.!…]+$/, '');
+  const cut = line.slice(0, 60);
+  const space = cut.lastIndexOf(' ');
+  return `${(space > 30 ? cut.slice(0, space) : cut).replace(/[,.:;—-]+$/, '')}…`;
 }

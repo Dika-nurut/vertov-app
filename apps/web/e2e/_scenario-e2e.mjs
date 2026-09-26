@@ -74,6 +74,9 @@ try {
   await page.waitForURL(new RegExp(`/scenario/${createdScriptId}$`), { timeout: 30_000 });
   await page.getByTestId('scenario-canvas').waitFor({ timeout: 20_000 });
   await page.getByTestId('scenario-structure-panel').waitFor();
+  // The idea start opens on a written draft: the mock's beats are scenes on the sheet.
+  await page.locator('[data-testid="scenario-editor"] .cm-content').getByText('.ЗАВЯЗКА').waitFor();
+  await page.getByTestId('scenario-timing-panel').waitFor();
   await page.screenshot({ path: resolve(evidenceDir, '02-structure-in-editor.png') });
   log('structurize result persisted as the editable project structure');
 

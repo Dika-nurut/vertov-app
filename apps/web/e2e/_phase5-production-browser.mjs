@@ -370,7 +370,7 @@ auditWalk: {
       (response) =>
         response.url().includes('/scene-timings/') && response.request().method() === 'PUT',
     );
-    await page.getByTestId('scenario-timing-save-1').click();
+    await timingInput.press('Enter');
     assert((await timingResponse).ok(), 'approved timing PUT succeeded');
     const timings = await json(
       await context.request.get(`${API}/v1/scripts/${encodeURIComponent(scriptId)}/scene-timings`),
@@ -408,6 +408,8 @@ auditWalk: {
 
     await page.unroute(/\/v1\/scripts\/[^/]+\/structurize$/, structRoute);
     await page.getByTestId('scenario-board-open').click();
+    // These journeys cover the scene handoff itself, not shot planning.
+    await page.getByTestId('scenario-board-plan').uncheck();
     await page.getByTestId('scenario-board-dialog').waitFor();
     await page.getByTestId('scenario-board-submit').click();
     await page.getByTestId('scenario-board-receipt').waitFor({ timeout: 20_000 });

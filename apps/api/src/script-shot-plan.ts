@@ -27,7 +27,6 @@ import {
   type AiCallAttempt,
   type AiUsage,
   scenarioFormatSchema,
-  scenarioOutlineV1Schema,
 } from '@seed/shared';
 import {
   SCENARIO_SHOT_PLAN_BUDGET,
@@ -43,7 +42,8 @@ import {
   scenarioShotPlanSchema,
   type ScenarioShotPlan,
 } from '@seed/shared/scenario-shot-plan';
-import { extractScenarioHandoffSources, scenarioHandoffLocks } from './scenario-board-handoff';
+import { scenarioHandoffLocks } from './scenario-board-handoff';
+import { loadScenarioSources } from './scenario-sources';
 import { egressFetch } from './egress-fetch';
 import { dailySpendCap, releaseDailyBudget, reserveDailyBudget } from './spend-guard';
 import { checkRateLimit } from './rate-limit';
@@ -129,11 +129,7 @@ function boundedText(value: unknown, max = 8_000): string {
 }
 
 function scriptSources(script: typeof scripts.$inferSelect) {
-  return extractScenarioHandoffSources({
-    format: scenarioFormatSchema.parse(script.format),
-    outline: scenarioOutlineV1Schema.parse(script.outline),
-    fountain: script.fountain,
-  });
+  return loadScenarioSources(script);
 }
 
 async function approvedMediaRefs(
@@ -216,7 +212,7 @@ export function setupScriptShotPlanRoutes(
 
       let source;
       try {
-        source = scriptSources(script).find(
+        source = (await scriptSources(script)).find(
           (candidate) => scenarioTimingSourceUnitId(candidate) === req.params.sceneId,
         );
       } catch (error) {

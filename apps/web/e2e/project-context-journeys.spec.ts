@@ -85,6 +85,8 @@ test('full project-context journey returns every real source and output to Ср�
 
   // Scenario → Board is the production handoff, not a route mock.
   await page.getByTestId('scenario-board-open').click();
+  // These journeys cover the scene handoff itself, not shot planning.
+  await page.getByTestId('scenario-board-plan').uncheck();
   await page.getByTestId('scenario-board-submit').click();
   await expect(page.getByTestId('scenario-board-receipt')).toBeVisible();
   await page.getByTestId('scenario-board-open-result').click();

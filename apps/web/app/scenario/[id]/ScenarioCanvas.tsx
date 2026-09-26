@@ -17,7 +17,8 @@ import { ScenarioMobileDock } from './ScenarioMobileDock';
 import { VersionsSheet } from './VersionsSheet';
 import { ScenarioBoardHandoff } from './ScenarioBoardHandoff';
 import { ScenarioStructurePanel } from './ScenarioStructurePanel';
-import { ScenarioTimingPanel } from './ScenarioTimingPanel';
+import { ScenarioTimingStrip } from './ScenarioTimingStrip';
+import { formatSeconds, sceneSeconds, useSceneTimings } from '../useSceneTimings';
 import { CANON_ACCRETION_ENABLED } from '../canon-flags';
 import {
   canonCount,
@@ -92,6 +93,20 @@ export function ScenarioCanvas({
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const scenes = useMemo(() => buildSceneNav(docText), [docText]);
   const currentSceneIndex = sceneAtOffset(scenes, caret);
+  const timings = useSceneTimings(apiUrl, initial.id, script.rev);
+  const [targetSeconds, setTargetSeconds] = useState<number | null>(
+    initial.brief.durationSeconds ?? null,
+  );
+  // The navigator shows the same screen time as the strip, not a second estimate.
+  const navScenes = useMemo(
+    () =>
+      scenes.map((scene) => {
+        const timing = timings.scenes?.find((item) => item.ordinal === scene.index);
+        const seconds = timing ? sceneSeconds(timing) : null;
+        return seconds ? { ...scene, duration: formatSeconds(seconds) } : scene;
+      }),
+    [scenes, timings.scenes],
+  );
 
   useEffect(() => {
     trackEvent(PlausibleEvent.scenarioStartOpened, {
@@ -146,6 +161,41 @@ export function ScenarioCanvas({
       void assist.ask({ question, anchor: anchorFromSelection(selection), scope: 'span' });
     },
     [selection, assist.ask, anchorFromSelection],
+  );
+
+  /** A scene action: the whole scene under the caret becomes the anchored fragment, so
+   *  the answer arrives as an applicable Было → Станет proposal, not advice. */
+  const askScene = useCallback(
+    async (question: string) => {
+      // Anchor only on text the server has acknowledged: saveNow() snapshots
+      // the sheet when it starts, so typing during a slow save means the ref
+      // runs ahead. Save again until the two match; give up while still typing.
+      let text: string | null = null;
+      for (let attempt = 0; attempt < 3 && text === null; attempt++) {
+        const snapshot = script.fountainRef.current;
+        if (!(await script.saveNow())) return;
+        if (script.fountainRef.current === snapshot) text = snapshot;
+      }
+      if (text === null) return;
+      const nav = buildSceneNav(text);
+      const ordinal = sceneAtOffset(nav, caret);
+      const scene = nav.find((item) => item.index === ordinal);
+      if (!scene) return;
+      let to = scene.to;
+      while (to > scene.from && /\s/.test(text[to - 1]!)) to--;
+      const quote = text.slice(scene.from, to);
+      // Past the fragment ceiling the scene can only be discussed, not rewritten.
+      if (quote.length > 4_000) {
+        void assist.ask({ question, scope: 'scene', sceneOrdinal: scene.index });
+        return;
+      }
+      void assist.ask({
+        question,
+        anchor: { from: scene.from, to, rev: script.rev, quote },
+        scope: 'span',
+      });
+    },
+    [assist.ask, caret, script],
   );
 
   /** Ordinary chat is project scope; whole-script is an explicit composer choice. */
@@ -346,6 +396,9 @@ export function ScenarioCanvas({
           scriptId={initial.id}
           workspaceProjectId={workspaceProjectId}
           saveNow={script.saveNow}
+          isAnonymous={isAnonymous}
+          reloadTimings={timings.reload}
+          setSeconds={timings.setSeconds}
         />
       </header>
 
@@ -403,7 +456,7 @@ export function ScenarioCanvas({
       {/* ---- three columns ---- */}
       <div className="flex min-h-0 flex-1">
         <LeftPanel
-          scenes={scenes}
+          scenes={navScenes}
           currentIndex={currentSceneIndex}
           notes={panel.notes}
           materials={panel.materials}
@@ -425,21 +478,34 @@ export function ScenarioCanvas({
 
         {/* screenplay sheet — reserve bottom room for the mobile dock (lg:0) */}
         <main className="relative flex min-w-0 flex-1 flex-col bg-[color:var(--color-bg)] pb-[72px] lg:pb-0">
-          <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 px-4">
-            <div className="relative flex h-full flex-col overflow-hidden border-x-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-paper)]">
+          <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col px-4 pt-3">
+            {timings.scenes && timings.scenes.length > 0 && (
+              <ScenarioTimingStrip
+                scenes={timings.scenes}
+                error={timings.error}
+                currentOrdinal={currentSceneIndex}
+                targetSeconds={targetSeconds}
+                onJump={(ordinal) => {
+                  const scene = scenes.find((item) => item.index === ordinal);
+                  if (scene) editorRef.current?.reveal(scene.from);
+                }}
+                onSetSeconds={async (sourceUnitId, seconds) =>
+                  (await script.saveNow()) && timings.setSeconds(sourceUnitId, seconds)
+                }
+              />
+            )}
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-x-[2.5px] border-t-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-paper)]">
               {initial.outline.beats.length > 0 && (
                 <ScenarioStructurePanel
                   initialFormat={initial.format}
                   initialBrief={initial.brief}
                   initialOutline={initial.outline}
-                  onSave={script.updateStructure}
-                />
-              )}
-              {scenes.length > 0 && (
-                <ScenarioTimingPanel
-                  apiUrl={apiUrl}
-                  scriptId={initial.id}
-                  saveNow={script.saveNow}
+                  showBeats={scenes.length === 0}
+                  onSave={async (value) => {
+                    const ok = await script.updateStructure(value);
+                    if (ok) setTargetSeconds(value.brief.durationSeconds ?? null);
+                    return ok;
+                  }}
                 />
               )}
               <div className="min-h-0 flex-1">
@@ -477,6 +543,7 @@ export function ScenarioCanvas({
           quote={assist.quote}
           quoteLoading={assist.quoteLoading}
           currentSceneOrdinal={currentSceneIndex}
+          onSceneAction={askScene}
           onStop={assist.stop}
           onDiscuss={discussThread}
           onApply={applyThread}
@@ -497,7 +564,7 @@ export function ScenarioCanvas({
         canonCount={projectCanonCount}
         soderjanie={
           <Soderjanie
-            scenes={scenes}
+            scenes={navScenes}
             currentIndex={currentSceneIndex}
             onJump={onJump}
             onAddScene={onAddScene}
@@ -540,6 +607,7 @@ export function ScenarioCanvas({
             quote={assist.quote}
             quoteLoading={assist.quoteLoading}
             currentSceneOrdinal={currentSceneIndex}
+            onSceneAction={askScene}
             onStop={assist.stop}
             onDiscuss={discussThread}
             onApply={applyThread}

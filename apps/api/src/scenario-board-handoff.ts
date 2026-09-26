@@ -67,9 +67,20 @@ export function extractScenarioHandoffSources(input: {
   format: ScenarioFormat;
   outline: ScenarioOutlineV1;
   fountain: string;
+  /** Legacy short-form scripts with work saved under beat ids keep the beats. */
+  keepBeatSources?: boolean;
 }): ScenarioHandoffScene[] {
-  if (input.format === 'film' || input.outline.beats.length === 0) {
-    return extractScenarioHandoffScenes(input.fountain);
+  // The sheet is canonical: once it has scenes, they are what the board gets,
+  // whatever the format. Beats remain the source for older short-form scripts
+  // whose sheet never grew scene headings, or whose timings and plans were
+  // saved under beat ids (switching would orphan that work).
+  const scenes = extractScenarioHandoffScenes(input.fountain);
+  if (
+    input.format === 'film' ||
+    input.outline.beats.length === 0 ||
+    (scenes.length > 0 && !input.keepBeatSources)
+  ) {
+    return scenes;
   }
   return input.outline.beats.map((beat, index) => {
     const sourceText = [
@@ -107,6 +118,30 @@ export class ScenarioBoardMaterializationLimitError extends Error {
     super(message);
     this.name = 'ScenarioBoardMaterializationLimitError';
   }
+}
+
+const SCENE_ROW_STEP = 360;
+/** Shot rows: a 300px generate node plus a 40px gap. */
+const SHOT_ROW_STEP = 340;
+/** Cast nodes stack under their scene: first at +320, each 180px tall. */
+const CAST_TOP = 320;
+const CAST_ROW_STEP = 180;
+/** A scene with its shots spans x 80 (scene) to 1320 (generate column end). */
+const LANE_LEFT = 80;
+const LANE_RIGHT = 1320;
+const LANE_GAP = 80;
+
+/** Lowest edge of any node that overlaps the scene lane horizontally. */
+function laneBottom(byId: ReadonlyMap<string, BoardNode>): number {
+  let bottom = -Infinity;
+  for (const node of byId.values()) {
+    const left = node.position.x;
+    // Nodes saved without a size still occupy the canvas; assume a card.
+    const right = left + (node.width ?? 360);
+    if (right <= LANE_LEFT || left >= LANE_RIGHT) continue;
+    bottom = Math.max(bottom, node.position.y + (node.height ?? 280));
+  }
+  return bottom;
 }
 
 const normalizeHeading = (value: string) => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
@@ -212,7 +247,7 @@ export function mergeScenarioScenesIntoBoard(input: {
   let materializedShots = 0;
   let materializedCastNodes = 0;
 
-  input.scenes.forEach((scene, index) => {
+  input.scenes.forEach((scene) => {
     const reuse = findReusableSceneNode(linked, used, scene);
     if (reuse.kind === 'ambiguous') {
       skipped += 1;
@@ -252,7 +287,9 @@ export function mergeScenarioScenesIntoBoard(input: {
         id: sceneNodeId,
         type: 'scene',
         version: BOARD_NODE_VERSION,
-        position: { x: 80, y: maxSceneY + 360 * (index + 1) },
+        // Below everything already in the scene lane: earlier scenes, their
+        // shots, and cast nodes reused from previous syncs alike.
+        position: { x: 80, y: Math.max(maxSceneY + SCENE_ROW_STEP, laneBottom(byId) + LANE_GAP) },
         width: 360,
         height: 280,
         data,
@@ -369,7 +406,7 @@ function materializeScenarioShotPlan(input: {
       'generate',
       String(shot.order),
     );
-    const y = input.sceneY + 320 + (shot.order - 1) * 300;
+    const y = input.sceneY + 320 + (shot.order - 1) * SHOT_ROW_STEP;
     const previousPrompt = input.byId.get(promptId);
     if (previousPrompt?.type === 'prompt') {
       input.byId.set(promptId, {
@@ -477,7 +514,7 @@ function materializeScenarioShotPlan(input: {
           id: castId,
           type: 'cast',
           version: BOARD_NODE_VERSION,
-          position: { x: 120, y: input.sceneY + 320 + newCastIds.size * 180 },
+          position: { x: 120, y: input.sceneY + CAST_TOP + newCastIds.size * CAST_ROW_STEP },
           width: 300,
           height: 180,
           data: {
@@ -515,7 +552,7 @@ function materializeScenarioShotPlan(input: {
           id: castId,
           type: 'cast',
           version: BOARD_NODE_VERSION,
-          position: { x: 120, y: input.sceneY + 320 + newCastIds.size * 180 },
+          position: { x: 120, y: input.sceneY + CAST_TOP + newCastIds.size * CAST_ROW_STEP },
           width: 300,
           height: 180,
           data: { castKind: 'character', name: asset, imageUrls: [] },

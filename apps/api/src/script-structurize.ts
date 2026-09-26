@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type IORedis from 'ioredis';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { db, nid, scripts, scriptAssistRequests } from '@seed/db';
+import { db, nid, scripts, scriptAssistRequests, scriptSceneTimings } from '@seed/db';
 import {
   creditService,
   enqueueViaOutbox,
@@ -32,8 +32,16 @@ import {
   buildStructurizePrompt,
   parseStructurizeOutput,
   StructurizeSchemaError,
+  draftTitle,
+  structurizeDraftFountain,
   type StructurizeSourceKind,
 } from './scenario-structurize';
+import { extractScenarioHandoffScenes } from './scenario-board-handoff';
+import {
+  SCENARIO_TIMING_POLICY_VERSION,
+  scenarioTimingSourceRevisionId,
+  scenarioTimingSourceUnitId,
+} from './scenario-timing';
 import { scenarioStructurizeAttempts, scenarioStructurizeRequestsTotal } from './metrics';
 import { recordAiUsage } from './ai-usage-store';
 import { resolveDeviceCluster } from './device-cluster';
@@ -705,12 +713,30 @@ export function setupScriptStructurizeRoutes(
         // charged (or subsidised for the anonymous acquisition path). A
         // concurrent editor change aborts the whole transaction and follows
         // the existing refund path instead of overwriting newer work.
+        // An idea start opens on a written draft, not on the idea itself: when
+        // the sheet still holds only the idea (or nothing), the beats become
+        // its scenes. Anything the author already wrote is never replaced.
+        const sheet = script.fountain.trim();
+        const draft =
+          kind === 'idea' && (sheet === '' || sheet === source)
+            ? structurizeDraftFountain(result)
+            : null;
         const structureSaved = await tx
           .update(scripts)
           .set({
             format: result.format,
             brief: result.brief,
             outline: result.outline,
+            ...(draft ? { fountain: draft } : {}),
+            // Decided in SQL, not from the row read before the provider call: a
+            // title-only rename does not bump rev, so only the live value can
+            // tell whether the author named it meanwhile. 'Новый сценарий' is
+            // the column default, i.e. still untitled.
+            ...(draft
+              ? {
+                  title: sql`CASE WHEN btrim(${scripts.title}) IN ('', 'Новый сценарий') THEN ${draftTitle(source)} ELSE ${scripts.title} END`,
+                }
+              : {}),
             rev: sql`${scripts.rev} + 1`,
             updatedAt: new Date(),
           })
@@ -723,6 +749,26 @@ export function setupScriptStructurizeRoutes(
           )
           .returning({ id: scripts.id });
         if (structureSaved.length === 0) throw new OwnershipLost();
+        if (draft) {
+          // Beat seconds become Vertov's timing suggestions for the new scenes;
+          // the author confirms them by editing or by «Раскадровать».
+          const timings = extractScenarioHandoffScenes(draft).flatMap((scene, index) => {
+            const seconds = result.outline.beats[index]?.durationSeconds;
+            if (!seconds) return [];
+            return [
+              {
+                id: nid(),
+                scriptId: script.id,
+                sourceUnitId: scenarioTimingSourceUnitId(scene),
+                durationSeconds: seconds,
+                owner: 'vertov' as const,
+                sourceRevisionId: scenarioTimingSourceRevisionId(scene.sourceText),
+                estimatorPolicyVersion: SCENARIO_TIMING_POLICY_VERSION,
+              },
+            ];
+          });
+          if (timings.length > 0) await tx.insert(scriptSceneTimings).values(timings);
+        }
         if (isAnonymous) return;
         await enqueueViaOutbox({
           tx,

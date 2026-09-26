@@ -3,6 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Film, Loader2, X } from '@/components/ui/icons';
 import { withProjectContext } from '@/lib/project-context';
+import { SCENARIO_SHOT_PLAN_CREDITS } from '@seed/shared';
+import {
+  formatSeconds,
+  sceneSeconds,
+  sceneTimingConfirmed,
+  type SceneTiming,
+} from '../useSceneTimings';
 import { useProjectContext } from '../../_components/ProjectContextProvider';
 
 interface ScenePreview {
@@ -25,6 +32,16 @@ interface Receipt {
   updated: number;
   removed: number;
   skipped: number;
+  materializedShots?: number;
+}
+
+function planErrorCopy(ordinal: number, error: string | undefined): string {
+  if (error === 'insufficient_credits') return 'Не хватает токенов на план кадров. Пополни баланс.';
+  if (error === 'signup_required') return 'План кадров доступен после входа.';
+  if (error === 'shot_plan_daily_quota') return 'Дневной лимит планов исчерпан. Попробуй завтра.';
+  if (error === 'shot_plan_in_progress')
+    return `План сцены ${ordinal} уже строится. Повтори позже.`;
+  return `Не удалось разложить на кадры сцену ${ordinal}. Повтори — готовые сцены не спишутся заново.`;
 }
 
 export function ScenarioBoardHandoff({
@@ -32,11 +49,17 @@ export function ScenarioBoardHandoff({
   scriptId,
   workspaceProjectId,
   saveNow,
+  isAnonymous,
+  reloadTimings,
+  setSeconds,
 }: {
   apiUrl: string;
   scriptId: string;
   workspaceProjectId: string | null;
   saveNow: () => Promise<boolean>;
+  isAnonymous: boolean;
+  reloadTimings: () => Promise<SceneTiming[] | null>;
+  setSeconds: (sourceUnitId: string, seconds: number) => Promise<boolean>;
 }) {
   const projectContext = useProjectContext();
   const destinationProjectTitle =
@@ -54,7 +77,26 @@ export function ScenarioBoardHandoff({
   const [navigating, setNavigating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
+  // «Раскадровать» means shots, not just scene cards; guests can't plan yet.
+  const [withPlans, setWithPlans] = useState(!isAnonymous);
+  const [timings, setTimings] = useState<SceneTiming[] | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
   const idempotencyKey = useRef(`scenario-board-${crypto.randomUUID()}`);
+
+  // Each opening is a fresh look at the script (the author edits between runs),
+  // so reload the scenes. The dialog cannot close mid-run: paid planning and the
+  // handoff would carry on unseen. The key survives a close unless the handoff
+  // landed, so a retry after a lost response still replays the same board; a
+  // changed payload is caught server-side as idempotency_payload_mismatch.
+  const close = () => {
+    if (busy) return;
+    setOpen(false);
+    setScenes(null);
+    setTimings(null);
+    if (receipt) idempotencyKey.current = `scenario-board-${crypto.randomUUID()}`;
+    setReceipt(null);
+    setError(null);
+  };
 
   useEffect(() => {
     if (!open || scenes !== null) return;
@@ -72,11 +114,50 @@ export function ScenarioBoardHandoff({
         const preview = (await previewResponse.json()) as { scenes: ScenePreview[] };
         const boardList = (await boardsResponse.json()) as { items: BoardOption[] };
         setScenes(preview.scenes);
+        setTimings(await reloadTimings());
         setSelected(new Set(preview.scenes.map((scene) => scene.ordinal)));
         setBoards(boardList.items);
       })
       .catch(() => setError('Не удалось подготовить передачу в борд.'));
-  }, [apiUrl, open, scenes, scriptId, workspaceProjectId]);
+  }, [apiUrl, open, scenes, scriptId, workspaceProjectId, reloadTimings]);
+
+  /** Confirm each selected scene's seconds, then plan its shots (cached plans are free). */
+  async function planShots(): Promise<boolean> {
+    const fresh = await reloadTimings();
+    const byOrdinal = new Map((fresh ?? []).map((scene) => [scene.ordinal, scene]));
+    const ordinals = [...selected].sort((a, b) => a - b);
+    for (const ordinal of ordinals) {
+      const scene = byOrdinal.get(ordinal);
+      const seconds = scene ? sceneSeconds(scene) : null;
+      if (!scene || !seconds) {
+        setError(`Задай длительность сцены ${ordinal} — без неё кадры не разложить.`);
+        return false;
+      }
+      if (!sceneTimingConfirmed(scene) && !(await setSeconds(scene.sourceUnitId, seconds))) {
+        setError('Не удалось сохранить хронометраж. Повтори ещё раз.');
+        return false;
+      }
+    }
+    for (const [index, ordinal] of ordinals.entries()) {
+      const scene = byOrdinal.get(ordinal)!;
+      setProgress(`Раскладываем на кадры: сцена ${index + 1} из ${ordinals.length}…`);
+      const response = await fetch(
+        `${apiUrl}/v1/scripts/${encodeURIComponent(scriptId)}/scenes/${encodeURIComponent(scene.sourceUnitId)}/shot-plan`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: '{}',
+        },
+      ).catch(() => null);
+      if (!response?.ok) {
+        const body = (await response?.json().catch(() => ({}))) as { error?: string } | undefined;
+        setError(planErrorCopy(ordinal, body?.error));
+        return false;
+      }
+    }
+    return true;
+  }
 
   async function submit() {
     if (!scenes || selected.size === 0 || busy) return;
@@ -87,6 +168,12 @@ export function ScenarioBoardHandoff({
       setBusy(false);
       return;
     }
+    if (withPlans && !(await planShots())) {
+      setProgress(null);
+      setBusy(false);
+      return;
+    }
+    setProgress('Собираем борд…');
     try {
       const response = await fetch(
         `${apiUrl}/v1/scripts/${encodeURIComponent(scriptId)}/board-handoff`,
@@ -144,23 +231,29 @@ export function ScenarioBoardHandoff({
         setError('Передача не завершена. Повторите — тот же запрос не создаст дубль.');
       }
     } finally {
+      setProgress(null);
       setBusy(false);
     }
   }
+
+  const planCredits = selected.size * SCENARIO_SHOT_PLAN_CREDITS;
+  const totalSeconds = (timings ?? [])
+    .filter((scene) => selected.has(scene.ordinal))
+    .reduce((sum, scene) => sum + (sceneSeconds(scene) ?? 0), 0);
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="sp-btn-ghost inline-flex items-center gap-1.5 border-[2px] border-[color:var(--color-line-soft)] px-2.5 py-1.5 text-[13px] font-semibold"
+        className="sp-btn inline-flex items-center gap-1.5 border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3 py-1.5 text-[13px] font-extrabold text-[color:var(--color-primary-foreground)]"
         data-testid="scenario-board-open"
       >
-        <Film size={13} /> В борд
+        <Film size={13} /> Раскадровать
       </button>
       {open && (
         <div className="fixed inset-0 z-[100] grid place-items-center p-4">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/70" onClick={close} />
           <div
             role="dialog"
             aria-modal="true"
@@ -171,13 +264,14 @@ export function ScenarioBoardHandoff({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 id="scenario-board-title" className="font-display text-xl font-black">
-                  Сценарий → Борд
+                  Раскадровка
                 </h2>
                 <p className="mt-1 text-[13px] text-[color:var(--color-muted-foreground)]">
-                  Сцены останутся связаны с исходным сценарием.
+                  {selected.size} сцен{totalSeconds > 0 ? ` · ${formatSeconds(totalSeconds)}` : ''}{' '}
+                  → борд с кадрами и готовыми промптами. Сцены останутся связаны со сценарием.
                 </p>
               </div>
-              <button type="button" aria-label="Закрыть" onClick={() => setOpen(false)}>
+              <button type="button" aria-label="Закрыть" onClick={close} disabled={busy}>
                 <X size={17} />
               </button>
             </div>
@@ -195,6 +289,7 @@ export function ScenarioBoardHandoff({
                   Добавлено {receipt.added} · обновлено {receipt.updated} · помечено удалёнными{' '}
                   {receipt.removed}
                   {receipt.skipped > 0 ? ` · пропущено ${receipt.skipped}` : ''}
+                  {receipt.materializedShots ? ` · кадров ${receipt.materializedShots}` : ''}
                 </p>
                 {workspaceProjectId && (
                   <p className="mt-1 text-[13px] text-[color:var(--color-muted-foreground)]">
@@ -262,7 +357,7 @@ export function ScenarioBoardHandoff({
                             })
                           }
                         />
-                        <span>
+                        <span className="min-w-0 flex-1">
                           <strong>{scene.heading}</strong>
                           {scene.synopsis && (
                             <span className="mt-0.5 block text-[13px] text-[color:var(--color-muted-foreground)]">
@@ -270,10 +365,40 @@ export function ScenarioBoardHandoff({
                             </span>
                           )}
                         </span>
+                        {(() => {
+                          const timing = timings?.find((item) => item.ordinal === scene.ordinal);
+                          const seconds = timing ? sceneSeconds(timing) : null;
+                          return seconds ? (
+                            <span className="shrink-0 font-mono text-[11px] text-[color:var(--color-muted-foreground)]">
+                              {formatSeconds(seconds)}
+                            </span>
+                          ) : null;
+                        })()}
                       </label>
                     ))
                   )}
                 </div>
+                <label className="mt-4 flex items-start gap-3 text-[13px]">
+                  <input
+                    type="checkbox"
+                    checked={withPlans}
+                    disabled={isAnonymous || busy}
+                    onChange={(event) => {
+                      setWithPlans(event.target.checked);
+                      idempotencyKey.current = `scenario-board-${crypto.randomUUID()}`;
+                    }}
+                    className="mt-0.5"
+                    data-testid="scenario-board-plan"
+                  />
+                  <span>
+                    <strong>Сразу разложить на кадры</strong>
+                    <span className="mt-0.5 block text-[color:var(--color-muted-foreground)]">
+                      {isAnonymous
+                        ? 'Доступно после входа. Без этого в борд уйдут карточки сцен.'
+                        : `${SCENARIO_SHOT_PLAN_CREDITS} ток за сцену · уже разложенные сцены бесплатно. Картинки и видео — отдельно, в борде.`}
+                    </span>
+                  </span>
+                </label>
                 {error && (
                   <p
                     className="mt-3 text-[13px] text-[color:var(--color-destructive)]"
@@ -290,8 +415,16 @@ export function ScenarioBoardHandoff({
                   data-testid="scenario-board-submit"
                 >
                   {busy && <Loader2 size={14} className="seed-spin" />}
-                  Передать сцены
+                  {withPlans ? `Раскадровать · до ${planCredits} ток` : 'Передать сцены'}
                 </button>
+                {progress && (
+                  <p
+                    className="mt-2 font-mono text-[11px] uppercase tracking-[0.06em] text-[color:var(--color-muted-foreground)]"
+                    data-testid="scenario-board-progress"
+                  >
+                    {progress}
+                  </p>
+                )}
               </>
             )}
           </div>

@@ -260,8 +260,8 @@ export function ScenarioListClient({
 
       {items.length === 0 && (
         <p className="mt-4 text-center text-[13px] text-[color:var(--color-muted-foreground)]">
-          Начни с чистого листа или импортируй .fountain · .fdx · .pdf · .docx — выбери путь прямо
-          на листе.
+          Опиши идею одной фразой — Вертов напишет сценарий по сценам. Или импортируй .fountain ·
+          .fdx · .pdf · .docx.
         </p>
       )}
 

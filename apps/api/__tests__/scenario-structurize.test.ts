@@ -3,7 +3,10 @@ import {
   buildStructurizePrompt,
   parseStructurizeOutput,
   StructurizeSchemaError,
+  draftTitle,
+  structurizeDraftFountain,
 } from '../src/scenario-structurize';
+import { extractScenarioHandoffScenes } from '../src/scenario-board-handoff';
 import { scoreStructurize, type StructurizeCorpusEntry } from '../src/scenario-structurize-eval';
 import { scenarioStructurizeResultSchema } from '@seed/shared';
 
@@ -261,5 +264,67 @@ describe('scoreStructurize rubric', () => {
     );
     expect(scoreStructurize(filmEntry, filmOut).timingSums).toBe(true);
     expect(scoreStructurize(filmEntry, filmOut).passed).toBe(true);
+  });
+});
+
+describe('structurizeDraftFountain', () => {
+  const result = {
+    format: 'ad' as const,
+    brief: { version: 1 as const },
+    outline: {
+      version: 1 as const,
+      beats: [
+        {
+          id: 'b1',
+          kind: 'hook' as const,
+          title: 'Андрей засыпает',
+          summary: 'Дедлайн через час.',
+          visual: 'Андрей спит лицом в клавиатуре.',
+          onScreenText: '9:03. Дедлайн в 10:00',
+          durationSeconds: 3,
+        },
+        {
+          id: 'b2',
+          kind: 'cta' as const,
+          title: '.Пэкшот\nи промокод',
+          summary: '',
+          spokenText: 'Твой утренний перезапуск.',
+          durationSeconds: 5,
+        },
+      ],
+    },
+  };
+
+  it('opens the draft as one real scene per beat, in order', () => {
+    const scenes = extractScenarioHandoffScenes(structurizeDraftFountain(result));
+
+    expect(scenes.map((scene) => [scene.ordinal, scene.heading, scene.synopsis])).toEqual([
+      [1, 'АНДРЕЙ ЗАСЫПАЕТ', 'Дедлайн через час.'],
+      [2, 'ПЭКШОТ И ПРОМОКОД', 'Пэкшот и промокод'],
+    ]);
+  });
+
+  it('keeps what we see, the on-screen text and the voice in the scene body', () => {
+    const fountain = structurizeDraftFountain(result);
+
+    expect(fountain).toContain('Андрей спит лицом в клавиатуре.');
+    expect(fountain).toContain('ТИТР: 9:03. Дедлайн в 10:00');
+    expect(fountain).toContain('ГОЛОС ЗА КАДРОМ\nТвой утренний перезапуск.');
+  });
+});
+
+describe('draftTitle', () => {
+  it('names the script after the first line of the idea', () => {
+    expect(draftTitle('Реклама кофейни «Зерно».\n\nФормат: Реклама.')).toBe(
+      'Реклама кофейни «Зерно»',
+    );
+  });
+
+  it('cuts a long idea on a word boundary', () => {
+    const title = draftTitle(
+      'Реклама кофейни «Зерно»: утро офисного сотрудника спасает капучино, смешно и без пафоса',
+    );
+    expect(title).toBe('Реклама кофейни «Зерно»: утро офисного сотрудника спасает…');
+    expect(title.length).toBeLessThanOrEqual(61);
   });
 });

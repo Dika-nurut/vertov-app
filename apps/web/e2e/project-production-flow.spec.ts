@@ -110,6 +110,8 @@ test('Scenario hands off to a project Board, which uses project media and opens 
   await page.goto(`/scenario/${script.id}?projectId=${encodeURIComponent(projectId)}`);
   await expect(page.getByTestId('project-context-valid')).toContainText(projectTitle);
   await page.getByTestId('scenario-board-open').click();
+  // These journeys cover the scene handoff itself, not shot planning.
+  await page.getByTestId('scenario-board-plan').uncheck();
   await expect(page.getByTestId('scenario-board-dialog')).toBeVisible();
   await expect(page.getByTestId('scenario-board-destination')).toHaveValue('new');
   let scenarioResponseLost = false;
@@ -279,6 +281,8 @@ test('Scenario handoff receipt makes a protected partial re-sync visible', async
 
   await page.goto(`/scenario/${scriptId}`);
   await page.getByTestId('scenario-board-open').click();
+  // These journeys cover the scene handoff itself, not shot planning.
+  await page.getByTestId('scenario-board-plan').uncheck();
   const handoffUrl = `${apiUrl}/v1/scripts/${scriptId}/board-handoff`;
   await page.route(handoffUrl, async (route) => {
     if (route.request().method() !== 'POST') return route.continue();
@@ -332,6 +336,8 @@ test('Scenario can update an existing Board only inside the same project', async
 
   await page.goto(`/scenario/${scriptId}?projectId=${projectId}`);
   await page.getByTestId('scenario-board-open').click();
+  // These journeys cover the scene handoff itself, not shot planning.
+  await page.getByTestId('scenario-board-plan').uncheck();
   await page.getByTestId('scenario-board-destination').selectOption(boardId);
   await page.getByTestId('scenario-board-submit').click();
   await expect(page.getByTestId('scenario-board-receipt')).toContainText('Обновлён борд');

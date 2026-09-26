@@ -867,6 +867,149 @@ describe('Boards pulls scenes from Scenario', () => {
     expect(matching).toHaveLength(1);
   });
 
+  it('does not replay a lost handoff once the scene it carried was edited', async () => {
+    const script = await createScript(scene(1), 'Правка после потери ответа');
+    const idempotencyKey = `handoff-${nid()}`;
+    const payload = { ordinals: [1], destination: 'new', fullSync: false, idempotencyKey };
+    const first = await app.inject({
+      method: 'POST',
+      url: `/v1/scripts/${script.id}/board-handoff`,
+      payload,
+    });
+    expect(first.statusCode).toBe(201);
+    createdBoards.push(first.json().boardId);
+    const edited = await app.inject({
+      method: 'PUT',
+      url: `/v1/scripts/${script.id}`,
+      payload: { baseRev: script.rev, fountain: `${scene(1)}Новая строка действия.\n` },
+    });
+    expect(edited.statusCode).toBe(200);
+
+    const retry = await app.inject({
+      method: 'POST',
+      url: `/v1/scripts/${script.id}/board-handoff`,
+      payload,
+    });
+
+    expect(retry.statusCode).toBe(409);
+    expect(retry.json()).toEqual({ error: 'idempotency_payload_mismatch' });
+  });
+
+  it('refuses to spend one handoff key on a second board', async () => {
+    const script = await createScript(scene(1), 'Ключ на другой борд');
+    const idempotencyKey = `handoff-${nid()}`;
+    const first = await app.inject({
+      method: 'POST',
+      url: `/v1/scripts/${script.id}/board-handoff`,
+      payload: { ordinals: [1], destination: 'new', fullSync: false, idempotencyKey },
+    });
+    expect(first.statusCode).toBe(201);
+    createdBoards.push(first.json().boardId);
+    const other = await app.inject({
+      method: 'POST',
+      url: `/v1/scripts/${script.id}/board-handoff`,
+      payload: {
+        ordinals: [1],
+        destination: 'new',
+        fullSync: false,
+        idempotencyKey: `handoff-${nid()}`,
+      },
+    });
+    expect(other.statusCode).toBe(201);
+    createdBoards.push(other.json().boardId);
+    const otherBefore = await db.select().from(boards).where(eq(boards.id, other.json().boardId));
+
+    const retarget = await app.inject({
+      method: 'POST',
+      url: `/v1/scripts/${script.id}/board-handoff`,
+      payload: {
+        ordinals: [1],
+        destination: 'board',
+        boardId: other.json().boardId,
+        fullSync: false,
+        idempotencyKey,
+      },
+    });
+
+    expect(retarget.statusCode).toBe(409);
+    expect(retarget.json()).toEqual({ error: 'idempotency_payload_mismatch' });
+    const otherAfter = await db.select().from(boards).where(eq(boards.id, other.json().boardId));
+    expect(otherAfter[0]!.state).toEqual(otherBefore[0]!.state);
+  });
+
+  it('lets only one of concurrent same-key handoffs to different boards land', async () => {
+    const script = await createScript(scene(1), 'Ключ в гонке');
+    const targets: string[] = [];
+    for (const _ of [1, 2]) {
+      const made = await app.inject({
+        method: 'POST',
+        url: `/v1/scripts/${script.id}/board-handoff`,
+        payload: { ordinals: [1], destination: 'new', fullSync: false },
+      });
+      expect(made.statusCode).toBe(201);
+      createdBoards.push(made.json().boardId);
+      targets.push(made.json().boardId);
+    }
+    const idempotencyKey = `handoff-${nid()}`;
+
+    // Hold the key's lock so every request is in flight before any can commit.
+    const client = await pool.connect();
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+      `${owner}:scenario-board:${idempotencyKey}`,
+    ]);
+    let responses;
+    try {
+      const handoffs = Promise.all([
+        app.inject({
+          method: 'POST',
+          url: `/v1/scripts/${script.id}/board-handoff`,
+          payload: { ordinals: [1], destination: 'new', fullSync: false, idempotencyKey },
+        }),
+        ...targets.map((boardId) =>
+          app.inject({
+            method: 'POST',
+            url: `/v1/scripts/${script.id}/board-handoff`,
+            payload: {
+              ordinals: [1],
+              destination: 'board',
+              boardId,
+              fullSync: false,
+              idempotencyKey,
+            },
+          }),
+        ),
+      ]);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await client.query('ROLLBACK');
+      responses = await handoffs;
+    } finally {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        // already released by the happy path
+      }
+      client.release();
+    }
+    for (const response of responses) {
+      if (response.statusCode === 201) createdBoards.push(response.json().boardId);
+    }
+
+    const landed = responses.filter((response) => response.statusCode < 300);
+    expect(landed).toHaveLength(1);
+    for (const response of responses.filter((r) => r.statusCode >= 300)) {
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toEqual({ error: 'idempotency_payload_mismatch' });
+    }
+    const rows = await db.select().from(boards).where(eq(boards.userId, owner));
+    const carrying = rows.filter(
+      (row) =>
+        (row.state as { __scenarioHandoff?: { idempotencyKey?: unknown } }).__scenarioHandoff
+          ?.idempotencyKey === idempotencyKey,
+    );
+    expect(carrying.map((row) => row.id)).toEqual([landed[0]!.json().boardId]);
+  });
+
   it('rejects a handoff that would exceed 1 MiB without persisting', async () => {
     const script = await createScript(scene(1), 'Переполнение байтов');
     const boardId = nid();
@@ -962,6 +1105,49 @@ describe('Scenario scene timing revisions', () => {
         sourceChanged: true,
       },
     });
+  });
+
+  it('keeps a short-form script on its beats once timing was saved under beat ids', async () => {
+    const fountain = 'ИНТ. КУХНЯ — УТРО\nАлиса находит письмо.\n';
+    const outline = {
+      version: 1,
+      beats: [{ id: 'hook-1', kind: 'hook', title: 'Письмо', summary: 'Алиса находит письмо.' }],
+    };
+    const legacy = await createScript(fountain, 'Legacy beats');
+    const fresh = await createScript(fountain, 'Fresh sheet');
+    for (const script of [legacy, fresh]) {
+      const saved = await app.inject({
+        method: 'PUT',
+        url: `/v1/scripts/${script.id}`,
+        payload: { baseRev: script.rev, format: 'ad', outline },
+      });
+      expect(saved.statusCode).toBe(200);
+    }
+    await db.insert(scriptSceneTimings).values({
+      id: nid(),
+      scriptId: legacy.id,
+      sourceUnitId: 'hook-1',
+      durationSeconds: 7,
+      owner: 'user',
+      sourceRevisionId: 'beat-revision',
+      estimatorPolicyVersion: 'page-estimate-v1',
+    });
+
+    const legacyRead = await app.inject({
+      method: 'GET',
+      url: `/v1/scripts/${legacy.id}/scene-timings`,
+    });
+    const freshRead = await app.inject({
+      method: 'GET',
+      url: `/v1/scripts/${fresh.id}/scene-timings`,
+    });
+
+    expect(legacyRead.json().scenes).toMatchObject([
+      { sourceUnitId: 'hook-1', timing: { durationSeconds: 7, owner: 'user' } },
+    ]);
+    expect(freshRead.json().scenes).toMatchObject([
+      { sourceUnitId: 'scene:1', heading: 'ИНТ. КУХНЯ — УТРО' },
+    ]);
   });
 
   it('marks a Vertov timing stale after its source revision changes and keeps history append-only', async () => {

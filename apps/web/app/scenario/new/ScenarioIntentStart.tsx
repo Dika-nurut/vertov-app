@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, FileText, Loader2 } from '@/components/ui/icons';
@@ -34,6 +34,24 @@ const FORMAT_LABEL: Record<ScenarioStructurizeResult['format'], string> = {
 
 type ApiError = { error?: string; reason?: string; message?: string };
 
+/** One click instead of spelling it out; sent as a plain line after the idea. */
+const FORMAT_CHIPS = ['Рилс / Shorts', 'Реклама', 'Клип', 'Объяснялка', 'Короткий метр', 'Фильм'];
+const DURATION_CHIPS: Array<[number, string]> = [
+  [15, '15 сек'],
+  [30, '30 сек'],
+  [60, '1 мин'],
+  [180, '3 мин'],
+  [600, '10 мин'],
+];
+
+function intentSource(idea: string, format: string | null, durationSeconds: number | null): string {
+  const hints = [
+    format ? `Формат: ${format}.` : '',
+    durationSeconds ? `Длительность: ${durationSeconds} сек.` : '',
+  ].filter(Boolean);
+  return hints.length ? `${idea}\n\n${hints.join(' ')}` : idea;
+}
+
 function stableKey(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -54,7 +72,7 @@ function errorCopy(
     return 'Не удалось разобрать файл. Проверь формат и попробуй ещё раз.';
   }
   if (error.error === 'insufficient_credits') {
-    return `Для структуры нужно ${STRUCTURIZE_CREDITS} кредита. Пополни баланс и повтори — черновик уже сохранён.`;
+    return `Для сценария нужно ${STRUCTURIZE_CREDITS} токена. Пополни баланс и повтори — идея уже сохранена.`;
   }
   if (error.error === 'signup_required') {
     // Authed viewers never get a login CTA — point at pricing/balance instead.
@@ -70,10 +88,10 @@ function errorCopy(
     return 'Слишком много попыток подряд. Подожди немного и повтори.';
   }
   if (error.error === 'daily_spend_cap_exceeded') {
-    return 'Редактор временно занят. Черновик сохранён — попробуй собрать структуру позже.';
+    return 'Редактор временно занят. Идея сохранена — попробуй написать сценарий позже.';
   }
   if (error.error === 'structurize_unusable' || error.error === 'structurize_failed') {
-    return 'Не удалось собрать устойчивую структуру. Черновик сохранён — попробуй ещё раз.';
+    return 'Не удалось написать сценарий. Идея сохранена — попробуй ещё раз.';
   }
   if (phase === 'create') return 'Не удалось сохранить черновик. Попробуй ещё раз.';
   return error.message || 'Что-то пошло не так. Черновик сохранён, попробуй ещё раз.';
@@ -148,13 +166,12 @@ function ResultSheet({
       data-testid="scenario-structure-result"
     >
       <p className="mb-5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--color-paper-ink)]/45">
-        Структура готова
+        Сценарий готов
       </p>
       <BriefPreview result={result} />
       <div className="mt-7">
         <p className="mb-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--color-paper-ink)]/50">
-          Структура · {result.outline.beats.length}{' '}
-          {result.outline.beats.length === 1 ? 'бит' : 'битов'}
+          Сцены · {result.outline.beats.length}
         </p>
         <ol className="space-y-0" data-testid="scenario-beats-preview">
           {result.outline.beats.map((beat, index) => (
@@ -199,10 +216,10 @@ function ResultSheet({
           className="inline-flex items-center gap-2 border-[2px] border-[color:var(--color-paper-ink)] bg-[color:var(--color-paper-ink)] px-4 py-2.5 text-[13px] font-extrabold text-[color:var(--color-paper)] shadow-[4px_4px_0_0_var(--color-accent)]"
           data-testid="scenario-open-editor"
         >
-          Начать писать <ArrowRight size={14} />
+          Открыть сценарий <ArrowRight size={14} />
         </button>
         <span className="text-[13px] text-[color:var(--color-paper-ink)]/50">
-          Бриф и биты уже сохранены в проекте.
+          Сцены уже на листе — правь текст и секунды, потом «Раскадровать».
         </span>
       </div>
     </div>
@@ -220,9 +237,26 @@ export function ScenarioIntentStart({
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const ideaRef = useRef<HTMLTextAreaElement>(null);
   const createKeyRef = useRef(stableKey('scenario-create'));
   const structurizeKeyRef = useRef(stableKey('scenario-structurize'));
+  // The saved draft this page created, and the exact text it holds. A retry
+  // with an edited idea or changed chips updates that draft rather than
+  // replaying the old one, so the server's «sheet still equals the idea» guard
+  // matches and the result screen and editor agree.
+  const draftRef = useRef<{ id: string; rev: number; source: string } | null>(null);
+  // The source the current structurize key was minted for; any change is a new
+  // logical request (idea text and chips alike).
+  const structurizeSourceRef = useRef<string | null>(null);
   const [idea, setIdea] = useState('');
+  const [format, setFormat] = useState<string | null>(null);
+  const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
+  // Text typed before hydration sits in the DOM but not in state, which would
+  // leave the submit button disabled on a slow phone. Adopt it once on mount.
+  useEffect(() => {
+    const typed = ideaRef.current?.value ?? '';
+    if (typed) setIdea(typed);
+  }, []);
   const [directMode, setDirectMode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'saving' | 'structuring' | 'importing'>('idle');
@@ -235,6 +269,23 @@ export function ScenarioIntentStart({
   };
 
   async function createDraft(source: string): Promise<string | null> {
+    const draft = draftRef.current;
+    if (draft) {
+      if (draft.source === source) return draft.id;
+      const response = await fetch(`${apiUrl}/v1/scripts/${encodeURIComponent(draft.id)}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ fountain: source, baseRev: draft.rev }),
+      }).catch(() => null);
+      const body = (await response?.json().catch(() => ({}))) as { rev?: number } | undefined;
+      if (!response?.ok || typeof body?.rev !== 'number') {
+        setError({ error: 'create_failed' });
+        return null;
+      }
+      draftRef.current = { id: draft.id, rev: body.rev, source };
+      return draft.id;
+    }
     const response = await fetch(`${apiUrl}/v1/scripts`, {
       method: 'POST',
       credentials: 'include',
@@ -249,11 +300,12 @@ export function ScenarioIntentStart({
       setError(await readError(response));
       return null;
     }
-    const row = (await response.json()) as { id?: string };
+    const row = (await response.json()) as { id?: string; rev?: number };
     if (!row.id) {
       setError({ error: 'invalid_create_response' });
       return null;
     }
+    draftRef.current = { id: row.id, rev: row.rev ?? 0, source };
     setCreatedId(row.id);
     return row.id;
   }
@@ -294,8 +346,13 @@ export function ScenarioIntentStart({
 
   async function submit(event?: FormEvent): Promise<void> {
     event?.preventDefault();
-    const source = idea.trim();
-    if (!source || busy) return;
+    const typed = idea.trim();
+    if (!typed || busy) return;
+    const source = directMode ? typed : intentSource(typed, format, durationSeconds);
+    if (structurizeSourceRef.current !== source) {
+      structurizeSourceRef.current = source;
+      structurizeKeyRef.current = stableKey('scenario-structurize');
+    }
     setBusy(true);
     setError(null);
     setPhase('saving');
@@ -374,17 +431,55 @@ export function ScenarioIntentStart({
             <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[color:var(--color-paper-ink)]/65">
               {directMode
                 ? 'Пишите как в обычном сценарии. Вертов сохранит лист, а структуру можно собрать позже.'
-                : 'Опишите замысел своими словами — Вертов определит формат, соберёт структуру и поможет дописать до готового сценария.'}
+                : 'Одна фраза — Вертов напишет сценарий по сценам с хронометражем. Потом одной кнопкой разложишь его на кадры.'}
             </p>
             <form onSubmit={(event) => void submit(event)} className="mt-7">
+              {!directMode && (
+                <div className="mb-3 flex flex-wrap gap-y-2" data-testid="scenario-intent-chips">
+                  <div className="flex flex-wrap" role="group" aria-label="Формат">
+                    {FORMAT_CHIPS.map((label) => (
+                      <button
+                        key={label}
+                        type="button"
+                        aria-pressed={format === label}
+                        onClick={() => setFormat((current) => (current === label ? null : label))}
+                        className={`-ml-[2px] border-[2px] border-[color:var(--color-paper-ink)] px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.05em] first:ml-0 ${
+                          format === label
+                            ? 'bg-[color:var(--color-paper-ink)] text-[color:var(--color-paper)]'
+                            : 'text-[color:var(--color-paper-ink)]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap sm:ml-auto" role="group" aria-label="Длительность">
+                    {DURATION_CHIPS.map(([seconds, label]) => (
+                      <button
+                        key={seconds}
+                        type="button"
+                        aria-pressed={durationSeconds === seconds}
+                        onClick={() =>
+                          setDurationSeconds((current) => (current === seconds ? null : seconds))
+                        }
+                        className={`-ml-[2px] border-[2px] border-[color:var(--color-paper-ink)] px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.05em] first:ml-0 ${
+                          durationSeconds === seconds
+                            ? 'bg-[color:var(--color-accent2)] text-[color:var(--color-paper-ink)]'
+                            : 'text-[color:var(--color-paper-ink)]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="border-[2px] border-[color:var(--color-paper-ink)] bg-white shadow-[5px_5px_0_0_var(--color-accent)]">
                 <textarea
+                  ref={ideaRef}
                   value={idea}
                   onChange={(event) => {
                     setIdea(event.target.value);
-                    // A changed idea is a new logical structurize — rotate so a
-                    // retry can't replay the previous text under the old key.
-                    structurizeKeyRef.current = stableKey('scenario-structurize');
                   }}
                   onKeyDown={(event) => {
                     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -412,7 +507,7 @@ export function ScenarioIntentStart({
                     data-testid="scenario-structurize"
                   >
                     {busy ? <Loader2 size={15} className="seed-spin" /> : <ArrowRight size={15} />}
-                    {directMode ? 'Открыть редактор' : 'Собрать структуру'}
+                    {directMode ? 'Открыть редактор' : 'Написать сценарий'}
                     {!directMode && (
                       <span className="font-mono text-[11px] font-normal opacity-60">
                         {isAnonymous ? 'бесплатно' : `${STRUCTURIZE_CREDITS} кр.`}
@@ -474,7 +569,7 @@ export function ScenarioIntentStart({
                   onClick={() => setDirectMode(false)}
                   className="underline decoration-dotted underline-offset-4"
                 >
-                  Вернуться к сборке структуры
+                  Вернуться к идее
                 </button>
               )}
               {projectId && (
@@ -506,7 +601,7 @@ export function ScenarioIntentStart({
                 {phase === 'importing'
                   ? 'Разбираем файл…'
                   : phase === 'structuring'
-                    ? 'Собираем структуру…'
+                    ? 'Пишем сценарий…'
                     : 'Сохраняем черновик…'}
               </p>
             )}

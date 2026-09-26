@@ -133,11 +133,9 @@ export function ScenarioComposer({
             <option value="script">Весь сценарий</option>
           </select>
         )}
-        {quote && !quoteLoading && (
+        {quote && !quoteLoading && (quote.contextReduced || quote.conspectRefreshRequired) && (
           <span className="text-[11px] text-[color:var(--color-muted-foreground)]">
-            {quote.inputBand}
-            {quote.contextReduced ? ' · сокращено' : ''}
-            {quote.conspectRefreshRequired ? ' · память обновится' : ''}
+            {quote.contextReduced ? 'контекст сокращён' : 'память обновится'}
           </span>
         )}
         <span

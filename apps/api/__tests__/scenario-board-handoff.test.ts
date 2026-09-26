@@ -92,6 +92,135 @@ describe('Board scene-source sync model', () => {
     expect(boardLinksToScript(merged.document, 'script-1')).toBe(true);
   });
 
+  it.each([1, 2])(
+    'stacks planned scenes so no node overlaps another (%i shots + a cast node per scene)',
+    (shotsPerScene) => {
+      const scenes = extractScenarioHandoffScenes(FOUNTAIN).map((scene) => {
+        const shot = (order: number) => ({
+          order,
+          title: `Кадр ${order}`,
+          durationSec: 4,
+          dramaticBeat: 'Бит.',
+          promptDraft: `Кадр ${order} сцены ${scene.ordinal}`,
+          requiredLocks: [`canon:character:${scene.ordinal}`],
+          unresolvedAssets: [],
+        });
+        return {
+          ...scene,
+          shotPlan: {
+            version: SCENARIO_SHOT_PLAN_VERSION,
+            sceneId: `scene:${scene.ordinal}`,
+            targetDurationSeconds: 8,
+            shots: Array.from({ length: shotsPerScene }, (_, index) => shot(index + 1)),
+          },
+          locks: [
+            {
+              id: `canon:character:${scene.ordinal}`,
+              kind: 'character' as const,
+              name: `Герой ${scene.ordinal}`,
+            },
+          ],
+        };
+      });
+      const merged = mergeScenarioScenesIntoBoard({
+        document: {},
+        scriptId: 'script-stacked',
+        scriptRevision: 1,
+        scenes,
+        fullSync: true,
+        makeId: ids(),
+      });
+
+      const boxes = merged.document.nodes.map((node) => ({
+        id: node.id,
+        left: node.position.x,
+        right: node.position.x + (node.width ?? 0),
+        top: node.position.y,
+        bottom: node.position.y + (node.height ?? 0),
+      }));
+      expect(merged.document.nodes.filter((node) => node.type === 'generate')).toHaveLength(
+        2 * shotsPerScene,
+      );
+      expect(merged.document.nodes.filter((node) => node.type === 'cast')).toHaveLength(2);
+      const overlaps = boxes.flatMap((a, index) =>
+        boxes
+          .slice(index + 1)
+          .filter(
+            (b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom,
+          )
+          .map((b) => `${a.id} × ${b.id}`),
+      );
+      expect(overlaps).toEqual([]);
+    },
+  );
+
+  it('places a scene added on re-sync below the cast nodes an earlier sync created', () => {
+    const [first, second] = extractScenarioHandoffScenes(FOUNTAIN);
+    const locks = [1, 2, 3].map((index) => ({
+      id: `canon:character:${index}`,
+      kind: 'character' as const,
+      name: `Герой ${index}`,
+    }));
+    const planned = (scene: typeof first) => ({
+      ...scene!,
+      shotPlan: {
+        version: SCENARIO_SHOT_PLAN_VERSION,
+        sceneId: `scene:${scene!.ordinal}`,
+        targetDurationSeconds: 4,
+        shots: [
+          {
+            order: 1,
+            title: 'Кадр',
+            durationSec: 4,
+            dramaticBeat: 'Бит.',
+            promptDraft: 'Кадр сцены',
+            requiredLocks: locks.map((lock) => lock.id),
+            unresolvedAssets: [],
+          },
+        ],
+      },
+      locks,
+    });
+    const prefixed = (prefix: string) => {
+      let next = 0;
+      return () => `${prefix}-${++next}`;
+    };
+    const firstSync = mergeScenarioScenesIntoBoard({
+      document: {},
+      scriptId: 'script-resync',
+      scriptRevision: 1,
+      scenes: [planned(first)],
+      fullSync: false,
+      makeId: prefixed('first'),
+    });
+    expect(firstSync.document.nodes.filter((node) => node.type === 'cast')).toHaveLength(3);
+
+    const resync = mergeScenarioScenesIntoBoard({
+      document: firstSync.document,
+      scriptId: 'script-resync',
+      scriptRevision: 2,
+      scenes: [planned(first), second!],
+      fullSync: false,
+      makeId: prefixed('resync'),
+    });
+
+    const boxes = resync.document.nodes.map((node) => ({
+      id: node.id,
+      left: node.position.x,
+      right: node.position.x + (node.width ?? 0),
+      top: node.position.y,
+      bottom: node.position.y + (node.height ?? 0),
+    }));
+    const overlaps = boxes.flatMap((a, index) =>
+      boxes
+        .slice(index + 1)
+        .filter((b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom)
+        .map((b) => `${a.id} × ${b.id}`),
+    );
+    expect(resync.document.nodes.filter((node) => node.type === 'scene')).toHaveLength(2);
+    expect(overlaps).toEqual([]);
+  });
+
   it('materializes named planned shots and approved locks as ordinary nodes', () => {
     const [scene] = extractScenarioHandoffScenes(FOUNTAIN);
     const merged = mergeScenarioScenesIntoBoard({
@@ -172,6 +301,22 @@ describe('Board scene-source sync model', () => {
         (edge) => edge.target === generate?.id && edge.targetHandle === 'images[1]',
       ),
     ).toBe(true);
+  });
+
+  it('sends the sheet, not the beats, once a short-form script has scene headings', () => {
+    const sources = extractScenarioHandoffSources({
+      format: 'ad',
+      fountain: FOUNTAIN,
+      outline: {
+        version: 1,
+        beats: [{ id: 'hook-1', kind: 'hook', title: 'Старый бит', summary: 'Не должен уйти.' }],
+      },
+    });
+
+    expect(sources.map((scene) => scene.heading)).toEqual([
+      'ИНТ. КУХНЯ — УТРО',
+      'НАТ. ДВОР — ДЕНЬ',
+    ]);
   });
 
   it('projects non-Film beats into stable Board scene sources', () => {

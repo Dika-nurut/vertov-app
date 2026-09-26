@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronRight, X, Zap } from '@/components/ui/icons';
 import {
   extractRule,
-  modelLabel,
   type Proposal,
   type Thread,
   type Tier,
@@ -52,6 +51,29 @@ function declineRule(rule: string): void {
   }
 }
 
+const SCENE_REWRITE_RULES =
+  'Сохрани формат Fountain, заголовок сцены и примерно ту же длительность. Верни переписанную сцену целиком.';
+const SCENE_ACTIONS = [
+  {
+    label: 'Переписать',
+    prompt: `Перепиши эту сцену сильнее и конкретнее. ${SCENE_REWRITE_RULES}`,
+  },
+  { label: 'Смешнее', prompt: `Сделай эту сцену смешнее, без пафоса. ${SCENE_REWRITE_RULES}` },
+  {
+    label: 'Короче',
+    prompt:
+      'Сократи эту сцену примерно вдвое, оставь главное действие. Сохрани формат Fountain и заголовок сцены. Верни сцену целиком.',
+  },
+  {
+    label: 'Сильнее начало',
+    prompt: `Сделай начало сцены цепляющим с первой секунды: конкретный образ или неожиданность. ${SCENE_REWRITE_RULES}`,
+  },
+  {
+    label: 'Живее диалог',
+    prompt: `Сделай реплики живее и короче, как говорят люди. ${SCENE_REWRITE_RULES}`,
+  },
+] as const;
+
 interface RightRailProps {
   tiers: Tier[];
   tier: TierId;
@@ -84,6 +106,8 @@ interface RightRailProps {
   } | null;
   quoteLoading: boolean;
   currentSceneOrdinal: number;
+  /** Rewrite the scene under the caret; the answer lands as a Было → Станет proposal. */
+  onSceneAction?: (prompt: string) => void;
   onStop: () => void;
   /** «Обсудить» a note in place: a follow-up ask on the note's own thread (R4). */
   onDiscuss: (threadId: string, question: string) => void;
@@ -147,6 +171,7 @@ export function RightRail(props: RightRailProps) {
     quote,
     quoteLoading,
     currentSceneOrdinal,
+    onSceneAction,
     onStop,
     onDiscuss,
     onApply,
@@ -183,7 +208,7 @@ export function RightRail(props: RightRailProps) {
   useEffect(() => () => void (ringTimer.current && clearTimeout(ringTimer.current)), []);
 
   const activeTier = tiers.find((t) => t.id === tier) ?? null;
-  const tierModel = modelLabel(activeTier?.model);
+  const tierModel = activeTier?.labelRu ?? '';
   const streamStatus =
     stream.phase === 'thinking'
       ? 'Обдумывает ответ…'
@@ -253,7 +278,7 @@ export function RightRail(props: RightRailProps) {
       <div className="flex flex-col gap-2 border-b-[2.5px] border-[color:var(--color-line)] px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] uppercase tracking-widest text-[color:var(--color-fg)]">
-            Архитектор истории
+            Редактор
           </span>
           <div className="ml-auto flex gap-1" data-testid="scenario-rail-tabs">
             {(
@@ -281,7 +306,7 @@ export function RightRail(props: RightRailProps) {
         {/* model selector lives in the header (owner ask): its own row, room to breathe */}
         <label className="flex cursor-pointer items-center gap-2 border-[2px] border-[color:var(--color-line-soft)] bg-[color:var(--color-surface2)] px-2.5 py-1.5 focus-within:border-[color:var(--color-accent)]">
           <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[color:var(--color-muted-foreground)]">
-            Модель
+            Качество
           </span>
           <select
             value={tier}
@@ -291,12 +316,32 @@ export function RightRail(props: RightRailProps) {
           >
             {tiers.map((t) => (
               <option key={t.id} value={t.id} disabled={t.isActive === false}>
-                {t.labelRu} — {modelLabel(t.model)}
+                {t.labelRu}
                 {t.isActive === false ? ' (выкл)' : ''}
               </option>
             ))}
           </select>
         </label>
+        {hasScenes && onSceneAction && currentSceneOrdinal > 0 && (
+          <div data-testid="scenario-scene-actions">
+            <p className="mb-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-[color:var(--color-muted-foreground)]">
+              Сцена {currentSceneOrdinal}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {SCENE_ACTIONS.map(({ label, prompt }) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled={stream.active}
+                  onClick={() => onSceneAction(prompt)}
+                  className="sp-btn-ghost border-[2px] border-[color:var(--color-line)] px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.04em] disabled:opacity-40"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {view === 'history' ? (
@@ -321,7 +366,7 @@ export function RightRail(props: RightRailProps) {
                     role={it.role}
                     content={stripRewrite(it.content)}
                     tierName={
-                      it.tierId ? modelLabel(tiers.find((t) => t.id === it.tierId)?.model) : ''
+                      it.tierId ? (tiers.find((t) => t.id === it.tierId)?.labelRu ?? '') : ''
                     }
                   />
                 ) : (
@@ -440,7 +485,7 @@ function EmptyState({
         {
           label: 'Развить мою идею',
           prompt:
-            'Помоги развить идею сценария. Сначала задай мне по одному самые важные вопросы о герое, цели, препятствии и ставках. Не пиши сценарий вместо меня.',
+            'Помоги развить идею сценария: предложи героя, цель, препятствие и ставки, затем спроси, что оставить.',
         },
         {
           label: 'Найти конфликт',
@@ -457,12 +502,12 @@ function EmptyState({
     <div className="flex flex-col gap-4" data-testid="scenario-rail-empty">
       <div>
         <p className="text-[13px] font-semibold text-[color:var(--color-fg)]">
-          {hasScenes ? 'Инструменты архитектора' : 'Соберём основу истории'}
+          {hasScenes ? 'Разбор сценария' : 'Соберём основу истории'}
         </p>
         <p className="mt-1 text-[13px] leading-relaxed text-[color:var(--color-muted-foreground)]">
           {hasScenes
             ? 'Запусти разбор или поставь собственную драматургическую задачу ниже.'
-            : 'Расскажи идею как есть. Архитектор задаст важные вопросы по одному, а решения останутся за тобой.'}
+            : 'Расскажи идею как есть — редактор предложит варианты, а решения останутся за тобой.'}
         </p>
       </div>
       <div className="flex flex-col gap-2" data-testid="scenario-starter-prompts">
@@ -605,7 +650,7 @@ function NoteCard(props: {
   const showRuleNudge =
     CANON_ACCRETION_ENABLED && applied && !!rule && !nudgeHidden && !ruleDeclined(rule);
   const quote = thread.anchor?.quote?.trim() || (thread.anchor ? '' : null);
-  const sig = modelLabel(tiers.find((t) => t.id === reply?.tier)?.model);
+  const sig = tiers.find((t) => t.id === reply?.tier)?.labelRu ?? '';
 
   // «Обсудить» inline comment box (R4).
   const [discussing, setDiscussing] = useState(false);
@@ -909,7 +954,7 @@ function HistoryRow({
 }) {
   const applied = thread.status === 'applied';
   const reply = lastAssistant(thread);
-  const sig = modelLabel(tiers.find((t) => t.id === reply?.tier)?.model);
+  const sig = tiers.find((t) => t.id === reply?.tier)?.labelRu ?? '';
   const quote = thread.anchor?.quote?.trim();
 
   return (

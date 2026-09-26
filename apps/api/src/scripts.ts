@@ -1,5 +1,6 @@
+import { createHash } from 'node:crypto';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { and, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   boards,
@@ -47,12 +48,12 @@ import {
 } from '@seed/shared';
 import {
   boardLinksToScript,
-  extractScenarioHandoffSources,
   mergeScenarioScenesIntoBoard,
   scenarioHandoffLocks,
   ScenarioBoardMaterializationLimitError,
 } from './scenario-board-handoff';
 import { scenarioBoardHandoffs, scenarioMaterialCompactions } from './metrics';
+import { loadScenarioSources } from './scenario-sources';
 import { validateOwnedLiveProject, workspaceProjectIdSchema } from './project-context';
 import {
   decodeProjectListCursor,
@@ -216,6 +217,35 @@ const boardHandoffSchema = z
     idempotencyKey: z.string().trim().min(8).max(128).optional(),
   })
   .strict();
+
+/**
+ * What one handoff request means: which scenes (by content and plan), where
+ * they go, and how. An idempotency key replays only the same meaning; an
+ * edited scene, a new plan or another destination is a different request.
+ */
+function handoffRequestFingerprint(input: {
+  scriptId: string;
+  ordinals: number[];
+  fullSync: boolean;
+  destination: string;
+  boardId: string | null;
+  scenes: ReadonlyArray<{ ordinal: number; sourceHash: string; shotPlan?: unknown }>;
+}): string {
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        ...input,
+        scenes: input.scenes.map((scene) => [
+          scene.ordinal,
+          scene.sourceHash,
+          scene.shotPlan
+            ? createHash('sha256').update(JSON.stringify(scene.shotPlan)).digest('hex')
+            : null,
+        ]),
+      }),
+    )
+    .digest('hex');
+}
 
 const IMPORT_FORMATS = [
   'fountain',
@@ -635,7 +665,7 @@ export function setupScriptRoutes(
     if (!session) return;
     const script = await loadOwn(req.params.id, session.user.id);
     if (!script) return reply.status(404).send({ error: 'not_found' });
-    const scenes = scenarioSources(script);
+    const scenes = await scenarioSources(script);
     const linked = await linkedBoards(script.id, session.user.id, script.projectId);
     return {
       scriptRevision: script.rev,
@@ -655,7 +685,7 @@ export function setupScriptRoutes(
     const script = await loadOwn(req.params.id, session.user.id);
     if (!script) return reply.status(404).send({ error: 'not_found' });
 
-    const sources = scenarioSources(script);
+    const sources = await scenarioSources(script);
     const pageEstimates = new Map(
       sceneTimings(script.fountain).map((estimate) => [estimate.index, estimate]),
     );
@@ -714,7 +744,7 @@ export function setupScriptRoutes(
       const script = await loadOwn(req.params.id, session.user.id);
       if (!script) return reply.status(404).send({ error: 'not_found' });
 
-      const source = scenarioSources(script).find(
+      const source = (await scenarioSources(script)).find(
         (candidate) => scenarioTimingSourceUnitId(candidate) === req.params.sourceUnitId,
       );
       if (!source) return reply.status(404).send({ error: 'scene_not_found' });
@@ -772,7 +802,7 @@ export function setupScriptRoutes(
       return reply.status(404).send({ error: 'project_context_unavailable' });
     }
 
-    const available = scenarioSources(script);
+    const available = await scenarioSources(script);
     const byOrdinal = new Map(available.map((scene) => [scene.ordinal, scene]));
     const selected = [...new Set(parsed.data.ordinals)].map((ordinal) => byOrdinal.get(ordinal));
     if (selected.some((scene) => !scene)) {
@@ -782,7 +812,7 @@ export function setupScriptRoutes(
       });
     }
     const selectedScenes = selected.filter(
-      (scene): scene is ReturnType<typeof scenarioSources>[number] => Boolean(scene),
+      (scene): scene is Awaited<ReturnType<typeof scenarioSources>>[number] => Boolean(scene),
     );
     const planRows = await db
       .select()
@@ -848,10 +878,19 @@ export function setupScriptRoutes(
       }
       const titleBase = script.title.trim() || 'Сценарий';
       const title = `${titleBase.slice(0, 68)} · Борд`;
+      const ordinals = [...new Set(parsed.data.ordinals)].sort((a, b) => a - b);
       const receipt = {
         scriptId: script.id,
-        ordinals: [...new Set(parsed.data.ordinals)].sort((a, b) => a - b),
+        ordinals,
         fullSync: parsed.data.fullSync,
+        requestFingerprint: handoffRequestFingerprint({
+          scriptId: script.id,
+          ordinals,
+          fullSync: parsed.data.fullSync,
+          destination: 'new',
+          boardId: null,
+          scenes: selectedScenesWithPlans,
+        }),
         added: merged.added,
         updated: merged.updated,
         removed: merged.removed,
@@ -882,7 +921,8 @@ export function setupScriptRoutes(
               !metadata ||
               metadata.scriptId !== receipt.scriptId ||
               JSON.stringify(metadata.ordinals) !== JSON.stringify(receipt.ordinals) ||
-              metadata.fullSync !== receipt.fullSync
+              metadata.fullSync !== receipt.fullSync ||
+              metadata.requestFingerprint !== receipt.requestFingerprint
             ) {
               return { kind: 'idempotency_mismatch' as const };
             }
@@ -993,6 +1033,14 @@ export function setupScriptRoutes(
       return reply.status(409).send({ error: 'board_not_linked' });
     }
     const ordinals = [...new Set(parsed.data.ordinals)].sort((a, b) => a - b);
+    const requestFingerprint = handoffRequestFingerprint({
+      scriptId: script.id,
+      ordinals,
+      fullSync: parsed.data.fullSync,
+      destination: parsed.data.destination,
+      boardId: board.id,
+      scenes: selectedScenesWithPlans,
+    });
     if (parsed.data.idempotencyKey) {
       const metadata = current.data.__scenarioHandoff as
         | {
@@ -1000,6 +1048,7 @@ export function setupScriptRoutes(
             scriptId?: unknown;
             ordinals?: unknown;
             fullSync?: unknown;
+            requestFingerprint?: unknown;
             added?: unknown;
             updated?: unknown;
             removed?: unknown;
@@ -1012,7 +1061,8 @@ export function setupScriptRoutes(
         if (
           metadata.scriptId !== script.id ||
           JSON.stringify(metadata.ordinals) !== JSON.stringify(ordinals) ||
-          metadata.fullSync !== parsed.data.fullSync
+          metadata.fullSync !== parsed.data.fullSync ||
+          metadata.requestFingerprint !== requestFingerprint
         ) {
           return reply.status(409).send({ error: 'idempotency_payload_mismatch' });
         }
@@ -1064,6 +1114,7 @@ export function setupScriptRoutes(
               scriptId: script.id,
               ordinals,
               fullSync: parsed.data.fullSync,
+              requestFingerprint,
               added: merged.added,
               updated: merged.updated,
               removed: merged.removed,
@@ -1074,15 +1125,39 @@ export function setupScriptRoutes(
           }
         : {}),
     };
-    const updated = await db
-      .update(boards)
-      .set({ state: stamped, updatedAt: new Date() })
-      .where(
-        and(
-          eq(boards.id, board.id),
-          eq(boards.userId, session.user.id),
-          isNull(boards.trashedAt),
-          sql`COALESCE(
+    const updated = await db.transaction(async (tx) => {
+      const key = parsed.data.idempotencyKey;
+      if (key) {
+        // Same lock as the new-board path: the key lookup and the write that
+        // spends it must not interleave with another request carrying the key.
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(hashtext(${`${session.user.id}:scenario-board:${key}`}))`,
+        );
+        // A key already spent on another board is a different request, never a
+        // licence to write the same key into this one too.
+        const [elsewhere] = await tx
+          .select({ id: boards.id })
+          .from(boards)
+          .where(
+            and(
+              eq(boards.userId, session.user.id),
+              isNull(boards.trashedAt),
+              ne(boards.id, board.id),
+              sql`${boards.state}->'__scenarioHandoff'->>'idempotencyKey' = ${key}`,
+            ),
+          )
+          .limit(1);
+        if (elsewhere) return 'idempotency_mismatch' as const;
+      }
+      return tx
+        .update(boards)
+        .set({ state: stamped, updatedAt: new Date() })
+        .where(
+          and(
+            eq(boards.id, board.id),
+            eq(boards.userId, session.user.id),
+            isNull(boards.trashedAt),
+            sql`COALESCE(
             CASE
               WHEN jsonb_typeof(${boards.state}->'__rev') = 'number'
               THEN (${boards.state}->>'__rev')::numeric
@@ -1090,9 +1165,13 @@ export function setupScriptRoutes(
             END,
             0
           ) = ${baseRev}`,
-        ),
-      )
-      .returning({ id: boards.id });
+          ),
+        )
+        .returning({ id: boards.id });
+    });
+    if (updated === 'idempotency_mismatch') {
+      return reply.status(409).send({ error: 'idempotency_payload_mismatch' });
+    }
     if (updated.length === 0) {
       scenarioBoardHandoffs.labels('revision_conflict').inc();
       return reply.status(409).send({ error: 'board_rev_conflict' });
@@ -1809,11 +1888,7 @@ export function setupScriptRoutes(
   }
 
   function scenarioSources(script: NonNullable<Awaited<ReturnType<typeof loadOwn>>>) {
-    return extractScenarioHandoffSources({
-      format: scenarioFormatSchema.parse(script.format),
-      outline: scenarioOutlineV1Schema.parse(script.outline),
-      fountain: script.fountain,
-    });
+    return loadScenarioSources(script);
   }
 
   async function loadOwnThread(scriptId: string, threadId: string, userId: string) {

@@ -28,11 +28,14 @@ export function ScenarioStructurePanel({
   initialFormat,
   initialBrief,
   initialOutline,
+  showBeats = true,
   onSave,
 }: {
   initialFormat: ScenarioFormat;
   initialBrief: ScenarioBriefV1;
   initialOutline: ScenarioOutlineV1;
+  /** Once the sheet has scenes the beats are history; keep the brief to one line. */
+  showBeats?: boolean;
   onSave: (value: {
     format: ScenarioFormat;
     brief: ScenarioBriefV1;
@@ -89,7 +92,7 @@ export function ScenarioStructurePanel({
 
   return (
     <section
-      className="shrink-0 border-b-[2px] border-[color:var(--color-paper-ink)]/25 bg-[color:var(--color-paper)] px-4 py-4 sm:px-7"
+      className="shrink-0 border-b-[2px] border-[color:var(--color-paper-ink)]/25 bg-[color:var(--color-paper)] px-4 py-3 text-[color:var(--color-paper-ink)] sm:px-7"
       data-testid="scenario-structure-panel"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -185,6 +188,7 @@ export function ScenarioStructurePanel({
           </div>
         </div>
       ) : (
+        showBeats &&
         rows.length > 0 && (
           <dl className="mt-3 grid gap-x-5 gap-y-1 text-[13px] leading-relaxed text-[color:var(--color-paper-ink)]/70 sm:grid-cols-2">
             {rows.map(([label, value]) => (
@@ -199,60 +203,61 @@ export function ScenarioStructurePanel({
         )
       )}
 
-      <div className="mt-5">
-        <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-paper-ink)]/50">
-          Структура · {outline.beats.length} {outline.beats.length === 1 ? 'бит' : 'битов'}
-        </p>
-        <ol className="space-y-0" data-testid="scenario-structure-beats">
-          {outline.beats.map((beat, index) => (
-            <li
-              key={beat.id}
-              className="flex gap-2.5 border-[2px] border-[color:var(--color-paper-ink)] bg-white px-3 py-2.5 [&+li]:-mt-[2px]"
-              data-testid="scenario-structure-beat"
-            >
-              <span className="w-5 shrink-0 pt-0.5 font-mono text-[11px] text-[color:var(--color-paper-ink)]/45">
-                {index + 1}
-              </span>
-              <span className="min-w-0 flex-1">
-                <strong className="block font-mono text-[11px] uppercase tracking-[0.06em]">
-                  {beat.title}
-                </strong>
-                <span className="mt-1 block text-[13px] leading-relaxed text-[color:var(--color-paper-ink)]/70">
-                  {beat.summary || 'Без дополнительного описания.'}
+      {showBeats && (
+        <div className="mt-5">
+          <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-paper-ink)]/50">
+            Структура · {outline.beats.length} {outline.beats.length === 1 ? 'бит' : 'битов'}
+          </p>
+          <ol className="space-y-0" data-testid="scenario-structure-beats">
+            {outline.beats.map((beat, index) => (
+              <li
+                key={beat.id}
+                className="flex gap-2.5 border-[2px] border-[color:var(--color-paper-ink)] bg-white px-3 py-2.5 [&+li]:-mt-[2px]"
+                data-testid="scenario-structure-beat"
+              >
+                <span className="w-5 shrink-0 pt-0.5 font-mono text-[11px] text-[color:var(--color-paper-ink)]/45">
+                  {index + 1}
                 </span>
-                {(beat.visual || beat.spokenText || beat.onScreenText) && (
-                  <span className="mt-2 block space-y-0.5 text-[11px] leading-relaxed text-[color:var(--color-paper-ink)]/55">
-                    {beat.visual && (
-                      <span className="block">
-                        <b>Визуал:</b> {beat.visual}
-                      </span>
-                    )}
-                    {beat.spokenText && (
-                      <span className="block">
-                        <b>Реплика:</b> {beat.spokenText}
-                      </span>
-                    )}
-                    {beat.onScreenText && (
-                      <span className="block">
-                        <b>На экране:</b> {beat.onScreenText}
-                      </span>
-                    )}
+                <span className="min-w-0 flex-1">
+                  <strong className="block font-mono text-[11px] uppercase tracking-[0.06em]">
+                    {beat.title}
+                  </strong>
+                  <span className="mt-1 block text-[13px] leading-relaxed text-[color:var(--color-paper-ink)]/70">
+                    {beat.summary || 'Без дополнительного описания.'}
+                  </span>
+                  {(beat.visual || beat.spokenText || beat.onScreenText) && (
+                    <span className="mt-2 block space-y-0.5 text-[11px] leading-relaxed text-[color:var(--color-paper-ink)]/55">
+                      {beat.visual && (
+                        <span className="block">
+                          <b>Визуал:</b> {beat.visual}
+                        </span>
+                      )}
+                      {beat.spokenText && (
+                        <span className="block">
+                          <b>Реплика:</b> {beat.spokenText}
+                        </span>
+                      )}
+                      {beat.onScreenText && (
+                        <span className="block">
+                          <b>На экране:</b> {beat.onScreenText}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </span>
+                {beat.durationSeconds && (
+                  <span className="shrink-0 pt-0.5 font-mono text-[11px] text-[color:var(--color-paper-ink)]/45">
+                    {beat.durationSeconds} с
                   </span>
                 )}
-              </span>
-              {beat.durationSeconds && (
-                <span className="shrink-0 pt-0.5 font-mono text-[11px] text-[color:var(--color-paper-ink)]/45">
-                  {beat.durationSeconds} с
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
-        <p className="mt-3 font-mono text-[11px] leading-relaxed tracking-[0.02em] text-[color:var(--color-paper-ink)]/45">
-          Биты — будущие кадры: визуал, реплика, надпись и хронометраж можно отправить на доску как
-          раскадровку.
-        </p>
-      </div>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-3 font-mono text-[11px] leading-relaxed tracking-[0.02em] text-[color:var(--color-paper-ink)]/45">
+            План истории. Сцены на листе ниже — то, что уйдёт в раскадровку.
+          </p>
+        </div>
+      )}
     </section>
   );
 }

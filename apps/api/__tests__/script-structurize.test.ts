@@ -11,6 +11,7 @@ import {
   outboxJobs,
   scripts,
   scriptAssistRequests,
+  scriptSceneTimings,
   usersApp,
   usersPii,
 } from '@seed/db';
@@ -289,6 +290,107 @@ describe('POST /v1/scripts/:id/structurize', () => {
     );
 
     expect(await balanceOf(userId)).toBe(before - STRUCTURIZE_CREDITS);
+    await app.close();
+  });
+
+  it('an idea start opens on a written draft: one scene per beat with suggested seconds', async () => {
+    const idea = 'Как за 15 секунд сложить футболку.';
+    const script = await makeScript(userId, idea);
+    const { fetchImpl } = mockJsonGateway();
+    const app = await buildApp({ id: userId }, fetchImpl);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/v1/scripts/${script.id}/structurize`,
+      payload: { idempotencyKey: `k-${nid()}`, idea },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const [saved] = await db.select().from(scripts).where(eq(scripts.id, script.id));
+    expect(saved!.fountain).toContain('.ГОРА МЯТЫХ ФУТБОЛОК');
+    expect(saved!.fountain).toContain('.ПОВТОР НА СКОРОСТИ');
+    expect(saved!.title).toBe('Тест');
+    expect(saved!.fountain).not.toContain(idea);
+    const timings = await db
+      .select()
+      .from(scriptSceneTimings)
+      .where(eq(scriptSceneTimings.scriptId, script.id));
+    expect(
+      timings
+        .map((row) => [row.sourceUnitId, row.durationSeconds, row.owner])
+        .sort(([a], [b]) => String(a).localeCompare(String(b))),
+    ).toEqual([
+      ['scene:1', 5, 'vertov'],
+      ['scene:2', 6, 'vertov'],
+      ['scene:3', 4, 'vertov'],
+    ]);
+    await app.close();
+  });
+
+  it('names an untitled idea start after the idea', async () => {
+    const idea = 'Как за 15 секунд сложить футболку.';
+    const [script] = await db
+      .insert(scripts)
+      .values({ id: nid(), userId, fountain: idea })
+      .returning();
+    createdScripts.push(script!.id);
+    const { fetchImpl } = mockJsonGateway();
+    const app = await buildApp({ id: userId }, fetchImpl);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/v1/scripts/${script!.id}/structurize`,
+      payload: { idempotencyKey: `k-${nid()}`, idea },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const [saved] = await db.select().from(scripts).where(eq(scripts.id, script!.id));
+    expect(saved!.title).toBe('Как за 15 секунд сложить футболку');
+    await app.close();
+  });
+
+  it('keeps a title the author set while the draft was being written', async () => {
+    const idea = 'Как за 15 секунд сложить футболку.';
+    const [script] = await db
+      .insert(scripts)
+      .values({ id: nid(), userId, fountain: idea })
+      .returning();
+    createdScripts.push(script!.id);
+    const { fetchImpl: gateway } = mockJsonGateway();
+    // The rename lands mid-call, as a title-only update (no rev bump).
+    const fetchImpl: typeof fetch = async (url, init) => {
+      await db.update(scripts).set({ title: 'Моё название' }).where(eq(scripts.id, script!.id));
+      return gateway(url, init);
+    };
+    const app = await buildApp({ id: userId }, fetchImpl);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/v1/scripts/${script!.id}/structurize`,
+      payload: { idempotencyKey: `k-${nid()}`, idea },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const [saved] = await db.select().from(scripts).where(eq(scripts.id, script!.id));
+    expect(saved!.title).toBe('Моё название');
+    expect(saved!.fountain).toContain('.ГОРА МЯТЫХ ФУТБОЛОК');
+    await app.close();
+  });
+
+  it('never replaces text the author already wrote with the draft', async () => {
+    const script = await makeScript(userId, FOUNTAIN);
+    const { fetchImpl } = mockJsonGateway();
+    const app = await buildApp({ id: userId }, fetchImpl);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/v1/scripts/${script.id}/structurize`,
+      payload: { idempotencyKey: `k-${nid()}`, idea: 'Как за 15 секунд сложить футболку.' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const [saved] = await db.select().from(scripts).where(eq(scripts.id, script.id));
+    expect(saved!.fountain).toBe(FOUNTAIN);
     await app.close();
   });
 

@@ -19,28 +19,50 @@ const chunks = [
   `<rewrite>${REWRITE}</rewrite>`,
   ...(RULE ? [`\n<rule>${RULE}</rule>`] : []),
 ];
-const structurize = JSON.stringify({
-  format: 'film',
-  brief: { version: 1, goal: 'Проверить идею под нагрузкой', inferred: true },
-  outline: {
-    version: 1,
-    beats: [
-      {
-        id: 'load-setup',
-        kind: 'setup',
-        title: 'Завязка',
-        summary: 'Герой обнаруживает проблему и принимает решение действовать.',
-      },
-      {
-        id: 'load-resolution',
-        kind: 'resolution',
-        title: 'Развязка',
-        summary: 'Решение героя меняет ситуацию и завершает проверяемую арку.',
-      },
-    ],
-  },
-});
+// MOCK_STRUCTURIZE_JSON swaps in a realistic draft for visual walks.
+const structurize =
+  process.env.MOCK_STRUCTURIZE_JSON ??
+  JSON.stringify({
+    format: 'film',
+    brief: { version: 1, goal: 'Проверить идею под нагрузкой', inferred: true },
+    outline: {
+      version: 1,
+      beats: [
+        {
+          id: 'load-setup',
+          kind: 'setup',
+          title: 'Завязка',
+          summary: 'Герой обнаруживает проблему и принимает решение действовать.',
+        },
+        {
+          id: 'load-resolution',
+          kind: 'resolution',
+          title: 'Развязка',
+          summary: 'Решение героя меняет ситуацию и завершает проверяемую арку.',
+        },
+      ],
+    },
+  });
 
+// Shot-planner requests share the structurize model; answer them with a
+// two-shot plan whose seconds add up to the scene target.
+const shotPlan = (sceneId, target) => {
+  const first = target > 3 ? Math.ceil(target / 2) : target;
+  const durations = first === target ? [target] : [first, target - first];
+  return JSON.stringify({
+    sceneId,
+    shots: durations.map((durationSec, index) => ({
+      order: index + 1,
+      title: index === 0 ? 'Общий план' : 'Крупный план',
+      durationSec,
+      dramaticBeat: 'mock',
+      promptDraft:
+        index === 0 ? 'Общий план сцены, утро, естественный свет' : 'Крупно: деталь действия',
+      requiredLocks: [],
+      unresolvedAssets: [],
+    })),
+  });
+};
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const reject = (req, res, reason, { model, stream } = {}) => {
   const streamState = stream === undefined ? 'absent' : String(stream);
@@ -102,7 +124,16 @@ createServer((req, res) => {
     }
     if (isStructurize) {
       await wait(delayMs);
-      const content = mode === 'empty' ? '' : mode === 'malformed' ? '{broken' : structurize;
+      const prompt = String(parsed.messages?.at(-1)?.content ?? '');
+      const planFor = /sceneId: (\S+)\ntargetDurationSeconds: (\d+)/.exec(prompt);
+      const content =
+        mode === 'empty'
+          ? ''
+          : mode === 'malformed'
+            ? '{broken'
+            : planFor
+              ? shotPlan(planFor[1], Number(planFor[2]))
+              : structurize;
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ choices: [{ message: { content } }] }));
       return;
