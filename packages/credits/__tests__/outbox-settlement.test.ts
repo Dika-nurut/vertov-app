@@ -109,6 +109,26 @@ describe('outbox drainer — settlement rows are never abandoned', () => {
     expect(opts.removeOnFail).toBe(false);
   });
 
+  it('a drainer stopped right after start runs no background pass over pending rows', async () => {
+    // The row exists BEFORE the drainer starts, so a first background pass
+    // would find it. Stopping synchronously must prevent that pass — otherwise
+    // it races the caller's own drain() and double-counts an attempt.
+    const failing = flakyQueue(MAX_ATTEMPTS + 2, `${TAG}-startup`);
+    const rowId = await enqueue(JOB_RUN_QUEUE, `${TAG}-startup`);
+    const drainer = startOutboxDrainer({
+      log,
+      queues: { [JOB_RUN_QUEUE]: failing.queue },
+      intervalMs: 3_600_000,
+      maxAttempts: MAX_ATTEMPTS,
+      settlementRetryBaseMs: 1,
+    });
+    drainer.stop();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(failing.attempted()).toBe(0);
+    expect((await rowFor(rowId))!.attempts).toBe(0);
+  });
+
   it('an ordinary queue still dead-letters at the ceiling (unchanged semantics)', async () => {
     const failing = flakyQueue(MAX_ATTEMPTS + 2, `${TAG}-run`);
     const drainer = startOutboxDrainer({

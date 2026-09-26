@@ -297,7 +297,10 @@ export function startOutboxDrainer(opts: OutboxDrainerOptions): OutboxDrainerHan
     }
   }
 
-  void loop();
+  // Start on the next macrotask, not synchronously: a caller that stops the
+  // drainer right after starting it (to drive drain() by hand) must not race a
+  // first background pass over the same rows — each would count an attempt.
+  setImmediate(() => void loop());
   opts.log.info({ intervalMs, batchSize, maxAttempts }, 'outbox drainer started');
 
   return {
