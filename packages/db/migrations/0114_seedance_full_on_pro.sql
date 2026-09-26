@@ -16,10 +16,6 @@ BEGIN
   ) THEN
     RETURN;
   END IF;
-  EXECUTE $q$
-    UPDATE "models"
-    SET "tier_min" = 'pro'
-    WHERE "id" IN ('seedance-2-0', 'seedance-2-0-reference-to-video')
-      AND "tier_min" = 'creator'
-  $q$;
+  EXECUTE $q$UPDATE "models" SET "tier_min" = 'pro' WHERE "id" = 'seedance-2-0' AND "tier_min" = 'creator';$q$;
+  EXECUTE $q$UPDATE "models" SET "tier_min" = 'pro' WHERE "id" = 'seedance-2-0-reference-to-video' AND "tier_min" = 'creator';$q$;
 END $$;
