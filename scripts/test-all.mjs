@@ -264,11 +264,17 @@ async function main() {
         '-d',
         '--wait',
         '--wait-timeout',
-        '60',
+        '120',
       ],
       testInfraEnv,
     )
   ) {
+    // Show why a service never went healthy instead of a bare "unhealthy".
+    spawnSync(
+      'docker',
+      ['compose', '-p', testComposeProject, '-f', testComposeFile, 'logs', '--tail', '40'],
+      { cwd: repoRoot, stdio: 'inherit', env: { ...process.env, ...testInfraEnv } },
+    );
     return finish(1);
   }
   const settleStartedAt = Date.now();

@@ -39,8 +39,10 @@ services:
 
   minio:
     # minio/minio is gone from Docker Hub (and quay.io needs auth); the pinned
-    # Bitnami legacy build starts `minio server` itself, console on :9001.
+    # Bitnami legacy build starts `minio server` itself, console on :9001. Root
+    # lets its entrypoint own the tmpfs before it drops to the minio user.
     image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    user: root
     environment:
       MINIO_ROOT_USER: ${TEST_MINIO_ROOT_USER:-seedtest}
       MINIO_ROOT_PASSWORD: ${TEST_MINIO_ROOT_PASSWORD:-seed-test-password}
@@ -48,7 +50,7 @@ services:
       - '127.0.0.1:${TEST_MINIO_PORT:-59000}:9000'
       - '127.0.0.1:${TEST_MINIO_CONSOLE_PORT:-59001}:9001'
     tmpfs:
-      - /bitnami/minio/data:mode=1777
+      - /bitnami/minio/data
     healthcheck:
       test:
         [
@@ -60,3 +62,4 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+      start_period: 60s
