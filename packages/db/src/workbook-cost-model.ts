@@ -20,9 +20,9 @@ export type WorkbookGatewayFamily = 'openrouter' | 'direct';
 /** Immutable provenance for the generated workbook export consumed at runtime. */
 export const WORKBOOK_SSOT = {
   path: 'docs/business/pricing-workbook/Vertov_Pricing_Model_v14_2026-07-28.xlsx',
-  sha256: 'ab35021e534e264a9bbb16c7ed391fb05b1a4056fc523b8e487728c41dd2d2fd',
-  exportRevision: 22,
-  exportHash16: '4a945faf95385d54',
+  sha256: '41dcd8b78f930f166763e46403506c463e36b6ec8450e70cc14deb6d3ecea4cb',
+  exportRevision: 23,
+  exportHash16: '3fbff59ac32e49ec',
   exportColumnsHash16: 'da54ec1b730a358b',
 } as const;
 

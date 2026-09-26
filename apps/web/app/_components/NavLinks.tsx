@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { isNavItemActive } from '@/lib/nav-active';
+import { withLocale, type Locale } from '@/lib/locale';
 
 export interface NavItem {
   href: string;
@@ -22,7 +23,7 @@ export interface NavItem {
  * parent tab lit. «Создать» (/generate) must match exactly so it doesn't also
  * claim the root.
  */
-export function NavLinks({ items }: { items: NavItem[] }) {
+export function NavLinks({ items, locale = 'ru' }: { items: NavItem[]; locale?: Locale }) {
   const pathname = usePathname() ?? '';
   return (
     // Brutalist segmented nav — bordered blocks whose 2.5px bone borders collapse
@@ -34,7 +35,7 @@ export function NavLinks({ items }: { items: NavItem[] }) {
         return (
           <Link
             key={n.href}
-            href={n.href}
+            href={withLocale(n.href, locale)}
             aria-current={active ? 'page' : undefined}
             className={cn(
               // No `.press` — this is a fused bar cell with no individual

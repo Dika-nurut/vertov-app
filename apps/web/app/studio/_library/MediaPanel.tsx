@@ -55,7 +55,7 @@ export function MediaPanel({
             : 'border-[color:var(--color-line)]/55 hover:border-[color:var(--color-line)]')
         }
       >
-        <span className="grid h-9 w-9 place-items-center rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] text-[color:var(--color-fg)] ring-1 ring-inset ring-[color:var(--color-line)]/15">
+        <span className="grid h-9 w-9 place-items-center rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] text-[color:var(--color-fg)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15">
           {importing ? <Loader2 size={16} className="seed-spin" /> : <UploadCloud size={16} />}
         </span>
         <span className="text-[13px] font-semibold text-[color:var(--color-fg)]">
@@ -104,8 +104,8 @@ export function MediaPanel({
                 key={c.id}
                 assetUrl={c.assetUrl}
                 added={timeline.some((t) => t.url === c.assetUrl)}
-                onAdd={() => void addClip(c.assetUrl, c.id)}
-                onPip={() => void addPip(c.assetUrl, c.id)}
+                onAdd={() => void addClip(c.assetUrl, c.assetId)}
+                onPip={() => void addPip(c.assetUrl, c.assetId)}
               />
             ))}
           </div>

@@ -26,7 +26,11 @@ import {
   EXECUTION_SNAPSHOT_VERSION,
   type ExecutionSnapshot,
 } from '@seed/shared/execution-snapshot';
-import { subscriptionTierAllows } from '@seed/shared/subscription-tiers';
+import {
+  cheapestSoldTierFor,
+  subscriptionTierAllows,
+  subscriptionTierLabel,
+} from '@seed/shared/subscription-tiers';
 import { validateBoardCompiledGenerationRequest } from '@seed/shared/board-contract';
 import { resolveCatalogueEntry, type FrameRole } from '@seed/shared/select-route';
 import {
@@ -234,11 +238,15 @@ export function setupJobsRoutes(
     // sits before the job/credit transaction, so no lock order changes.
     const userTier = await resolveUserPlanTier(db, session.user.id);
     if (!subscriptionTierAllows(userTier, model.tierMin)) {
+      // Name a plan the customer can buy — never the retired «Креатор» a row may carry.
+      const requiredPlan = subscriptionTierLabel(cheapestSoldTierFor(model.tierMin));
       return reply.status(403).send({
         error: 'tier_required',
         requiredTier: model.tierMin,
         currentTier: userTier,
-        message: `Эта модель доступна на тарифе «${model.tierMin}» и выше.`,
+        message: requiredPlan
+          ? `Эта модель доступна на тарифе «${requiredPlan}» и выше.`
+          : 'Эта модель недоступна на вашем тарифе.',
       });
     }
 

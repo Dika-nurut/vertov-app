@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, Lock, ArrowsDownUp } from '@phosphor-icons/react/dist/ssr';
 import { cardVisual } from '../../lib/visual-hash';
 import { capabilitySigns } from '../../lib/model-capabilities';
+import { FAMILY_VENDOR } from '../../lib/generate-model-cards';
 import type { ModelCard } from '../../lib/generate-model-cards';
 import type { ModelRow, PresetRow } from './GenerateClient';
 
@@ -107,7 +108,9 @@ export function ModelEffectPicker({
                 className="w-full bg-transparent text-[13px] text-[color:var(--color-fg)] outline-none placeholder:text-[color:var(--color-faint)]"
               />
             </div>
-            {/* Family filter chips — derived from the catalog, not vendor folders. */}
+            {/* Family filter chips — friendly vendor labels from the shared
+              FAMILY_VENDOR map (same source as the card subtitles), not raw
+              catalog ids. Key stays the family id so filtering is unchanged. */}
             <div className="mb-3.5 flex flex-wrap gap-2">
               {['all', ...families].map((f) => {
                 const on = family === f;
@@ -123,7 +126,7 @@ export function ModelEffectPicker({
                         : 'border-[color:var(--color-line)] text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]')
                     }
                   >
-                    {f === 'all' ? 'Все' : f}
+                    {f === 'all' ? 'Все' : (FAMILY_VENDOR[f.toLowerCase()] ?? f)}
                   </button>
                 );
               })}
@@ -138,11 +141,13 @@ export function ModelEffectPicker({
                 onClick={() => setSort((s) => (s === 'default' ? 'cheap' : 'default'))}
                 className="flex items-center gap-1.5 rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] px-2 py-1 font-mono text-[11px] font-bold uppercase text-[color:var(--color-fg)]"
               >
-                <ArrowsDownUp size={12} />
+                <ArrowsDownUp size={12} weight="bold" />
                 {sort === 'default' ? 'Рекомендуемые' : 'Сначала дешёвые'}
               </button>
             </div>
-            {/* Grid — no icon; capability sign badges (standardised EN) + cost. */}
+            {/* Grid — no icon; capability sign badges (standardised EN, see the
+              note below). No per-card price: the ONLY quote is the CTA's live
+              estimate — a card figure would go stale the moment params change. */}
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
               {shownCards.map((c) => {
                 const on = c.model.id === currentModelId;
@@ -214,6 +219,11 @@ export function ModelEffectPicker({
                         {c.note}
                       </span>
                     )}
+                    {/* Capability signs — deliberately EN, not RU (WS6-recorded
+                      bible exception): they mirror the capability-bag keys and
+                      the boards' port-type vocabulary (text/image/video), so a
+                      user comparing Generate with a board row sees one language.
+                      AUDIO is accent here — the CTA quote keeps the one lime. */}
                     {signs.length > 0 && (
                       <span className="flex flex-wrap gap-1.5">
                         {signs.map((s) => (
@@ -221,11 +231,9 @@ export function ModelEffectPicker({
                             key={s}
                             className={
                               'rounded-[var(--radius-xs)] border-[1.5px] px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase ' +
-                              (s === 'AUDIO'
-                                ? 'border-[color:var(--color-accent2)] text-[color:var(--color-accent2)]'
-                                : s === 'REF'
-                                  ? 'border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
-                                  : 'border-[color:var(--color-line)]/40 text-[color:var(--color-muted-foreground)]')
+                              (s === 'AUDIO' || s === 'REF'
+                                ? 'border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
+                                : 'border-[color:var(--color-line)]/40 text-[color:var(--color-muted-foreground)]')
                             }
                           >
                             {s}

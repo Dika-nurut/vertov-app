@@ -23,7 +23,7 @@ export function CanvasToolbar({
   return (
     <div
       data-testid="canvas-toolbar"
-      className="glass-menu absolute bottom-2 left-1/2 z-50 flex -translate-x-1/2 items-center gap-0.5 rounded-[var(--radius-md)] p-0.5 ring-1 ring-inset ring-[color:var(--color-line)]/30"
+      className="glass-menu absolute bottom-2 left-1/2 z-50 flex -translate-x-1/2 items-center gap-0.5 rounded-[var(--radius-md)] p-0.5 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/30"
     >
       <button
         type="button"

@@ -351,9 +351,9 @@ describe('shared owned live project context', () => {
       url: '/v1/studio/clips?kind=legacy-video-value',
     });
     expect(scoped.statusCode, scoped.body).toBe(200);
-    expect(scoped.json().clips.map((clip: { id: string }) => clip.id)).toEqual([
-      firstMemberAssetId,
-    ]);
+    const scopedClips = scoped.json().clips as Array<{ id: string; assetId?: string }>;
+    expect(scopedClips.map((clip) => clip.id)).toEqual([firstMemberAssetId]);
+    expect(scopedClips.map((clip) => clip.assetId)).toEqual([firstMemberAssetId]);
     expect(standalone.statusCode, standalone.body).toBe(200);
     expect(standalone.json().clips.map((clip: { id: string }) => clip.id)).toEqual(
       expect.arrayContaining([firstMemberAssetId, provenanceOnlyAssetId]),

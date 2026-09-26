@@ -9,6 +9,7 @@ import { assetSrc } from '@/lib/asset-src';
 import { TokenStar } from '@/components/ui/token-star';
 import { PublishButton } from './PublishButton';
 import { CopyPromptButton } from './CopyPromptButton';
+import { AssetLifecycleNotice } from '@/app/_components/AssetLifecycleNotice';
 import {
   parseProjectIdSearchValue,
   withProjectContext,
@@ -30,6 +31,8 @@ interface JobDetail {
   status: 'queued' | 'running' | 'succeeded' | 'failed' | 'refunded';
   modelId: string;
   resultAssets: string[];
+  resultExpiresAt: string | null;
+  resultUnavailableReason: 'deleted' | 'expired' | null;
   errorCode: string | null;
   errorMessage: string | null;
   creditsReserved: number;
@@ -89,6 +92,9 @@ export default async function GalleryItemPage({
   if (!job.data) notFound();
 
   const j = job.data;
+  const firstResultAsset = j.resultAssets[0];
+  const resultUnavailable =
+    j.status === 'succeeded' && j.resultAssets.length === 0 ? j.resultUnavailableReason : null;
   const prompt = typeof j.params['prompt'] === 'string' ? (j.params['prompt'] as string) : '';
   const size = typeof j.params['size'] === 'string' ? (j.params['size'] as string) : null;
   // Full generation params — what a power user needs to reproduce the result.
@@ -142,6 +148,24 @@ export default async function GalleryItemPage({
                   />
                 ),
               )
+            ) : resultUnavailable ? (
+              <Card className="flex min-h-[260px] w-full flex-col items-center justify-center p-6 text-center">
+                <h1 className="font-display text-2xl font-black">
+                  {resultUnavailable === 'deleted' ? 'Результат удалён' : 'Результат недоступен'}
+                </h1>
+                <p className="mt-2 text-sm text-[color:var(--color-muted-foreground)]">
+                  {resultUnavailable === 'deleted'
+                    ? 'Материал больше нельзя открыть или скачать.'
+                    : 'Срок хранения результата истёк.'}
+                </p>
+                <div className="mt-4 w-full max-w-md">
+                  <AssetLifecycleNotice
+                    expiresAt={j.resultExpiresAt}
+                    expired={resultUnavailable === 'expired'}
+                    unavailable={resultUnavailable === 'deleted'}
+                  />
+                </div>
+              </Card>
             ) : (
               <Card className="flex aspect-square w-full items-center justify-center text-[color:var(--color-muted-foreground)]">
                 {STATUS_LABELS[j.status] ?? j.status}
@@ -226,8 +250,43 @@ export default async function GalleryItemPage({
               <div className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--color-faint)]">
                 Создано
               </div>
-              <div className="mt-1">{formatDate(j.queuedAt)}</div>
+              <div className="tnum mt-1">{formatDate(j.queuedAt)}</div>
             </div>
+            {j.resultExpiresAt && j.resultAssets.length > 0 && (
+              <AssetLifecycleNotice
+                expiresAt={j.resultExpiresAt}
+                expired={new Date(j.resultExpiresAt).getTime() <= Date.now()}
+                {...(firstResultAsset ? { assetUrl: firstResultAsset } : {})}
+              />
+            )}
+            {j.referenceAssets.length > 0 && (
+              <div
+                data-testid="detail-reference-assets"
+                className="border-t border-[color:var(--color-line-soft)] pt-4"
+              >
+                <div className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--color-faint)]">
+                  Референсы
+                </div>
+                <div className="mt-2 grid grid-cols-4 gap-2">
+                  {j.referenceAssets.map((url, index) => (
+                    <a
+                      key={`${url}-${index}`}
+                      href={assetSrc(url)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={assetSrc(url)}
+                        alt={`Референс ${index + 1}`}
+                        loading="lazy"
+                        className="aspect-square w-full object-cover border-2 border-[color:var(--color-line)]"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="space-y-3 pt-1">
               <Button asChild className="w-full">
                 <Link href={repeatHref} data-testid="remix-button">

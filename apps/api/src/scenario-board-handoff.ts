@@ -20,6 +20,47 @@ export interface ScenarioHandoffScene {
   sourceHash: string;
   /** Optional normalized M3 plan; absent keeps the legacy scene-only handoff. */
   shotPlan?: ScenarioShotPlan;
+  /** Approved identity locks are ordinary Cast nodes when a plan uses them. */
+  locks?: readonly ScenarioHandoffLock[];
+}
+
+export interface ScenarioHandoffLock {
+  id: string;
+  kind: 'character' | 'location';
+  name: string;
+  description?: string;
+}
+
+/** Keep the handoff lock catalog in step with the shot-planner prompt catalog. */
+export function scenarioHandoffLocks(bible: unknown): ScenarioHandoffLock[] {
+  if (!bible || typeof bible !== 'object') return [];
+  const source = bible as { characters?: unknown; locations?: unknown };
+  return [
+    ['character', source.characters],
+    ['location', source.locations],
+  ]
+    .flatMap(([kind, values]) =>
+      Array.isArray(values)
+        ? values.flatMap((value, index) => {
+            if (!value || typeof value !== 'object') return [];
+            const name = typeof value.name === 'string' ? value.name.trim() : '';
+            if (!name) return [];
+            const description =
+              typeof value.description === 'string'
+                ? value.description.trim().slice(0, 200)
+                : undefined;
+            return [
+              {
+                id: `canon:${kind}:${index + 1}`,
+                kind: kind as 'character' | 'location',
+                name: name.slice(0, 160),
+                ...(description ? { description } : {}),
+              },
+            ];
+          })
+        : [],
+    )
+    .slice(0, 32);
 }
 
 export function extractScenarioHandoffSources(input: {
@@ -229,6 +270,7 @@ export function mergeScenarioScenesIntoBoard(input: {
         sceneNodeId,
         sceneY: (byId.get(sceneNodeId) as BoardNode).position.y,
         plan: scene.shotPlan,
+        ...(scene.locks ? { locks: scene.locks } : {}),
         makeId: input.makeId,
       });
       materializedShots += materialized.shots;
@@ -310,6 +352,7 @@ function materializeScenarioShotPlan(input: {
   sceneNodeId: string;
   sceneY: number;
   plan: ScenarioShotPlan;
+  locks?: readonly ScenarioHandoffLock[];
   makeId: () => string;
 }): { shots: number; castNodes: number } {
   const newCastIds = new Set<string>();
@@ -334,6 +377,9 @@ function materializeScenarioShotPlan(input: {
         data: {
           ...previousPrompt.data,
           text: shot.promptDraft,
+          title: shot.title,
+          result: undefined,
+          view: 'draft',
           sourceSceneNodeId: input.sceneNodeId,
         },
       });
@@ -345,7 +391,11 @@ function materializeScenarioShotPlan(input: {
         position: { x: 520, y },
         width: 360,
         height: 220,
-        data: { text: shot.promptDraft, sourceSceneNodeId: input.sceneNodeId },
+        data: {
+          text: shot.promptDraft,
+          title: shot.title,
+          sourceSceneNodeId: input.sceneNodeId,
+        },
       });
     }
 
@@ -355,6 +405,15 @@ function materializeScenarioShotPlan(input: {
     const generateData = {
       mode: 'video' as const,
       prompt: '',
+      title: shot.title,
+      plannerShotId: idForMaterialization(
+        input.scriptId,
+        input.sourceSceneId,
+        'shot',
+        String(shot.order),
+      ),
+      requiredLocks: shot.requiredLocks,
+      unresolvedAssets: shot.unresolvedAssets,
       ...(shot.shotGrammar ? { shot: shot.shotGrammar } : {}),
       durationSeconds: shot.durationSec,
       count: 1 as const,
@@ -391,6 +450,58 @@ function materializeScenarioShotPlan(input: {
       makeId: input.makeId,
     });
 
+    let referenceIndex = 0;
+    shot.requiredLocks.forEach((lockId) => {
+      const lock = input.locks?.find((candidate) => candidate.id === lockId);
+      if (!lock) {
+        referenceIndex += 1;
+        return;
+      }
+      const castId = idForMaterialization(input.scriptId, 'shared', 'cast', lock.id);
+      const previousCast = input.byId.get(castId);
+      if (previousCast?.type === 'cast') {
+        const previousData = previousCast.data;
+        input.byId.set(castId, {
+          ...previousCast,
+          data: {
+            ...previousData,
+            castKind: lock.kind,
+            name: lock.name,
+            scenarioLockId: lock.id,
+            ...(lock.description ? { description: lock.description } : {}),
+            ...(!lock.description ? { description: undefined } : {}),
+          },
+        });
+      } else if (!previousCast) {
+        input.byId.set(castId, {
+          id: castId,
+          type: 'cast',
+          version: BOARD_NODE_VERSION,
+          position: { x: 120, y: input.sceneY + 320 + newCastIds.size * 180 },
+          width: 300,
+          height: 180,
+          data: {
+            castKind: lock.kind,
+            name: lock.name,
+            scenarioLockId: lock.id,
+            ...(lock.description ? { description: lock.description } : {}),
+            imageUrls: [],
+          },
+        });
+        newCastIds.add(castId);
+      }
+      ensureEdge({
+        edges: input.edges,
+        edgeIds: input.edgeIds,
+        source: castId,
+        sourceHandle: 'out',
+        target: generateId,
+        targetHandle: `images[${referenceIndex}]`,
+        makeId: input.makeId,
+      });
+      referenceIndex += 1;
+    });
+
     shot.unresolvedAssets.forEach((asset, index) => {
       const castId = idForMaterialization(input.scriptId, input.sourceSceneId, 'cast', asset);
       const previousCast = input.byId.get(castId);
@@ -417,7 +528,7 @@ function materializeScenarioShotPlan(input: {
         source: castId,
         sourceHandle: 'out',
         target: generateId,
-        targetHandle: `images[${index}]`,
+        targetHandle: `images[${referenceIndex + index}]`,
         makeId: input.makeId,
       });
     });

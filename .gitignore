@@ -1,13 +1,40 @@
-node_modules/
-.next/
-.next-*/
-dist/
-*.tsbuildinfo
+node_modules
+.next
+.next-fid
+.next-floor
+apps/web/tmp
+dist
+.turbo
+.agent-lease
 .env
-.env.*
-!.env.example
+.env.local
 *.log
+.pnpm-store
+coverage
+playwright-report
+test-results
 .DS_Store
-coverage/
-playwright-report/
-test-results/
+*.tsbuildinfo
+
+# Editor / OS noise the W1 review caught
+.vscode/
+.idea/
+Thumbs.db
+
+# stray artifacts / agent transcripts (not source)
+Novella.zip
+apps/web/.claude/
+.claude/W4_EXECUTION_BRIEF.md
+# throwaway audit/screenshot harnesses under e2e (not tests — see file header)
+apps/web/e2e/_gen-*.mjs
+apps/worker/src/guard-red-demo-*.ts
+
+# nested git worktrees — `git add` records these as gitlinks (mode 160000) with no
+# .gitmodules, which breaks a fresh clone. Keep worktrees OUT of the repo tree.
+.worktrees/
+.claude/worktrees/
+
+# Alertmanager renders secrets to a host-local runtime file. The checked-in
+# alertmanager.yml remains a placeholder/template only.
+/infra/observability/*.rendered.yml
+/infra/observability/.runtime/

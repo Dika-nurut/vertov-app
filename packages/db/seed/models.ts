@@ -277,7 +277,9 @@ export const seedModels: ModelRow[] = [
     variant: '2.0',
     kind: 'video',
     isActive: true,
-    tierMin: 'creator',
+    // Approved /pricing (owner 2026-09-25): «Seedance — все модели» opens at Про;
+    // Старт/Плюс get Seedance Fast.
+    tierMin: 'pro',
     unitKind: 'second',
     expectedLatencyMsP50: 240000,
     expectedLatencyMsP95: 420000,
@@ -349,6 +351,38 @@ export const seedModels: ModelRow[] = [
     },
   },
   {
+    // Seedance 2.0 Mini — the free/economy video tier (owner ruling 2026-08-03, PRD).
+    // Single leg on Pixazo (`seedance-2-0-mini`, live gateway quote 2026-09-03:
+    // 480p $0.014/s, 720p $0.0302/s; t2v and first/last-frame i2v at one rate).
+    // No fallback on purpose: kie's Mini is ~3× dearer and a reserve would force its
+    // break-even into the price. tierMin free so the welcome tokens buy video.
+    // Active since the 2026-09-25 paid smoke confirmed $0.014/s (migration 0115).
+    id: 'seedance-2-0-mini',
+    provider: 'byteplus',
+    family: 'seedance',
+    variant: '2.0-mini',
+    kind: 'video',
+    isActive: true,
+    tierMin: 'free',
+    unitKind: 'second',
+    expectedLatencyMsP50: 120000,
+    expectedLatencyMsP95: 300000,
+    maxDurationSeconds: 15,
+    maxResolution: '720p',
+    providerModelId: 'seedance-2-0-mini',
+    providerEndpoint: 'https://gateway.pixazo.ai/seedance-2-0-mini/text-to-video',
+    capabilities: {
+      ...SEEDANCE_FAST_BOARD_SETTINGS,
+      audio: true,
+      frames: ['first', 'last'],
+      forceGateway: 'pixazo',
+      default_resolution: '480p',
+      // Worst sold rung (720p). Pixazo bills output seconds rounded up; the price
+      // absorbs it through the grid's 5/4 worst-duration factor.
+      priceUsdPerUnit: 0.0302,
+    },
+  },
+  {
     // Reference-to-video (previz cast lock): up to 9 reference stills carry the
     // character/location across shots. Image and audio references stay enabled;
     // video-reference attachment is deliberately unavailable on both routes.
@@ -360,7 +394,9 @@ export const seedModels: ModelRow[] = [
     variant: '2.0-reference',
     kind: 'video',
     isActive: true,
-    tierMin: 'creator',
+    // Approved /pricing (owner 2026-09-25): «Seedance — все модели» opens at Про;
+    // Старт/Плюс get Seedance Fast.
+    tierMin: 'pro',
     unitKind: 'second',
     expectedLatencyMsP50: 240000,
     expectedLatencyMsP95: 420000,

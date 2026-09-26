@@ -27,7 +27,7 @@ export function LandingFooter() {
         <nav className="flex flex-wrap gap-x-6 gap-y-2">
           <SupportLink
             href={SUPPORT_HREF}
-            className="font-sans text-[13px] font-semibold text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]"
+            className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]"
           >
             Поддержка · 5 рабочих дней
           </SupportLink>
@@ -35,7 +35,7 @@ export function LandingFooter() {
             <Link
               key={href}
               href={href}
-              className="font-sans text-[13px] font-semibold text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]"
+              className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]"
             >
               {label}
             </Link>

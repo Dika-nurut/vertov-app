@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { X } from '@phosphor-icons/react/dist/ssr';
 import { assetSrc } from '@/lib/asset-src';
 import type { PresetRow } from '../../generate/GenerateClient';
 import { trackEvent, PlausibleEvent } from '../PlausibleEvents';
@@ -114,7 +115,7 @@ export function VitrinaPopover({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      className="m-auto overflow-visible border-[2.5px] border-[color:var(--color-fg)] bg-[color:var(--color-surface)] p-0 text-[color:var(--color-fg)] shadow-[10px_10px_0_0_var(--color-accent)] backdrop:bg-[color:var(--color-overlay-strong)]"
+      className="m-auto overflow-visible border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-0 text-[color:var(--color-fg)] shadow-[5px_5px_0_0_var(--color-shadow)] backdrop:bg-[color:var(--color-overlay-strong)]"
       style={
         geometry
           ? { width: geometry.popoverWidth, height: geometry.popoverHeight }
@@ -128,9 +129,9 @@ export function VitrinaPopover({
         type="button"
         onClick={onClose}
         aria-label="Закрыть"
-        className="absolute right-0 top-0 z-20 flex h-8 w-8 items-center justify-center border-[2.5px] border-[color:var(--color-fg)] bg-[color:var(--color-surface)] font-mono text-lg leading-none"
+        className="absolute right-0 top-0 z-20 flex h-8 w-8 items-center justify-center border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-fg)]"
       >
-        ✕
+        <X size={16} weight="bold" aria-hidden />
       </button>
       {geometry && (
         <div className="flex flex-col items-center md:flex-row md:items-stretch">
@@ -179,8 +180,8 @@ export function VitrinaPopover({
                 : { height: geometry.mediaHeight }
             }
           >
-            {/* pr-9 keeps the first line clear of the flush corner ✕ */}
-            <p className="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap pr-9 font-mono text-[11px] leading-[1.66]">
+            {/* pr-9 keeps the first line clear of the flush corner close button */}
+            <p className="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap pr-9 font-sans text-[13px] leading-[1.5]">
               {pack.promptTemplate}
             </p>
             <div className="mt-4 flex shrink-0">

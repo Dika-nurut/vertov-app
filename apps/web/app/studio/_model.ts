@@ -23,6 +23,7 @@ export type SpeedCurve = 'montage' | 'hero' | 'flash';
 export interface StudioClip {
   id: string;
   assetUrl: string;
+  assetId?: string;
   createdAt?: string;
 }
 

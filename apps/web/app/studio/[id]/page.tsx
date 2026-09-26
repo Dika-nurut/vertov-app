@@ -3,7 +3,7 @@ import { AppShell } from '../../_components/AppShell';
 import { AnonBootstrap } from '../../_components/AnonBootstrap';
 import { apiBaseUrl, apiGet } from '../../../lib/server-api';
 import { StudioClient, type StudioClip } from '../StudioClient';
-import { StudioHandoffReceipt } from './StudioHandoffReceipt';
+import { StudioAutoCreateNotice, StudioHandoffReceipt } from './StudioHandoffReceipt';
 import {
   parseProjectIdSearchValue,
   withProjectContext,
@@ -36,6 +36,7 @@ export default async function StudioProjectPage({
     handoff?: string | string[];
     sourceBoardId?: string | string[];
     clips?: string | string[];
+    created?: string | string[];
   }>;
 }) {
   const { id: studioProjectId } = await params;
@@ -53,6 +54,7 @@ export default async function StudioProjectPage({
       : null;
   const clipCount =
     typeof sp.clips === 'string' && /^\d{1,4}$/.test(sp.clips) ? Number(sp.clips) : null;
+  const autoCreated = sp.created === '1';
   const contextQuery = workspaceProjectId
     ? `?projectId=${encodeURIComponent(workspaceProjectId)}`
     : '';
@@ -139,6 +141,7 @@ export default async function StudioProjectPage({
             projectId={workspaceProjectId}
           />
         )}
+        {autoCreated && <StudioAutoCreateNotice projectTitle={project.data.title} />}
         <StudioClient
           initialClips={clips.data?.clips ?? []}
           apiUrl={apiBaseUrl()}

@@ -129,6 +129,7 @@ export function setupMeAccountRoutes(app: FastifyInstance, requireSession: Requi
         ipAddress: schema.session.ipAddress,
         userAgent: schema.session.userAgent,
         createdAt: schema.session.createdAt,
+        updatedAt: schema.session.updatedAt,
         expiresAt: schema.session.expiresAt,
       })
       .from(schema.session)
@@ -143,6 +144,7 @@ export function setupMeAccountRoutes(app: FastifyInstance, requireSession: Requi
       ip: r.ipAddress,
       userAgent: r.userAgent,
       createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
       expiresAt: r.expiresAt,
     }));
     return { items };

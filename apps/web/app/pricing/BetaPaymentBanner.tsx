@@ -38,10 +38,14 @@ export function BetaPaymentBanner({ apiUrl }: { apiUrl: string }) {
     }
   }
 
+  // Kept (not deleted): Tochka is live behind BILLING_PROVIDER=tochka, but the
+  // default provider is still yookassa and beta mode (no YOOKASSA_SHOP_ID) is
+  // reachable — see page.tsx isBetaPaymentMode. So the banner stays, as a
+  // brutal card in tokens like every other pricing slab (WS6).
   return (
     <div
       data-testid="beta-payment-banner"
-      className="mb-8 rounded-[var(--radius-lg)] border-[1.5px] border-[rgba(var(--accent-rgb),0.4)] bg-[rgba(var(--accent-rgb),0.08)] p-6 text-[13px]"
+      className="mb-8 rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-card)] p-6 text-[13px] shadow-[5px_5px_0_0_var(--color-shadow)]"
     >
       <p className="font-semibold text-[color:var(--color-accent)]">
         Бета: оплата откроется через несколько дней — мы напишем
@@ -72,7 +76,7 @@ export function BetaPaymentBanner({ apiUrl }: { apiUrl: string }) {
       )}
 
       {state === 'error' && (
-        <p className="mt-2 text-[13px] text-destructive">
+        <p role="alert" className="mt-2 text-[13px] text-destructive">
           Не удалось сохранить. Попробуйте ещё раз.
         </p>
       )}

@@ -32,7 +32,7 @@ export function EffectsPanel({
               onClick={() =>
                 clip && patchClip(clip.uid, { color: graded, filter: e.filter ?? 'none' })
               }
-              className="press-inset overflow-hidden rounded-[var(--radius-sm)] ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40 disabled:cursor-default"
+              className="press-inset overflow-hidden rounded-[var(--radius-sm)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40 disabled:cursor-default"
             >
               <span
                 className="studio-swatch block h-12 w-full"

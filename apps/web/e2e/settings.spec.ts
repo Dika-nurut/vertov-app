@@ -6,6 +6,7 @@ test('user can update display name + locale and persist across reload', async ({
   test.setTimeout(60_000);
   const page = signedInPage;
 
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/settings');
   await expect(page.getByRole('heading', { name: 'Настройки' })).toBeVisible();
 
@@ -30,3 +31,21 @@ test('user can update display name + locale and persist across reload', async ({
 // Destructive delete-account flow is covered by the vitest unit test
 // (apps/api/__tests__/me-profile.test.ts); doing it here would tear
 // down the shared session/cookies the fixture depends on.
+
+test('settings heading is viewport-conditional (Настройки desktop / Профиль mobile)', async ({
+  signedInPage,
+}) => {
+  test.setTimeout(60_000);
+  const page = signedInPage;
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/settings');
+  await expect(page.getByRole('heading', { name: 'Настройки' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Профиль' })).toHaveCount(0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/settings');
+  await expect(page.getByTestId('mobile-desktop-notice')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Профиль' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Настройки' })).toHaveCount(0);
+});

@@ -169,7 +169,7 @@ export function TransitionGrid({
                   onPointerDown={(e) => onTilePointerDown?.(t.id, e)}
                   onClick={() => onPick(t.id)}
                   className={
-                    'press-inset group flex flex-col items-stretch gap-1 rounded-[var(--radius-sm)] p-1.5 text-left ring-1 ring-inset disabled:cursor-default disabled:opacity-50 ' +
+                    'press-inset group flex flex-col items-stretch gap-1 rounded-[var(--radius-sm)] p-1.5 text-left ring-[1.5px] ring-inset disabled:cursor-default disabled:opacity-50 ' +
                     (active
                       ? 'ring-2 ring-[color:var(--color-accent)]'
                       : 'ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/35')

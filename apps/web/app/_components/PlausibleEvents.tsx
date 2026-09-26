@@ -30,6 +30,11 @@ export const PlausibleEvent = {
   presetApplied: 'preset_applied',
   shareOpened: 'share_opened',
   onboardingStepCompleted: 'onboarding_step_completed',
+  localeChanged: 'locale_changed',
+  phoneBindingStarted: 'phone_binding_started',
+  phoneBindingCompleted: 'phone_binding_completed',
+  accountExported: 'account_exported',
+  accountDeleted: 'account_deleted',
 } as const;
 
 export type PlausibleEventName = (typeof PlausibleEvent)[keyof typeof PlausibleEvent];

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { statusLabel, tierLabel } from '../../_fmt';
 
 type Subscription = {
   tier: string;
@@ -121,8 +122,8 @@ export function SubscriptionManagementForm({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-6 text-[13px]">
-        <KV k="Тариф" v={subscription.tier} />
-        <KV k="Статус" v={subscription.status} />
+        <KV k="Тариф" v={tierLabel(subscription.tier)} />
+        <KV k="Статус" v={statusLabel(subscription.status)} />
         <KV k="До" v={new Date(subscription.currentPeriodEnd).toLocaleString('ru-RU')} />
         <KV k="Цена" v={`${subscription.priceRub.toLocaleString('ru-RU')} ₽`} />
         <KV k="Токенов/цикл" v={subscription.creditsPerCycle.toLocaleString('ru-RU')} />
@@ -159,7 +160,7 @@ export function SubscriptionManagementForm({
           onClick={() => {
             const value = Number(days);
             if (!Number.isInteger(value) || value < 1 || value > 3650) {
-              setMsg({ ok: false, text: 'Укажи целое число от 1 до 3650.' });
+              setMsg({ ok: false, text: 'Укажите целое число от 1 до 3650.' });
               return;
             }
             request('/extend', 'POST', { days: value }, 'Период и токены текущего цикла продлены.');
@@ -191,7 +192,7 @@ export function SubscriptionManagementForm({
           onClick={() => {
             if (!confirmCloseNow) {
               setConfirmCloseNow(true);
-              setMsg({ ok: false, text: 'Нажми ещё раз: доступ будет отозван немедленно.' });
+              setMsg({ ok: false, text: 'Нажмите ещё раз: доступ будет отозван немедленно.' });
               return;
             }
             request('/close', 'POST', { mode: 'now' }, 'Подписка закрыта, доступ отозван.');
@@ -210,7 +211,7 @@ function KV({ k, v }: { k: string; v: string }) {
   return (
     <div>
       <div className="font-mono text-[9.5px] uppercase tracking-widest text-faint">{k}</div>
-      <div className="mt-0.5 font-semibold capitalize">{v}</div>
+      <div className="mt-0.5 font-semibold">{v}</div>
     </div>
   );
 }

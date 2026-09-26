@@ -29,6 +29,16 @@ test('Board → add Scene → choose Scenario and scenes → source blocks appea
   await page.getByTestId('board-add').click();
   await page.getByTestId('add-scene').click();
   await expect(page.getByTestId('board-scenario-picker')).toBeVisible();
+  // WS5 tokens-first-half: scenario source is a right-side overlay panel
+  // (shot-list/history/cast pattern), not a full-canvas modal — the canvas
+  // stays visible behind it.
+  const pickerTag = await page
+    .getByTestId('board-scenario-picker')
+    .evaluate((el) => el.tagName.toLowerCase());
+  expect(pickerTag).toBe('aside');
+  const pickerBox = (await page.getByTestId('board-scenario-picker').boundingBox())!;
+  expect(pickerBox.width).toBeLessThan(page.viewportSize()!.width);
+  await expect(page.getByTestId('board-canvas')).toBeVisible();
   await page.getByText('Источник для Board', { exact: true }).click();
   await expect(page.getByTestId('scenario-source-scenes').getByRole('button')).toHaveCount(3);
   await expect(page.getByText('Выбрано: 3')).toBeVisible();

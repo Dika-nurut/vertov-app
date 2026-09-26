@@ -944,7 +944,15 @@ export function setupAdminPanelRoutes(app: FastifyInstance, requireSession: Sess
   // the picker — rows route via real gatewayOverride/fallbackGateway pairs now.
   // The registry still RESOLVES the aliases for in-flight legacy jobs, so a
   // stored value never breaks; it is simply no longer offered to new routing.
-  const KNOWN_GATEWAYS = ['atlascloud', 'openrouter', 'laozhang', 'kie', 'gptproto'] as const;
+  const KNOWN_GATEWAYS = [
+    'atlascloud',
+    'openrouter',
+    'laozhang',
+    'kie',
+    'gptproto',
+    'pixazo',
+    'grsai',
+  ] as const;
 
   // --- Phase 3: model catalog (read; feeds the switch UI) ---
   app.get('/v1/admin/models', async (req, reply) => {

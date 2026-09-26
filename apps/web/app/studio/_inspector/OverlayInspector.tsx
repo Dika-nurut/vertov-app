@@ -1,24 +1,15 @@
-// Unified overlay (PiP) inspector — III.1 (G1). CapCut web gives an overlay the
-// SAME structured drill-in panel as a base clip, not a reduced flat list. We do
-// the same within our rail: an overlay edits the CANONICAL upper-track `TClip`
-// (rich), so it gets transform (size/pos/rotate/opacity/crop), the full colour
-// grade, flips and in/out animation — exactly the instruments the worker bakes
-// into the alpha layer (preview == export). Mask, blend and keyframes are shown
-// GATED-disabled with a hint, because the layer compositing path can't honour
-// them yet (gated in buildNormalizeArgs); honest, not hidden.
+// Unified overlay (PiP) inspector — III.1 (G1). An overlay edits the canonical
+// upper-track `TClip` through the same structured panel as a base clip. The
+// inspector exposes the static, alpha-safe subset; mask, blend, keyframes and
+// animation are disclosed as gated because the compositing path cannot honour
+// them on upper tracks yet.
 import { FlipHorizontal, FlipVertical, Lock, Trash2 } from '../_icons';
-import { Row, Seg, Section, TripleInput } from '../_kit/controls';
+import { Section, TripleInput } from '../_kit/controls';
 import { ColorPanel } from './ColorPanel';
 import { AudioPanel } from './AudioPanel';
 import { SmartPanel } from './SmartPanel';
-import {
-  ANIM_LABEL,
-  DEFAULT_COLOR,
-  DEFAULT_TRANSFORM,
-  isNeutralColor,
-  isIdentityTransform,
-} from '../_model';
-import type { AnimKind, HslChannel, InspectorTab, TClip, TTransform } from '../_model';
+import { DEFAULT_COLOR, DEFAULT_TRANSFORM, isNeutralColor, isIdentityTransform } from '../_model';
+import type { HslChannel, InspectorTab, TClip, TTransform } from '../_model';
 
 /** The rail tabs an overlay exposes — the worker-renderable subset (no Background
  *  [composition-level], no Speed [not preview-synced for overlays], no Animation
@@ -233,63 +224,15 @@ function OverlayMainPanel({
         />
       </Section>
 
-      {/* In/Out animation — the renderable overlay animation (animChain bakes into
-          the alpha layer). The keyframe gallery is gated on upper tracks. */}
-      <Section title="Анимация" testid="insp-sec-anim" collapsible defaultOpen={false}>
-        {(
-          [
-            ['animIn', 'Вход'],
-            ['animOut', 'Выход'],
-          ] as const
-        ).map(([key, label]) => {
-          const cur = clip[key];
-          return (
-            <div key={key} className="space-y-2">
-              <Row label={label}>
-                <Seg
-                  value={(cur?.kind ?? 'none') as AnimKind | 'none'}
-                  onChange={(v) =>
-                    patchClip(clip.uid, {
-                      [key]:
-                        v === 'none'
-                          ? undefined
-                          : { kind: v as AnimKind, durSec: cur?.durSec ?? 0.5 },
-                    } as Partial<TClip>)
-                  }
-                  options={(['none', 'fade', 'slide', 'zoom'] as const).map((id) => ({
-                    id,
-                    label: ANIM_LABEL[id],
-                  }))}
-                />
-              </Row>
-              {cur && (
-                <TripleInput
-                  label="Длительность"
-                  value={cur.durSec}
-                  min={0.2}
-                  max={2}
-                  step={0.1}
-                  def={0.5}
-                  unit="с"
-                  testid={`insp-${key}-dur`}
-                  onChange={(v) =>
-                    patchClip(clip.uid, { [key]: { ...cur, durSec: v } } as Partial<TClip>)
-                  }
-                />
-              )}
-            </div>
-          );
-        })}
-      </Section>
-
-      {/* Mask + Blend are gated on upper tracks — surfaced with an honest hint so
-          the capability reads as "coming", not missing (preview == export honesty). */}
-      <Section title="Маска · Смешивание" testid="insp-sec-gated">
-        <div className="flex items-start gap-2 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)]/50 px-3 py-2 ring-1 ring-inset ring-[color:var(--color-line)]/10">
+      {/* Upper-track capabilities that require lower-layer compositing or motion
+          over transparency stay disclosed but unavailable until the worker can
+          preserve alpha for them. */}
+      <Section title="Маска · Смешивание · Анимация" testid="insp-sec-gated">
+        <div className="flex items-start gap-2 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)]/50 px-3 py-2 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/10">
           <Lock size={13} className="mt-0.5 shrink-0 text-[color:var(--color-faint)]" />
           <p className="text-[11px] leading-relaxed text-[color:var(--color-faint)]">
-            Маска и режимы смешивания пока доступны только на основной дорожке — слой компонуется
-            поверх кадра, рендер их ещё не сводит.
+            Маска, режимы смешивания и анимация пока доступны только на основной дорожке — верхний
+            слой компонуется поверх кадра без этих эффектов.
           </p>
         </div>
       </Section>

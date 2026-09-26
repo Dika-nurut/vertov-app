@@ -10,12 +10,18 @@ import {
   Link2Off,
   LogOut,
   Monitor,
+  Settings2,
   ShieldCheck,
   Smartphone,
+  User,
 } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { TokenStar } from '@/components/ui/token-star';
+import { GIFT_TOKENS_PHONE } from '@/lib/gift-tokens';
 import { TIER_LABEL, type Tier } from '@/lib/tier-label';
+import { useBalance } from '../_components/BalanceWidget';
+import { PlausibleEvent, trackEvent } from '../_components/PlausibleEvents';
+import { withLocale } from '@/lib/locale';
 
 interface LinkedAccount {
   id: string;
@@ -29,6 +35,7 @@ interface ActiveSession {
   ip: string | null;
   userAgent: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 /** Coarse, dependency-free UA → device label (display only, never trusted). */
@@ -61,7 +68,7 @@ function deviceLabel(ua: string | null): { name: string; mobile: boolean } {
 interface InitialProfile {
   displayName: string;
   locale: 'ru' | 'en';
-  email: string;
+  email: string | null;
   tier: Tier | null;
   balance: number;
   version: string;
@@ -70,6 +77,7 @@ interface InitialProfile {
   phoneBindingEnabled: boolean;
   phone: string | null;
   phoneVerified: boolean;
+  phoneBonus: number | null;
 }
 
 // Help + legal/about — the links that live in the desktop footer. The full-page
@@ -77,23 +85,61 @@ interface InitialProfile {
 // pattern: legal/about as a scannable settings section, not a footer).
 const DOC_LINKS: { href: string; label: string }[] = [
   { href: '/faq', label: 'Вопросы и ответы' },
+  { href: '/support', label: 'Поддержка' },
+  { href: '/pricing', label: 'Тарифы' },
   { href: '/legal/offer', label: 'Оферта' },
   { href: '/legal/tos', label: 'Условия' },
   { href: '/legal/aup', label: 'Правила' },
   { href: '/legal/privacy', label: 'Конфиденциальность' },
+  { href: '/legal/consent', label: 'Согласие на обработку данных' },
   { href: '/legal/refund', label: 'Возврат' },
   { href: '/legal/requisites', label: 'Реквизиты' },
 ];
 
-function initials(name: string, email: string): string {
-  const base = name.trim() || email.split('@')[0] || '';
+function initials(name: string, email: string | null): string {
+  const base = name.trim() || email?.split('@')[0] || '';
   const parts = base.split(/[\s._-]+/).filter(Boolean);
   const letters = (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '');
   return (letters || base.slice(0, 2)).toUpperCase();
 }
 
+function normalizePhone(value: string): string | null {
+  const trimmed = value.trim();
+  if (!/^\+[\d\s().-]+$/.test(trimmed)) return null;
+  const normalized = `+${trimmed.slice(1).replace(/\D/g, '')}`;
+  return /^\+[1-9]\d{7,14}$/.test(normalized) ? normalized : null;
+}
+
+function responseErrorCode(body: unknown): string | null {
+  if (!body || typeof body !== 'object') return null;
+  const value =
+    (body as { error?: unknown; code?: unknown }).error ?? (body as { code?: unknown }).code;
+  return typeof value === 'string' ? value.toLowerCase() : null;
+}
+
+function retryAfterSeconds(response: Response, body: unknown): number | null {
+  const header = Number(response.headers.get('retry-after'));
+  if (Number.isFinite(header) && header > 0) return Math.ceil(header);
+  if (body && typeof body === 'object') {
+    const value = (body as { retryAfter?: unknown }).retryAfter;
+    if (typeof value === 'number' && value > 0) return Math.ceil(value);
+  }
+  return null;
+}
+
+function sessionDate(iso: string): string {
+  return new Date(iso).toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: InitialProfile }) {
   const router = useRouter();
+  const liveBalance = useBalance(initial.balance, apiUrl);
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [locale, setLocale] = useState<'ru' | 'en'>(initial.locale);
   const [profileMsg, setProfileMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
@@ -119,8 +165,28 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
   const [phoneStep, setPhoneStep] = useState<'idle' | 'code'>('idle');
   const [phoneBusy, setPhoneBusy] = useState(false);
   const [phoneErr, setPhoneErr] = useState<string | null>(null);
+  const [phoneResendIn, setPhoneResendIn] = useState(0);
+  const [phoneVerified, setPhoneVerified] = useState(initial.phoneVerified);
+  const [phoneBonus, setPhoneBonus] = useState<number | null>(initial.phoneBonus);
+
+  useEffect(() => {
+    if (phoneResendIn <= 0) return;
+    const timer = window.setInterval(() => {
+      setPhoneResendIn((value) => Math.max(0, value - 1));
+    }, 1_000);
+    return () => window.clearInterval(timer);
+  }, [phoneResendIn]);
 
   async function onSendPhoneOtp() {
+    const normalizedPhone = normalizePhone(phoneVal);
+    if (!normalizedPhone) {
+      setPhoneErr('Введите номер в международном формате: +7 900 000-00-00.');
+      return;
+    }
+    if (phoneResendIn > 0) {
+      setPhoneErr(`Повторный запрос будет доступен через ${phoneResendIn} с.`);
+      return;
+    }
     setPhoneBusy(true);
     setPhoneErr(null);
     try {
@@ -128,10 +194,30 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: phoneVal.trim() }),
+        body: JSON.stringify({ phoneNumber: normalizedPhone }),
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const code = responseErrorCode(body);
+        if (r.status === 429) {
+          const seconds = retryAfterSeconds(r, body);
+          setPhoneErr(
+            seconds
+              ? `Слишком много запросов. Повторите через ${seconds} с.`
+              : 'Слишком много запросов. Повторите позже.',
+          );
+        } else if (code === 'invalid_phone_number' || code === 'invalid_phone') {
+          setPhoneErr('Проверьте номер: нужен международный формат, например +7 900 000-00-00.');
+        } else {
+          setPhoneErr('Не удалось отправить код. Попробуйте ещё раз.');
+        }
+        return;
+      }
+      setPhoneVal(normalizedPhone);
       setPhoneStep('code');
+      setPhoneOtp('');
+      setPhoneResendIn(60);
+      trackEvent(PlausibleEvent.phoneBindingStarted);
     } catch {
       setPhoneErr('Не удалось отправить код. Попробуйте ещё раз.');
     } finally {
@@ -140,6 +226,15 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
   }
 
   async function onVerifyPhoneOtp() {
+    const normalizedPhone = normalizePhone(phoneVal);
+    if (!normalizedPhone) {
+      setPhoneErr('Проверьте номер в международном формате.');
+      return;
+    }
+    if (!/^\d{4,6}$/.test(phoneOtp.trim())) {
+      setPhoneErr('Введите код из SMS: 4–6 цифр.');
+      return;
+    }
     setPhoneBusy(true);
     setPhoneErr(null);
     try {
@@ -148,17 +243,60 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          phoneNumber: phoneVal.trim(),
+          phoneNumber: normalizedPhone,
           code: phoneOtp.trim(),
           updatePhoneNumber: true,
         }),
       });
-      if (!r.ok) throw new Error('bad-code');
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const code = responseErrorCode(body);
+        if (r.status === 429) {
+          const seconds = retryAfterSeconds(r, body);
+          setPhoneErr(
+            seconds
+              ? `Слишком много запросов. Повторите через ${seconds} с.`
+              : 'Слишком много запросов. Повторите позже.',
+          );
+        } else if (code === 'expired' || code === 'otp_expired' || code === 'code_expired') {
+          setPhoneErr('Срок действия кода истёк. Запросите новый код.');
+        } else if (code === 'invalid_otp' || code === 'invalid_code' || code === 'code_mismatch') {
+          setPhoneErr('Неверный код. Проверьте SMS и попробуйте ещё раз.');
+        } else {
+          setPhoneErr('Не удалось подтвердить номер. Попробуйте ещё раз.');
+        }
+        return;
+      }
       // Re-run /v1/me so the server applies the L2 welcome grant, then refresh.
-      await fetch(`${apiUrl}/v1/me`, { credentials: 'include' });
+      const meResponse = await fetch(`${apiUrl}/v1/me`, { credentials: 'include' });
+      const meBody = await meResponse.json().catch(() => ({}));
+      const phoneGrant =
+        meBody && typeof meBody === 'object' && 'welcome' in meBody
+          ? (
+              meBody as {
+                welcome?: { phone?: { granted?: boolean; amount?: number; reason?: string } };
+              }
+            ).welcome?.phone
+          : null;
+      if (phoneGrant?.reason === 'phone_taken') {
+        setPhoneBonus(null);
+        setPhoneErr('Этот номер уже привязан к другому аккаунту.');
+      } else {
+        setPhoneBonus(
+          phoneGrant?.granted && typeof phoneGrant.amount === 'number'
+            ? phoneGrant.amount
+            : phoneGrant?.reason === 'already_granted'
+              ? GIFT_TOKENS_PHONE
+              : null,
+        );
+      }
+      setPhoneVerified(true);
+      setPhoneStep('idle');
+      setPhoneOtp('');
+      trackEvent(PlausibleEvent.phoneBindingCompleted);
       router.refresh();
     } catch {
-      setPhoneErr('Неверный код.');
+      setPhoneErr('Не удалось подтвердить номер. Попробуйте ещё раз.');
     } finally {
       setPhoneBusy(false);
     }
@@ -270,7 +408,7 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
   async function onRequestEmail() {
     const v = newEmail.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
-      setEmailMsg({ kind: 'err', text: 'Введи корректный email.' });
+      setEmailMsg({ kind: 'err', text: 'Введите корректный email.' });
       return;
     }
     setEmailBusy(true);
@@ -294,7 +432,7 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
           b?.error === 'email_taken'
             ? 'Этот email уже занят.'
             : b?.error === 'same_email'
-              ? 'Это твой текущий email.'
+              ? 'Это Ваш текущий email.'
               : 'Не удалось отправить код.',
       });
     } catch {
@@ -331,7 +469,7 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
           b?.error === 'code_mismatch'
             ? 'Неверный код.'
             : b?.error === 'expired'
-              ? 'Код истёк — запроси новый.'
+              ? 'Код истёк — запросите новый.'
               : b?.error === 'email_taken'
                 ? 'Этот email уже занят.'
                 : 'Не удалось подтвердить.',
@@ -344,10 +482,9 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
   }
 
   const nameDirty = displayName.trim() !== initial.displayName.trim();
-  // Billing page hosts both subscription management and pack history; route the
-  // primary CTA there for every tier (the page itself upsells plans to free
-  // users). e2e (billing.spec) relies on this link going to /settings/billing.
-  const billingHref = '/settings/billing';
+  // Free users choose a plan; active subscribers manage the existing one.
+  const billingHref =
+    initial.tier === null || initial.tier === 'free' ? '/pricing' : '/settings/billing';
   const planCta =
     initial.tier === null || initial.tier === 'free' ? 'Тариф и оплата →' : 'Управлять подпиской →';
 
@@ -378,6 +515,8 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
   async function onLocale(next: 'ru' | 'en') {
     if (next === locale) return;
     setLocale(next);
+    document.cookie = `lang=${next}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    trackEvent(PlausibleEvent.localeChanged, { locale: next });
     try {
       await fetch(`${apiUrl}/v1/me/locale`, {
         method: 'POST',
@@ -406,6 +545,7 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      trackEvent(PlausibleEvent.accountExported);
     } catch {
       setExportErr('Не удалось выгрузить данные.');
     } finally {
@@ -421,9 +561,14 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
         method: 'DELETE',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ confirmEmail: deleteConfirm }),
+        body: JSON.stringify(
+          initial.email?.trim()
+            ? { confirmEmail: deleteConfirm }
+            : { confirmPhrase: deleteConfirm },
+        ),
       });
       if (res.ok) {
+        trackEvent(PlausibleEvent.accountDeleted);
         router.push('/login?flash=account_deleted');
         return;
       }
@@ -431,7 +576,9 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
       setDeleteErr(
         body?.error === 'email_mismatch'
           ? 'Email не совпадает.'
-          : `Не удалось удалить (HTTP ${res.status}).`,
+          : body?.error === 'confirm_phrase_mismatch'
+            ? 'Фраза не совпадает. Введите УДАЛИТЬ.'
+            : `Не удалось удалить (HTTP ${res.status}).`,
       );
     } catch {
       setDeleteErr('Сетевая ошибка');
@@ -442,6 +589,8 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
 
   /* ---- shared section blocks (rendered in both mobile + desktop layouts) ---- */
 
+  const accountContact = initial.email ?? initial.phone ?? 'Телефонный аккаунт';
+
   const accountHeader = (
     <div className="flex items-center gap-3.5">
       <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] font-mono text-[15px] font-extrabold text-[color:var(--color-primary-foreground)]">
@@ -449,10 +598,10 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
       </span>
       <div className="min-w-0">
         <p className="font-display truncate text-[18px] font-black tracking-tight text-[color:var(--color-fg)]">
-          {initial.displayName || initial.email.split('@')[0]}
+          {initial.displayName || accountContact.split('@')[0]}
         </p>
         <p className="truncate font-mono text-[11px] text-[color:var(--color-faint)]">
-          {initial.email}
+          {accountContact}
         </p>
         {initial.tier && (
           <span className="mt-1.5 inline-block rounded-[var(--radius-xs)] border-2 border-[color:var(--color-accent)] px-1.5 py-0.5 font-mono text-[9px] font-extrabold uppercase tracking-wide text-[color:var(--color-accent)]">
@@ -470,14 +619,14 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
         <div className="flex items-center gap-2">
           <TokenStar size={14} className="text-[color:var(--color-accent)]" />
           <span className="font-display text-[26px] font-black leading-none text-[color:var(--color-fg)]">
-            {initial.balance}
+            {liveBalance}
           </span>
         </div>
         <p className="mt-1.5 font-mono text-[10px] font-bold uppercase text-[color:var(--color-muted-foreground)]">
           {initial.tier ? `Тариф · ${TIER_LABEL[initial.tier]}` : 'Не удалось проверить тариф'}
         </p>
         <Link
-          href={billingHref}
+          href={withLocale(billingHref, locale)}
           data-testid="settings-billing-link"
           className="press-inset mt-3 flex h-11 items-center justify-center rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-accent)] bg-[color:var(--color-accent)] font-mono text-[10.5px] font-extrabold uppercase tracking-wide text-[color:var(--color-primary-foreground)]"
         >
@@ -493,6 +642,7 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
       <div className="overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)]">
         {/* Name */}
         <div className="flex items-center gap-3 px-3.5 py-3">
+          <User size={17} className="shrink-0 text-[color:var(--color-faint)]" aria-hidden />
           <div className="min-w-0 flex-1">
             <label
               htmlFor="display-name"
@@ -507,7 +657,7 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
               maxLength={64}
               onChange={(e) => setDisplayName(e.target.value.slice(0, 64))}
               className="mt-0.5 w-full bg-transparent text-[14px] font-semibold text-[color:var(--color-fg)] outline-none placeholder:text-[color:var(--color-faint)]"
-              placeholder="Твоё имя"
+              placeholder="Ваше имя"
             />
           </div>
           {nameDirty && (
@@ -524,7 +674,10 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
         </div>
         {/* Language */}
         <div className="flex items-center justify-between gap-3 border-t-2 border-[color:var(--color-line)] px-3.5 py-3.5">
-          <span className="text-[14px] font-semibold text-[color:var(--color-fg)]">Язык</span>
+          <span className="flex items-center gap-3 text-[14px] font-semibold text-[color:var(--color-fg)]">
+            <Settings2 size={17} className="shrink-0 text-[color:var(--color-faint)]" aria-hidden />
+            Язык
+          </span>
           <div
             data-testid="locale"
             className="flex overflow-hidden rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)]"
@@ -549,32 +702,39 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
         </div>
         {/* Email — display + two-step verified change. */}
         <div className="border-t-2 border-[color:var(--color-line)] px-3.5 py-3">
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-faint)]">
-                Email
-              </span>
-              <span className="mt-0.5 block truncate text-[14px] font-semibold text-[color:var(--color-fg)]">
-                {initial.email}
-              </span>
+          <div className="flex items-start gap-3">
+            <ShieldCheck
+              size={17}
+              className="mt-0.5 shrink-0 text-[color:var(--color-faint)]"
+              aria-hidden
+            />
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-faint)]">
+                  Email
+                </span>
+                <span className="mt-0.5 block truncate text-[14px] font-semibold text-[color:var(--color-fg)]">
+                  {accountContact}
+                </span>
+              </div>
+              {!emailOpen && (
+                <button
+                  type="button"
+                  data-testid="email-change-open"
+                  onClick={() => {
+                    setEmailOpen(true);
+                    setEmailMsg(null);
+                  }}
+                  className="press-inset shrink-0 rounded-[var(--radius-xs)] border-2 border-[color:var(--color-accent)] px-3 py-1.5 font-mono text-[9px] font-extrabold uppercase tracking-wide text-[color:var(--color-accent)]"
+                >
+                  Изменить
+                </button>
+              )}
             </div>
-            {!emailOpen && (
-              <button
-                type="button"
-                data-testid="email-change-open"
-                onClick={() => {
-                  setEmailOpen(true);
-                  setEmailMsg(null);
-                }}
-                className="press-inset shrink-0 rounded-[var(--radius-xs)] border-2 border-[color:var(--color-accent)] px-3 py-1.5 font-mono text-[9px] font-extrabold uppercase tracking-wide text-[color:var(--color-accent)]"
-              >
-                Изменить
-              </button>
-            )}
           </div>
 
           {emailOpen && (
-            <div className="mt-3 space-y-2.5">
+            <div className="ml-8 mt-3 space-y-2.5">
               {emailStep === 'request' ? (
                 <>
                   <input
@@ -584,7 +744,7 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="новый@email.ru"
-                    className="w-full rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 py-2 text-[14px] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
+                    className="min-h-11 w-full rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 py-2 text-[14px] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
                   />
                   <div className="flex gap-2">
                     <button
@@ -614,7 +774,7 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
                     value={emailCode}
                     onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="6-значный код"
-                    className="w-full rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 py-2 text-center font-mono text-[16px] tracking-[0.3em] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
+                    className="min-h-11 w-full rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 py-2 text-center font-mono text-[16px] tracking-[0.3em] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
                   />
                   <div className="flex gap-2">
                     <button
@@ -758,7 +918,7 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
                     {d.name}
                   </span>
                   <span className="block font-mono text-[9px] font-bold uppercase tracking-wide text-[color:var(--color-faint)]">
-                    {s.ip ?? '—'}
+                    {s.ip ?? '—'} · Последняя активность: {sessionDate(s.updatedAt)}
                   </span>
                 </span>
                 {s.current ? (
@@ -798,17 +958,19 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
     <section>
       <SecLabel>Телефон</SecLabel>
       <div className="rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-3.5 py-3.5">
-        {initial.phoneVerified ? (
+        {phoneVerified ? (
           <div className="flex items-center gap-3">
             <span className="shrink-0 text-[color:var(--color-accent2)]">
               <ShieldCheck size={18} />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[14px] font-semibold text-[color:var(--color-fg)]">
-                {initial.phone ?? 'Номер подтверждён'}
+                {initial.phone ?? phoneVal ?? 'Номер подтверждён'}
               </span>
               <span className="block font-mono text-[9px] font-bold uppercase tracking-wide text-[color:var(--color-faint)]">
-                Подтверждён · бонус начислен
+                {phoneBonus
+                  ? `Подтверждён · бонус +${phoneBonus} начислен`
+                  : 'Подтверждён · бонус не начислен'}
               </span>
             </span>
           </div>
@@ -816,8 +978,8 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
           <div className="space-y-2.5">
             <p className="flex items-center gap-2 text-[13px] text-[color:var(--color-muted-foreground)]">
               <Smartphone size={15} className="shrink-0 text-[color:var(--color-accent)]" />
-              Подтвердите номер — начислим <b className="text-[color:var(--color-fg)]">+100</b>{' '}
-              бонусных токенов.
+              Подтвердите номер — начислим{' '}
+              <b className="text-[color:var(--color-fg)]">+{GIFT_TOKENS_PHONE}</b> бонусных токенов.
             </p>
             <input
               type="tel"
@@ -825,17 +987,30 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
               data-testid="phone-bind-number"
               placeholder="+7 900 000-00-00"
               value={phoneVal}
-              onChange={(e) => setPhoneVal(e.target.value)}
-              className="w-full rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 py-2 text-[14px] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
+              onChange={(e) => {
+                setPhoneVal(e.target.value);
+                setPhoneErr(null);
+              }}
+              aria-invalid={phoneVal.length > 0 && !normalizePhone(phoneVal)}
+              className="min-h-11 w-full rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 py-2 text-[14px] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)] aria-[invalid=true]:border-[color:var(--color-destructive)]"
             />
+            {phoneVal.length > 0 && !normalizePhone(phoneVal) && (
+              <p className="text-[11px] text-[color:var(--color-destructive)]">
+                Нужен международный формат, например +7 900 000-00-00.
+              </p>
+            )}
             <button
               type="button"
               data-testid="phone-bind-send"
-              disabled={phoneBusy || phoneVal.trim().length < 6}
+              disabled={phoneBusy || phoneResendIn > 0 || !normalizePhone(phoneVal)}
               onClick={onSendPhoneOtp}
               className="press-inset w-full rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] py-2.5 font-mono text-[10.5px] font-extrabold uppercase tracking-wide text-[color:var(--color-fg)] disabled:opacity-50"
             >
-              {phoneBusy ? 'Отправляем…' : 'Прислать код'}
+              {phoneBusy
+                ? 'Отправляем…'
+                : phoneResendIn > 0
+                  ? `Повторный запрос через ${phoneResendIn} с`
+                  : 'Прислать код'}
             </button>
           </div>
         ) : (
@@ -845,17 +1020,19 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
             </p>
             <input
               inputMode="numeric"
+              maxLength={6}
+              pattern="[0-9]{4,6}"
               data-testid="phone-bind-code"
               placeholder="Код из SMS"
               value={phoneOtp}
-              onChange={(e) => setPhoneOtp(e.target.value)}
-              className="w-full rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 py-2 text-[14px] tracking-[0.3em] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
+              onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="min-h-11 w-full rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 py-2 text-[14px] tracking-[0.3em] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
             />
             <div className="flex gap-2">
               <button
                 type="button"
                 data-testid="phone-bind-verify"
-                disabled={phoneBusy || phoneOtp.trim().length < 3}
+                disabled={phoneBusy || !/^\d{4,6}$/.test(phoneOtp.trim())}
                 onClick={onVerifyPhoneOtp}
                 className="press-inset flex-1 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-accent)] bg-[color:var(--color-accent)] py-2.5 font-mono text-[10.5px] font-extrabold uppercase tracking-wide text-white disabled:opacity-50"
               >
@@ -873,6 +1050,17 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
                 Изменить
               </button>
             </div>
+            <button
+              type="button"
+              data-testid="phone-bind-resend"
+              disabled={phoneBusy || phoneResendIn > 0}
+              onClick={onSendPhoneOtp}
+              className="press-inset min-h-11 w-full rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] px-3 py-2 font-mono text-[10px] font-extrabold uppercase tracking-wide text-[color:var(--color-muted-foreground)] disabled:opacity-50"
+            >
+              {phoneResendIn > 0
+                ? `Прислать код ещё раз через ${phoneResendIn} с`
+                : 'Прислать код ещё раз'}
+            </button>
           </div>
         )}
         {phoneErr && (
@@ -889,8 +1077,8 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
         {DOC_LINKS.map((l) => (
           <a
             key={l.href}
-            href={`${l.href}?lang=${locale}`}
-            className="press-inset rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-2.5 py-1.5 font-mono text-[9.5px] font-bold uppercase tracking-wide text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-fg)]"
+            href={withLocale(l.href, locale)}
+            className="press-inset inline-flex min-h-11 items-center rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-2.5 py-1.5 font-mono text-[9.5px] font-bold uppercase tracking-wide text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-fg)]"
           >
             {l.label}
           </a>
@@ -909,13 +1097,15 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
 
   const dangerCard = (
     <section>
-      <div className="overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-destructive)] bg-[color:var(--color-surface)] shadow-[4px_4px_0_0_var(--color-destructive)]">
+      <div className="overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-destructive)] bg-[color:var(--color-surface)] shadow-[var(--offset)]">
         <h2 className="font-display px-4 pt-3.5 text-[14px] font-black uppercase tracking-tight text-[color:var(--color-destructive)]">
           Опасная зона
         </h2>
         <p className="px-4 pb-3 pt-1.5 text-[11.5px] leading-relaxed text-[color:var(--color-muted-foreground)]">
-          Удаление аккаунта = отзыв согласия на обработку данных и расторжение договора.
-          Безвозвратно удаляет персональные данные; история расчётов хранится обезличенно (54-ФЗ).
+          Удаление аккаунта отзывает согласие на обработку данных и расторгает договор. Ваши
+          персональные данные, публикации и публичные ссылки будут удалены; активные подписки
+          отменены, а резерв генераций возвращён. История расчётов хранится обезличенно (54-ФЗ).
+          Действие необратимо.
         </p>
         <div className="px-4 pb-4">
           {!deleteOpen ? (
@@ -933,13 +1123,16 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
                 htmlFor="delete-confirm-email"
                 className="block font-mono text-[10px] font-bold uppercase tracking-wide text-[color:var(--color-muted-foreground)]"
               >
-                Введи email для подтверждения:{' '}
-                <b className="text-[color:var(--color-fg)]">{initial.email}</b>
+                {initial.email?.trim()
+                  ? 'Введите email для подтверждения: '
+                  : 'Введите фразу для подтверждения: '}
+                <b className="text-[color:var(--color-fg)]">{initial.email?.trim() || 'УДАЛИТЬ'}</b>
               </label>
               <input
                 id="delete-confirm-email"
                 data-testid="delete-confirm-email"
-                type="email"
+                type={initial.email?.trim() ? 'email' : 'text'}
+                placeholder={initial.email?.trim() ? initial.email : 'УДАЛИТЬ'}
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
                 className="w-full rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 py-2 text-[14px] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-destructive)]"
@@ -1000,7 +1193,12 @@ export function SettingsClient({ apiUrl, initial }: { apiUrl: string; initial: I
         <button
           type="button"
           aria-label="Назад"
-          onClick={() => router.back()}
+          onClick={() => {
+            // R4: a deep link straight into /settings leaves an empty history —
+            // router.back() would be a silent no-op, so fall back to /generate.
+            if (typeof window !== 'undefined' && window.history.length > 1) router.back();
+            else router.push(withLocale('/generate', locale));
+          }}
           className="press-inset grid h-8 w-8 place-items-center rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] text-[color:var(--color-fg)]"
         >
           <ChevronLeft size={16} />

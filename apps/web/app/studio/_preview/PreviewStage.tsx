@@ -197,7 +197,7 @@ export function PreviewStage({
   setShareCopied: (v: boolean) => void;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] p-4 shadow-[var(--offset-sm)] ring-1 ring-inset ring-[color:var(--color-line)]/10">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] p-4 shadow-[var(--offset-sm)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/10">
       {/* Hidden <audio> per SFX — usePlayback attaches to sfxEls (keyed by uid,
         the same Map+callback-ref pattern as the clip videos) and drives play/
         seek/volume so the timed effect is audible in the live preview. */}
@@ -319,7 +319,7 @@ export function PreviewStage({
                 title={safeZones ? 'Скрыть направляющие' : 'Безопасные зоны'}
                 onClick={() => setSafeZones((v) => !v)}
                 className={
-                  'glass-menu absolute right-2 top-2 z-50 grid h-7 w-7 place-items-center rounded-[var(--radius-sm)] ring-1 ring-inset ring-[color:var(--color-line)]/20 ' +
+                  'glass-menu absolute right-2 top-2 z-50 grid h-7 w-7 place-items-center rounded-[var(--radius-sm)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/20 ' +
                   (safeZones ? 'text-[color:var(--color-accent)]' : 'text-[color:var(--color-fg)]')
                 }
               >
@@ -463,7 +463,7 @@ export function PreviewStage({
                               markVid(uid, 'buffering');
                               videoEls.current.get(uid)?.load();
                             }}
-                            className="press-inset pointer-events-auto rounded-[var(--radius-sm)] px-3 py-1 text-[11px] font-semibold text-[color:var(--color-fg)] ring-1 ring-inset ring-[color:var(--color-line)]/20"
+                            className="press-inset pointer-events-auto rounded-[var(--radius-sm)] px-3 py-1 text-[11px] font-semibold text-[color:var(--color-fg)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/20"
                           >
                             Повторить
                           </button>
@@ -508,11 +508,10 @@ export function PreviewStage({
                 })}
                 {/* E8/III.1: PiP overlays above the main stack. Rendered from
                   the CANONICAL upper-track clip so the preview honours the
-                  full RENDERABLE instrument set (transform incl. rotate/crop,
-                  colour grade, flips, static opacity, in/out animation) — the
-                  exact set the worker bakes into the alpha layer, so
-                  preview == export holds. Mask/blend/keyframes are gated out
-                  of the overlay inspector (the layer path can't honour them). */}
+                  static alpha-safe set (transform, colour grade, flips and
+                  opacity) — the exact set the worker bakes into the layer.
+                  Mask/blend/keyframes/animation are gated out because the layer
+                  path cannot honour them yet. */}
                 {upperClips.map((c) => {
                   const startSec = c.startSec ?? 0;
                   const len = Math.max(0.1, c.outSec - c.inSec);
@@ -706,7 +705,7 @@ export function PreviewStage({
                 >
                   <span
                     className={
-                      'grid h-14 w-14 place-items-center rounded-[var(--radius-sm)] bg-black/80 ring-1 ring-inset ring-[color:var(--color-line)]/30 transition-opacity duration-200 ' +
+                      'grid h-14 w-14 place-items-center rounded-[var(--radius-sm)] bg-black/80 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/30 transition-opacity duration-200 ' +
                       (playing ? 'opacity-0 hover:opacity-100' : 'opacity-100')
                     }
                   >

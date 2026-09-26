@@ -369,10 +369,10 @@ export interface AssemblyInput {
   sfxInputs?: { inputIdx: number; atSec: number; gainDb?: number }[];
   /** E8: PiP overlay sources — raw inputs (trim happens in-graph). */
   overlays?: { inputIdx: number; clip: StudioOverlayClip; sourceDur: number; hasAudio: boolean }[];
-  /** Phase II: upper-track layers — PRE-NORMALIZED full-instrument alpha clips
+  /** Phase II: upper-track layers — PRE-NORMALIZED static alpha-safe clips
    * (frame-sized yuva). Each is time-shifted to `startSec` and alpha-composited
-   * over the assembled track, base-first → top-last. The clip's instruments are
-   * already baked in, so the graph only places + composites it. */
+   * over the assembled track, base-first → top-last. The supported instruments
+   * are already baked in, so the graph only places + composites each layer. */
   trackLayers?: {
     inputIdx: number;
     startSec: number;
@@ -1165,8 +1165,8 @@ export function buildNormalizeArgs(opts: {
   /** Phase II: normalize an UPPER-TRACK clip onto a transparent frame-sized
    * canvas (ProRes 4444 / yuva intermediate) so it alpha-composites over the
    * base in pass 2. Forces the transform path; static opacity is baked into the
-   * alpha channel. Mask/blend are NOT applied here (gated to base track) — they
-   * need lower-layer compositing the overlay path can't honour yet. */
+   * alpha channel. Mask/blend/motion are intentionally not applied here until
+   * the transparent-layer path can honour them safely. */
   alpha?: boolean;
 }): string[] {
   const { clip, hasAudio, width, height, fps, outFile } = opts;

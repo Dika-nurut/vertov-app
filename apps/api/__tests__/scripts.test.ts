@@ -403,6 +403,16 @@ describe('Boards pulls scenes from Scenario', () => {
   it('materializes a stored selected-scene plan into prompt → generate + unresolved cast nodes', async () => {
     const source = scene(1).trimEnd();
     const script = await createScript(`${source}\n`, 'План кадров');
+    const bible = await app.inject({
+      method: 'PUT',
+      url: `/v1/scripts/${script.id}`,
+      payload: {
+        bible: {
+          characters: [{ name: 'Алиса', description: 'Героиня сцены.' }],
+        },
+      },
+    });
+    expect(bible.statusCode).toBe(200);
     const timing = await app.inject({
       method: 'PUT',
       url: `/v1/scripts/` + script.id + `/scene-timings/scene:1`,
@@ -421,7 +431,7 @@ describe('Boards pulls scenes from Scenario', () => {
           dramaticBeat: 'Герой решается открыть дверь.',
           promptDraft: 'Крупный план ключа в замке, рука замирает перед поворотом.',
           shotGrammar: { size: 'close', move: 'static' },
-          requiredLocks: [],
+          requiredLocks: ['canon:character:1'],
           unresolvedAssets: [],
         },
         {
@@ -455,7 +465,7 @@ describe('Boards pulls scenes from Scenario', () => {
     expect(created.statusCode).toBe(201);
     expect(created.json()).toMatchObject({
       materializedShots: 2,
-      materializedCastNodes: 1,
+      materializedCastNodes: 2,
     });
     const boardId = created.json().boardId as string;
     createdBoards.push(boardId);
@@ -467,11 +477,11 @@ describe('Boards pulls scenes from Scenario', () => {
     expect(state.nodes.filter((node) => node.type === 'scene')).toHaveLength(1);
     expect(state.nodes.filter((node) => node.type === 'prompt')).toHaveLength(2);
     expect(state.nodes.filter((node) => node.type === 'generate')).toHaveLength(2);
-    expect(state.nodes.filter((node) => node.type === 'cast')).toMatchObject([
-      { data: { name: 'неуказанный герой', imageUrls: [] } },
-    ]);
+    expect(
+      state.nodes.filter((node) => node.type === 'cast').map((node) => node.data.name),
+    ).toEqual(expect.arrayContaining(['Алиса', 'неуказанный герой']));
     expect(state.edges.filter((edge) => edge.targetHandle === 'prompt')).toHaveLength(2);
-    expect(state.edges.filter((edge) => edge.targetHandle?.startsWith('images['))).toHaveLength(1);
+    expect(state.edges.filter((edge) => edge.targetHandle?.startsWith('images['))).toHaveLength(2);
     const sceneNode = state.nodes.find((node) => node.type === 'scene')!;
     expect(
       state.nodes

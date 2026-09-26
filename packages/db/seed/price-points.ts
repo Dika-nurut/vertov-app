@@ -140,6 +140,10 @@ export const PRICE_POINT_SEED: readonly PricePointSeedRow[] = [
   // === Seedance Fast — 720p ceiling (rows 11–12). ===
   row('seedance-2-0-fast', '720p', 'second', 259, 5, 'Сетка FX!AA19/AB19', true),
   row('seedance-2-0-fast', '480p', 'second', 118, 5, 'rev9:Сетка FX стр.20', true),
+  // Seedance 2.0 Mini on Pixazo (rev. 23, 2026-09-25). Paid smoke 2026-09-25: three 480p
+  // 4 s clips billed 5 s each at $0.07 = $0.014/s, the quoted rate — active (migration 0115).
+  row('seedance-2-0-mini', '480p', 'second', 36, 5, 'rev23:Сетка FX стр.111', true),
+  row('seedance-2-0-mini', '720p', 'second', 77, 5, 'rev23:Сетка FX стр.112', true),
   // === HappyHorse (rows 13–16). ===
   row('happyhorse-1-1', '720p', 'second', 212, 5, 'rev9:Сетка FX стр.21', true),
   row('happyhorse-1-1', '1080p', 'second', 274, 5, 'Сетка FX!AA22/AB22', true),

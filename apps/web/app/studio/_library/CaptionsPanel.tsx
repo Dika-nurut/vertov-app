@@ -45,7 +45,7 @@ export function CaptionsPanel({
   onSrtUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   const segButton =
-    'press-inset flex-1 rounded-[var(--radius-sm)] px-2 py-1.5 text-[11px] font-semibold ring-1 ring-inset ';
+    'press-inset flex-1 rounded-[var(--radius-sm)] px-2 py-1.5 text-[11px] font-semibold ring-[1.5px] ring-inset ';
   const segOn =
     'bg-[rgba(var(--accent-rgb),0.15)] text-[color:var(--color-accent)] ring-[color:var(--color-accent)]/40';
   const segOff =
@@ -113,7 +113,7 @@ export function CaptionsPanel({
         data-testid="cap-auto"
         onClick={() => (popMode ? void autoCaptionWords() : void autoCaption())}
         disabled={timeline.length === 0 || captioning}
-        className="press-inset flex w-full items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface)] disabled:opacity-40"
+        className="press-inset flex w-full items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface)] disabled:opacity-40"
       >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[rgba(var(--accent-rgb),0.15)] text-[color:var(--color-accent)]">
           {captioning ? <Loader2 size={15} className="seed-spin" /> : <Captions size={15} />}
@@ -140,7 +140,7 @@ export function CaptionsPanel({
       {popWordCount > 0 && (
         <div
           data-testid="cap-pop-summary"
-          className="flex items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 ring-1 ring-inset ring-[color:var(--color-line)]/15"
+          className="flex items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15"
         >
           <span className="min-w-0 flex-1 text-[11px] text-[color:var(--color-muted-foreground)]">
             Субтитры по словам: <span className="font-semibold">{popWordCount}</span>
@@ -149,7 +149,7 @@ export function CaptionsPanel({
             type="button"
             data-testid="cap-pop-clear"
             onClick={onClearPop}
-            className="press-inset flex shrink-0 items-center gap-1 rounded-[var(--radius-sm)] bg-[color:var(--color-surface)] px-2 py-1 text-[11px] font-semibold text-[color:var(--color-muted-foreground)] ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:text-[color:var(--color-fg)]"
+            className="press-inset flex shrink-0 items-center gap-1 rounded-[var(--radius-sm)] bg-[color:var(--color-surface)] px-2 py-1 text-[11px] font-semibold text-[color:var(--color-muted-foreground)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:text-[color:var(--color-fg)]"
           >
             <X size={12} />
             Очистить
@@ -161,7 +161,7 @@ export function CaptionsPanel({
         data-testid="cap-manual"
         onClick={() => addText()}
         disabled={timeline.length === 0}
-        className="press-inset flex w-full items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface)] disabled:opacity-40"
+        className="press-inset flex w-full items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface)] disabled:opacity-40"
       >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)]">
           <Plus size={15} />
@@ -177,7 +177,7 @@ export function CaptionsPanel({
       </button>
       <label
         data-testid="cap-upload"
-        className="press-inset flex w-full cursor-pointer items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface)]"
+        className="press-inset flex w-full cursor-pointer items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface)]"
       >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)]">
           <Download size={15} />

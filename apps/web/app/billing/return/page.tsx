@@ -24,7 +24,9 @@ export default async function BillingReturnPage({
   ]);
   if (!me.data || me.data.user.isAnonymous) redirect('/login');
   const orderId = sp.orderId ?? null;
-  const forceSuccess = sp.forceSuccess === '1';
+  // WS2: the stub-only success shortcut must never activate in prod. e2e
+  // runs non-prod, so it keeps working through this conditional.
+  const forceSuccess = sp.forceSuccess === '1' && process.env.NODE_ENV !== 'production';
 
   return (
     <AppShell
@@ -32,7 +34,7 @@ export default async function BillingReturnPage({
       balance={balance.data?.available ?? 0}
       apiUrl={apiBaseUrl()}
     >
-      <div className="mx-auto max-w-xl py-10 text-center">
+      <div className="mx-auto max-w-xl px-4 py-10 text-center">
         <h1 className="font-display text-2xl font-black uppercase tracking-tight">Оплата</h1>
         <ReturnClient orderId={orderId} forceSuccess={forceSuccess} apiUrl={apiBaseUrl()} />
       </div>

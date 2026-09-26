@@ -82,6 +82,13 @@ describe('Board document v1 runtime contract', () => {
         originCastNodeId: 'cast-1',
       }),
     ).toHaveProperty('originCastNodeId', 'cast-1');
+    expect(
+      boardNodeDefaultData('cast', {
+        castKind: 'character',
+        name: 'Алиса',
+        scenarioLockId: 'canon:character:1',
+      }),
+    ).toMatchObject({ scenarioLockId: 'canon:character:1' });
   });
 
   it('persists stable media and generated-result ids while loading legacy URL-only nodes', () => {
@@ -922,8 +929,9 @@ describe('selected-model capability predicate', () => {
     const active = seedModels.filter(
       (model) => model.isActive && ['image', 'image-edit', 'video'].includes(model.kind),
     );
-    // 22: happyhorse-1-0 and Seedream 4.5 are inactive by owner ruling.
-    expect(active).toHaveLength(22);
+    // 23: happyhorse-1-0 and Seedream 4.5 are inactive by owner ruling; Seedance 2.0 Mini
+    // (rev. 23, Pixazo) joined 2026-09-25.
+    expect(active).toHaveLength(23);
     for (const candidate of active) {
       const contract = resolveBoardModelContract(candidate as BoardModelLike);
       expect(contract, candidate.id).not.toBeNull();
@@ -1784,7 +1792,7 @@ describe('BRD-3 active catalog conformance', () => {
   );
 
   it('keeps every active Board model explicit and compilable', () => {
-    expect(activeMediaModels).toHaveLength(22); // happyhorse-1-0 and Seedream 4.5 are retired
+    expect(activeMediaModels).toHaveLength(23); // happyhorse-1-0 and Seedream 4.5 are retired; + Seedance Mini
     for (const candidate of activeMediaModels) {
       const model = candidate as BoardModelLike;
       expect(boardModelMetadataIssues(model), model.id).toEqual([]);

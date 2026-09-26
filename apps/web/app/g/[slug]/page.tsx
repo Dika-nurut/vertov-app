@@ -110,7 +110,7 @@ export default async function PublicGalleryPage({ params }: { params: Promise<{ 
 
       <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
         <div
-          className="overflow-hidden rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-black/40 shadow-[5px_5px_0_0_var(--color-shadow)]"
+          className="overflow-hidden rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-tile)] shadow-[5px_5px_0_0_var(--color-shadow)]"
           data-testid="public-hero"
         >
           {item.kind === 'video' ? (
@@ -171,7 +171,7 @@ export default async function PublicGalleryPage({ params }: { params: Promise<{ 
         {/* Client-side reports must use the browser-reachable public origin, not API_INTERNAL_URL. */}
         <ReportButton slug={slug} apiUrl={apiBaseUrl()} />
       </div>
-      <footer className="mt-8 border-t-[2px] border-[color:var(--color-line-soft)] pt-4 text-center">
+      <footer className="mt-8 border-t-[2.5px] border-[color:var(--color-line-soft)] pt-4 text-center">
         <a
           href="https://vertov.space"
           className="font-mono text-[11px] uppercase tracking-wider text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-accent)]"

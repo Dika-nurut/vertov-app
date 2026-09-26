@@ -13,16 +13,16 @@ import {
 } from './PricingClient';
 import type { PlanAccessBlock } from '../../lib/plan-block';
 import { serializeJsonLd } from '@/lib/json-ld';
+import { GIFT_TOKENS_UPFRONT } from '@/lib/gift-tokens';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Тарифы и цены — Vertov',
-  description:
-    'Прозрачные тарифы: 210 токенов бесплатно при регистрации, без карты. Подписки для профессионалов и разовые пакеты.',
+  description: `Прозрачные тарифы: ${GIFT_TOKENS_UPFRONT} токенов бесплатно при регистрации, без карты. Подписки для профессионалов и разовые пакеты.`,
   alternates: { canonical: '/pricing' },
   openGraph: {
     title: 'Vertov · Тарифы',
-    description: '210 токенов в подарок · без карты. Подписки от профессионалов.',
+    description: `${GIFT_TOKENS_UPFRONT} токенов в подарок · без карты. Подписки от профессионалов.`,
     url: '/pricing',
     siteName: 'Vertov',
     type: 'website',

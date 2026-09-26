@@ -25,7 +25,7 @@ export interface PlanCta {
   action: PlanAction;
   /** Disabled per press-physics disabled grammar. */
   disabled: boolean;
-  /** Lime, non-interactive status marker (this is the viewer's current tier). */
+  /** Bone, non-interactive status marker + lime dot (viewer's current tier). */
   status?: boolean;
   /** This plate is the scheduled-downgrade target (shows «Запланирован», cancellable). */
   scheduled?: boolean;
@@ -74,7 +74,7 @@ export function deriveCta(plate: PlateRef, ctx: PricingContext): PlanCta {
   }
   // Authed WITH an active subscription.
   if (ctx.activeTier === plate.tier) {
-    // The viewer's current tier — a lime status marker, not an action.
+    // The viewer's current tier — a bone status marker + lime dot, not an action.
     return { label: 'Текущий тариф', action: 'none', disabled: true, status: true };
   }
   // A scheduled downgrade lands on THIS plate at the next renewal — show it as

@@ -111,6 +111,14 @@ function boardAssetReferences(state: ReturnType<typeof parseBoardDocument>) {
   });
 }
 
+function studioHandoffAssetReferences(clips: Array<{ uid: string; assetId?: unknown }>) {
+  return clips.flatMap((clip) =>
+    typeof clip.assetId === 'string' && clip.assetId.length > 0
+      ? [{ assetId: clip.assetId, slotId: clip.uid }]
+      : [],
+  );
+}
+
 function boardThumbnailUrl(state: unknown): string | null {
   const parsed = safeParseBoardDocument(state);
   if (!parsed.success) return null;
@@ -497,6 +505,12 @@ export function setupBoardRoutes(
         if (metadata?.requestHash !== requestHash) {
           return { kind: 'idempotency_mismatch' as const };
         }
+        await syncAssetReferences(tx, {
+          userId: session.user.id,
+          refType: 'studio_clip',
+          resourceId: keyReplay.id,
+          references: studioHandoffAssetReferences(input.clips),
+        });
         return {
           kind: 'replayed' as const,
           studio: keyReplay,
@@ -550,6 +564,12 @@ export function setupBoardRoutes(
           .update(studioProjects)
           .set({ timeline, updatedAt: new Date() })
           .where(eq(studioProjects.id, studio.id));
+        await syncAssetReferences(tx, {
+          userId: session.user.id,
+          refType: 'studio_clip',
+          resourceId: studio.id,
+          references: studioHandoffAssetReferences(input.clips),
+        });
         return {
           kind: 'updated' as const,
           studio,
@@ -576,6 +596,12 @@ export function setupBoardRoutes(
           projectId: studioProjects.projectId,
           title: studioProjects.title,
         });
+      await syncAssetReferences(tx, {
+        userId: session.user.id,
+        refType: 'studio_clip',
+        resourceId: studio!.id,
+        references: studioHandoffAssetReferences(input.clips),
+      });
       return {
         kind: 'created' as const,
         studio: studio!,

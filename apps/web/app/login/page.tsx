@@ -1,17 +1,22 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Send, Zap } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mark } from '@/components/ui/mark';
+import { rateLimitMessage } from '@/lib/rate-limit';
 import { trackSignupStarted } from '../_components/PlausibleEvents';
 import { VkIdWidget } from './VkIdWidget';
 import { YandexWidget } from './YandexWidget';
 import { loginNextTarget } from '@/lib/login-next';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+// Cooldown between code sends so "Получить код" cannot be hammered (and the
+// resend button has something truthful to count down).
+const RESEND_COOLDOWN_S = 60;
 
 /** Where to land after auth: a sanitized same-origin ?next= deep link (prompt /
  *  preset prefills carried through login), else /generate. Read lazily from
@@ -36,34 +41,6 @@ function FlashBanner() {
   return null;
 }
 
-/** Wide, uniform "Войти через X" OAuth button with the official brand mark. */
-function OAuthButton({
-  onClick,
-  disabled,
-  label,
-  testid,
-  logo,
-}: {
-  onClick: () => void;
-  disabled: boolean;
-  label: string;
-  testid: string;
-  logo: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      data-testid={testid}
-      className="press flex h-11 w-full items-center gap-3 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-card px-4 text-[13px] font-medium shadow-[3px_3px_0_0_var(--color-shadow)] transition-transform hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      <span className="grid size-5 shrink-0 place-items-center">{logo}</span>
-      <span>{label}</span>
-    </button>
-  );
-}
-
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [emailOtp, setEmailOtp] = useState('');
@@ -73,6 +50,10 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [state, setState] = useState<'idle' | 'sending' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [emailResendIn, setEmailResendIn] = useState(0);
+  const [phoneResendIn, setPhoneResendIn] = useState(0);
+  const emailCodeRef = useRef<HTMLInputElement>(null);
+  const phoneCodeRef = useRef<HTMLInputElement>(null);
   const isDev = process.env.NODE_ENV !== 'production';
 
   // Providers render only where the deployment wired them (creds API-side + this
@@ -89,6 +70,27 @@ export default function LoginPage() {
   // Phone is the first-class method when SMS delivery is wired; email remains
   // available through the same, deliberately mechanical segmented switcher.
   const [mode, setMode] = useState<'email' | 'phone'>(phoneEnabled ? 'phone' : 'email');
+
+  // a11y: move focus into the code field as soon as it appears, so keyboard
+  // and screen-reader users land where the next action is.
+  useEffect(() => {
+    if (emailOtpSent) emailCodeRef.current?.focus();
+  }, [emailOtpSent]);
+  useEffect(() => {
+    if (otpSent) phoneCodeRef.current?.focus();
+  }, [otpSent]);
+
+  // Resend cooldowns tick down once a second while a code is outstanding.
+  useEffect(() => {
+    if (!emailOtpSent || emailResendIn <= 0) return;
+    const t = window.setTimeout(() => setEmailResendIn((s) => Math.max(0, s - 1)), 1000);
+    return () => window.clearTimeout(t);
+  }, [emailOtpSent, emailResendIn]);
+  useEffect(() => {
+    if (!otpSent || phoneResendIn <= 0) return;
+    const t = window.setTimeout(() => setPhoneResendIn((s) => Math.max(0, s - 1)), 1000);
+    return () => window.clearTimeout(t);
+  }, [otpSent, phoneResendIn]);
 
   // 152-ФЗ: consent is given by the affirmative act of signing in (the fine print
   // below states it). We persist server-side proof once a session exists. Inline
@@ -140,18 +142,6 @@ export default function LoginPage() {
     );
   const handleVk = () =>
     startOAuth('/api/auth/sign-in/social', { provider: 'vk' }, 'Не удалось войти через VK');
-  const handleMailru = () =>
-    startOAuth(
-      '/api/auth/sign-in/oauth2',
-      { providerId: 'mailru' },
-      'Не удалось войти через Mail.ru',
-    );
-  const handleOk = () =>
-    startOAuth(
-      '/api/auth/sign-in/oauth2',
-      { providerId: 'ok' },
-      'Не удалось войти через Одноклассники',
-    );
 
   // VK ID widget bridge: the SDK verified+exchanged and our server bridge set the
   // session cookie, so just materialize the user, record consent, go in.
@@ -166,8 +156,9 @@ export default function LoginPage() {
   }
 
   // Email login by CODE (6-digit, not a link): request → verify → session.
-  async function handleSendEmailOtp(e: React.FormEvent) {
-    e.preventDefault();
+  // Send/verify are event-free so the submit button, the resend button, and
+  // the paste-to-verify hook all share one path.
+  async function sendEmailOtp() {
     if (!emailOtpSent) trackSignupStarted('email');
     setState('sending');
     setErrorMsg(null);
@@ -178,16 +169,19 @@ export default function LoginPage() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email, type: 'sign-in' }),
       });
-      if (!res.ok) throw new Error((await res.text()) || `HTTP ${res.status}`);
+      if (!res.ok) {
+        if (res.status === 429) throw new Error(rateLimitMessage(res.headers.get('retry-after')));
+        throw new Error((await res.text()) || `HTTP ${res.status}`);
+      }
       setEmailOtpSent(true);
+      setEmailResendIn(RESEND_COOLDOWN_S);
       setState('idle');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Не удалось отправить код');
       setState('error');
     }
   }
-  async function handleVerifyEmailOtp(e: React.FormEvent) {
-    e.preventDefault();
+  async function verifyEmailOtpCode(code: string) {
     setState('sending');
     setErrorMsg(null);
     try {
@@ -195,9 +189,12 @@ export default function LoginPage() {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, otp: emailOtp }),
+        body: JSON.stringify({ email, otp: code }),
       });
-      if (!res.ok) throw new Error('Неверный код');
+      if (!res.ok) {
+        if (res.status === 429) throw new Error(rateLimitMessage(res.headers.get('retry-after')));
+        throw new Error('Неверный код');
+      }
       await fetch(`${API_URL}/v1/me`, { credentials: 'include' });
       await recordConsent();
       window.location.href = loginTarget();
@@ -208,8 +205,7 @@ export default function LoginPage() {
   }
 
   // Phone OTP (flash-call / SMS): request → verify → session.
-  async function handleSendOtp(e: React.FormEvent) {
-    e.preventDefault();
+  async function sendPhoneOtp() {
     if (!otpSent) trackSignupStarted('phone');
     setState('sending');
     setErrorMsg(null);
@@ -220,16 +216,19 @@ export default function LoginPage() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ phoneNumber: phone }),
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        if (r.status === 429) throw new Error(rateLimitMessage(r.headers.get('retry-after')));
+        throw new Error(`HTTP ${r.status}`);
+      }
       setOtpSent(true);
+      setPhoneResendIn(RESEND_COOLDOWN_S);
       setState('idle');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Не удалось отправить код');
       setState('error');
     }
   }
-  async function handleVerifyOtp(e: React.FormEvent) {
-    e.preventDefault();
+  async function verifyPhoneOtpCode(code: string) {
     setState('sending');
     setErrorMsg(null);
     try {
@@ -237,15 +236,34 @@ export default function LoginPage() {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: phone, code: otp }),
+        body: JSON.stringify({ phoneNumber: phone, code }),
       });
-      if (!r.ok) throw new Error('Неверный код');
+      if (!r.ok) {
+        if (r.status === 429) throw new Error(rateLimitMessage(r.headers.get('retry-after')));
+        throw new Error('Неверный код');
+      }
       await fetch(`${API_URL}/v1/me`, { credentials: 'include' });
       await recordConsent();
       window.location.href = loginTarget();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Неверный код');
       setState('error');
+    }
+  }
+
+  // Paste-to-verify: authenticator apps and SMS autofill hand over a 6-digit
+  // code on the clipboard; a full code verifies immediately, a partial one
+  // just lands in the field for manual completion.
+  function handleOtpPaste(e: React.ClipboardEvent<HTMLInputElement>, kind: 'email' | 'phone') {
+    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (digits.length !== 6) return;
+    e.preventDefault();
+    if (kind === 'email') {
+      setEmailOtp(digits);
+      void verifyEmailOtpCode(digits);
+    } else {
+      setOtp(digits);
+      void verifyPhoneOtpCode(digits);
     }
   }
 
@@ -302,7 +320,8 @@ export default function LoginPage() {
           <FlashBanner />
         </Suspense>
 
-        {/* --- OAuth (official buttons, matched radius/size) --- */}
+        {/* --- OAuth (official SDK widgets; each carries its own keyboard
+            fallback button in case the SDK script is blocked) --- */}
         {anyOAuth && (
           <div className="mt-6 space-y-2.5">
             {/* Yandex ID — the OFFICIAL YaAuthSuggest SDK widget. */}
@@ -311,6 +330,7 @@ export default function LoginPage() {
                 onSuccess={handleVkIdSuccess}
                 onError={handleVkIdError}
                 onStart={() => trackSignupStarted('yandex')}
+                onFallback={handleYandex}
               />
             )}
             {/* VK ID — official SDK widget (VK's rules require it); it also renders
@@ -320,6 +340,7 @@ export default function LoginPage() {
                 onSuccess={handleVkIdSuccess}
                 onError={handleVkIdError}
                 onStart={() => trackSignupStarted('vk')}
+                onFallback={handleVk}
               />
             )}
           </div>
@@ -346,24 +367,34 @@ export default function LoginPage() {
               Способ входа
             </p>
             <div
-              role="group"
+              role="radiogroup"
               aria-labelledby="login-method-label"
+              onKeyDown={(e) => {
+                // Roving radio behaviour: arrows flip the method, Tab leaves.
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                e.preventDefault();
+                setMode((m) => (m === 'phone' ? 'email' : 'phone'));
+              }}
               className="flex overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] shadow-[var(--offset-sm)]"
             >
               <button
                 type="button"
+                role="radio"
+                aria-checked={mode === 'phone'}
+                tabIndex={mode === 'phone' ? 0 : -1}
                 onClick={() => setMode('phone')}
                 data-testid="login-tab-phone"
-                aria-pressed={mode === 'phone'}
                 className={`${tab(mode === 'phone')} border-r-[2.5px] border-[color:var(--color-line)]`}
               >
                 Телефон
               </button>
               <button
                 type="button"
+                role="radio"
+                aria-checked={mode === 'email'}
+                tabIndex={mode === 'email' ? 0 : -1}
                 onClick={() => setMode('email')}
                 data-testid="login-tab-email"
-                aria-pressed={mode === 'email'}
                 className={tab(mode === 'email')}
               >
                 Email
@@ -375,31 +406,60 @@ export default function LoginPage() {
         {/* --- email code form --- */}
         {mode === 'email' && (
           <form
-            onSubmit={emailOtpSent ? handleVerifyEmailOtp : handleSendEmailOtp}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (emailOtpSent) void verifyEmailOtpCode(emailOtp);
+              else void sendEmailOtp();
+            }}
             className="space-y-2.5"
           >
-            <Input
-              type="email"
-              required
-              placeholder="pochta@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={emailOtpSent}
-              data-testid="login-email-input"
-              className="h-11"
-            />
-            {emailOtpSent && (
+            <div>
+              <label
+                htmlFor="login-email"
+                className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-[color:var(--color-muted-foreground)]"
+              >
+                Ваш email
+              </label>
               <Input
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
+                id="login-email"
+                type="email"
+                name="email"
+                autoComplete="email"
                 required
-                placeholder="Код из письма"
-                value={emailOtp}
-                onChange={(e) => setEmailOtp(e.target.value)}
-                data-testid="login-email-code"
+                placeholder="Введите ваш email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={emailOtpSent}
+                data-testid="login-email-input"
                 className="h-11"
               />
+            </div>
+            {emailOtpSent && (
+              <div>
+                <label
+                  htmlFor="login-email-code"
+                  className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-[color:var(--color-muted-foreground)]"
+                >
+                  Код из письма
+                </label>
+                <Input
+                  id="login-email-code"
+                  ref={emailCodeRef}
+                  type="text"
+                  name="email-otp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  required
+                  placeholder="Введите 6 цифр из письма"
+                  value={emailOtp}
+                  onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onPaste={(e) => handleOtpPaste(e, 'email')}
+                  data-testid="login-email-code"
+                  className="h-11"
+                />
+              </div>
             )}
             <Button
               type="submit"
@@ -418,38 +478,83 @@ export default function LoginPage() {
                   : 'Получить код'}
             </Button>
             {emailOtpSent && (
-              <p className="text-center text-[13px] text-[color:var(--color-muted-foreground)]">
-                Код отправлен на почту — действует 10 минут.
-              </p>
+              <div className="space-y-1.5 text-center">
+                <p className="text-[13px] text-[color:var(--color-muted-foreground)]">
+                  Код отправлен на почту — действует 10 минут.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void sendEmailOtp()}
+                  disabled={busy || emailResendIn > 0}
+                  data-testid="login-email-resend"
+                  className="font-mono text-[11px] font-bold uppercase tracking-wider text-[color:var(--color-fg)] underline decoration-[color:var(--color-line)] underline-offset-2 hover:text-[color:var(--color-accent)] disabled:no-underline disabled:opacity-50"
+                >
+                  {emailResendIn > 0
+                    ? `Отправить снова через ${emailResendIn} с`
+                    : 'Отправить код снова'}
+                </button>
+              </div>
             )}
           </form>
         )}
 
         {/* --- phone code form --- */}
         {phoneEnabled && mode === 'phone' && (
-          <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-2.5">
-            <Input
-              type="tel"
-              required
-              placeholder="+7 999 123-45-67"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              disabled={otpSent}
-              data-testid="login-phone-input"
-              className="h-11"
-            />
-            {otpSent && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (otpSent) void verifyPhoneOtpCode(otp);
+              else void sendPhoneOtp();
+            }}
+            className="space-y-2.5"
+          >
+            <div>
+              <label
+                htmlFor="login-phone"
+                className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-[color:var(--color-muted-foreground)]"
+              >
+                Ваш телефон
+              </label>
               <Input
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
+                id="login-phone"
+                type="tel"
+                name="phone"
+                autoComplete="tel"
                 required
-                placeholder="Код из звонка / SMS"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                data-testid="login-phone-code"
+                placeholder="Введите ваш телефон"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={otpSent}
+                data-testid="login-phone-input"
                 className="h-11"
               />
+            </div>
+            {otpSent && (
+              <div>
+                <label
+                  htmlFor="login-phone-code"
+                  className="mb-1.5 block font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-[color:var(--color-muted-foreground)]"
+                >
+                  Код из звонка / SMS
+                </label>
+                <Input
+                  id="login-phone-code"
+                  ref={phoneCodeRef}
+                  type="text"
+                  name="phone-otp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  required
+                  placeholder="Введите 6 цифр из SMS"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onPaste={(e) => handleOtpPaste(e, 'phone')}
+                  data-testid="login-phone-code"
+                  className="h-11"
+                />
+              </div>
             )}
             <Button
               type="submit"
@@ -461,15 +566,30 @@ export default function LoginPage() {
               {busy ? 'Проверяем…' : otpSent ? 'Войти' : 'Получить код'}
             </Button>
             {otpSent && (
-              <p className="text-center text-[13px] text-[color:var(--color-muted-foreground)]">
-                Код отправлен на телефон.
-              </p>
+              <div className="space-y-1.5 text-center">
+                <p className="text-[13px] text-[color:var(--color-muted-foreground)]">
+                  Код отправлен на телефон.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void sendPhoneOtp()}
+                  disabled={busy || phoneResendIn > 0}
+                  data-testid="login-phone-resend"
+                  className="font-mono text-[11px] font-bold uppercase tracking-wider text-[color:var(--color-fg)] underline decoration-[color:var(--color-line)] underline-offset-2 hover:text-[color:var(--color-accent)] disabled:no-underline disabled:opacity-50"
+                >
+                  {phoneResendIn > 0
+                    ? `Отправить снова через ${phoneResendIn} с`
+                    : 'Отправить код снова'}
+                </button>
+              </div>
             )}
           </form>
         )}
 
         {state === 'error' && (
-          <p className="mt-3 text-[13px] text-destructive">{errorMsg ?? 'Ошибка'}</p>
+          <p role="alert" className="mt-3 text-[13px] text-destructive">
+            {errorMsg ?? 'Ошибка'}
+          </p>
         )}
 
         {/* --- fine-print consent (152-ФЗ): the act of continuing is the consent --- */}

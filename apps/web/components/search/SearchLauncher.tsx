@@ -62,13 +62,11 @@ export function SearchLauncher({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {/* Just the word. The magnifier glyph said the same thing twice, and the
-            ⌘K badge was a lie on Windows and Linux — the shortcut itself takes
-            metaKey OR ctrlKey (lib/global-search.ts), so only the hint was
-            Mac-only. Removing it costs discoverability of the shortcut, not the
-            shortcut. (Owner, 2026-07-28.) */}
-        <button type="button" className={className}>
+        <button type="button" className={`${className ?? ''} inline-flex items-center gap-2`}>
           {label}
+          <kbd className="hidden border border-[color:var(--color-line-soft)] px-1.5 py-0.5 font-mono text-[9px] normal-case tracking-normal text-[color:var(--color-faint)] lg:inline">
+            ⌘/Ctrl K
+          </kbd>
         </button>
       </DialogTrigger>
       {/* Search must cover the project desk, which owns transient layers up to

@@ -59,7 +59,7 @@ export function AnimationPanel({
               aria-pressed={on}
               onClick={() => applyAnim(clip.uid, p, animDur)}
               className={
-                'press-inset overflow-hidden rounded-[var(--radius-sm)] ring-1 ring-inset transition-shadow ' +
+                'press-inset overflow-hidden rounded-[var(--radius-sm)] ring-[1.5px] ring-inset transition-shadow ' +
                 (on
                   ? 'ring-2 ring-[color:var(--color-accent)]'
                   : 'ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40')
@@ -108,7 +108,7 @@ export function AnimationPanel({
         type="button"
         data-testid="anim-none"
         onClick={() => applyAnim(clip.uid, null, animDur)}
-        className="press-inset w-full rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] py-2 text-[13px] font-semibold text-[color:var(--color-muted-foreground)] ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:text-[color:var(--color-fg)]"
+        className="press-inset w-full rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] py-2 text-[13px] font-semibold text-[color:var(--color-muted-foreground)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:text-[color:var(--color-fg)]"
       >
         Без анимации
       </button>

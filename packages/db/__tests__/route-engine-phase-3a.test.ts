@@ -58,7 +58,7 @@ function g1Gaps(rows: readonly PricePointSeedRow[]): string[] {
               !leg.costKnown ||
               !Number.isFinite(leg.usdPerUnit) ||
               leg.usdPerUnit <= 0 ||
-              !['kie', 'openrouter', 'laozhang'].includes(leg.relay.toLowerCase()),
+              !['kie', 'openrouter', 'laozhang', 'pixazo'].includes(leg.relay.toLowerCase()),
           ),
         )
       );
@@ -134,8 +134,13 @@ describe('Phase 3a data guards against the signed export', () => {
     // hardcoded date turns a boundary test into a test that expires. Rev. 22 legitimately
     // has two cohorts: the eight newly signed Gemini/GPT fallback rows were captured on
     // the owner-approval date, while existing rows retain their original evidence date.
+    // Rev. 23 adds a third: the four Seedance 2.0 Mini (Pixazo) legs signed 2026-09-25.
     const cohorts = [...new Set(file.legs.map((row) => row.capturedOn))].sort();
-    expect(cohorts, 'the export carries only governed capture cohorts').toHaveLength(2);
+    expect(cohorts, 'the export carries only governed capture cohorts').toEqual([
+      '2026-08-11',
+      '2026-08-14',
+      '2026-09-25',
+    ]);
     const legacyCohort = cohorts[0]!;
     const exportCohort = cohorts[cohorts.length - 1]!;
     const legacyLegs = file.legs.filter((row) => row.capturedOn === legacyCohort);

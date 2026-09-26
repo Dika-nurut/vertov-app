@@ -25,10 +25,17 @@ export default async function SearchPage({
     projectId?: string | string[];
   }>;
 }) {
-  const userAgent = (await headers()).get('user-agent') ?? '';
-  if (MOBILE_UA.test(userAgent)) redirect('/workspace');
-
   const params = await searchParams;
+  const userAgent = (await headers()).get('user-agent') ?? '';
+  if (MOBILE_UA.test(userAgent)) {
+    const preserved = new URLSearchParams();
+    for (const key of ['q', 'page', 'projectId'] as const) {
+      const value = params[key];
+      if (typeof value === 'string') preserved.set(key, value);
+    }
+    redirect(`/workspace${preserved.size > 0 ? `?${preserved.toString()}` : ''}`);
+  }
+
   const initialQuery = typeof params.q === 'string' ? params.q.slice(0, 100) : '';
   const initialProjectId =
     typeof params.projectId === 'string' ? params.projectId.slice(0, 160) : undefined;

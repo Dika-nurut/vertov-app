@@ -32,7 +32,7 @@ import {
   type BoardRunNodeLike,
   type PreparedBoardRun,
 } from '@/lib/board-run-request';
-import { stashHandoff } from '@/lib/handoff';
+import { stashAssetHandoff } from '@/lib/handoff';
 import type { ModelLike } from '@/lib/node-settings';
 import { estimatePriceToShow, useJobEstimate } from '@/lib/useJobEstimate';
 import { tierUpsellLabel } from '@/lib/model-tier';
@@ -72,7 +72,9 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_CLASS: Record<string, string> = {
   idle: 'text-[color:var(--color-faint)]',
   running: 'text-[color:var(--color-accent)]',
-  done: 'text-[color:var(--color-accent2)]',
+  // WS5: done = mint positive (status token), never lime — accent2 is a rare
+  // decorative spark, banned as status/body colour by the bible.
+  done: 'text-[color:var(--color-positive)]',
   failed: 'text-[color:var(--color-destructive)]',
 };
 
@@ -120,11 +122,16 @@ function Canvas({
         .map((n) => ({ id: n.id, d: n.data as unknown as GenerateData })),
     [nodes],
   );
-  const studioUrls = useMemo(
+  const studioAssets = useMemo(
     () =>
       shots.flatMap(({ d }) =>
         d.status === 'done' && d.resultUrl && (d.resultKind === 'video' || isVideoUrl(d.resultUrl))
-          ? [d.resultUrl]
+          ? [
+              {
+                url: d.resultUrl,
+                ...(typeof d.assetId === 'string' && d.assetId ? { assetId: d.assetId } : {}),
+              },
+            ]
           : [],
       ),
     [shots],
@@ -309,7 +316,9 @@ function Canvas({
           variant={BackgroundVariant.Dots}
           gap={22}
           size={1.4}
-          color="rgba(236,238,243,0.12)"
+          // WS5: bone tint via the paper token (same recipe as the desktop
+          // GraphBoard grid), dimmer alpha for the small phone viewport.
+          color="rgba(var(--paper-rgb),0.12)"
         />
       </ReactFlow>
 
@@ -372,8 +381,9 @@ function Canvas({
         </div>
       )}
 
-      {/* Floating review dock — status, fit, and completed-video handoff. */}
-      <nav className="absolute inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-20 grid grid-cols-3 overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] shadow-[4px_4px_0_0_var(--color-shadow)]">
+      {/* Floating review dock — status, fit, and completed-video handoff.
+          WS5: standard-elevation --offset (5px); the old 4px was off-ladder. */}
+      <nav className="absolute inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-20 grid grid-cols-3 overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] shadow-[5px_5px_0_0_var(--color-shadow)]">
         <DockBtn
           label="Кадры"
           icon={<Clapperboard size={19} />}
@@ -389,9 +399,9 @@ function Canvas({
           testid="mobile-board-studio"
           label="В Studio"
           icon={<Film size={19} />}
-          disabled={studioUrls.length === 0}
+          disabled={studioAssets.length === 0}
           onClick={() => {
-            if (!stashHandoff('studio', studioUrls)) return;
+            if (!stashAssetHandoff('studio', studioAssets)) return;
             router.push('/studio');
           }}
         />
@@ -472,7 +482,7 @@ function Canvas({
                 type="button"
                 disabled={runBusy}
                 onClick={() => setReadyRun(null)}
-                className="press-inset rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] px-3 py-2.5 text-[13px] font-semibold"
+                className="press-inset rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 py-2.5 text-[13px] font-semibold"
               >
                 Отмена
               </button>
@@ -481,7 +491,7 @@ function Canvas({
                 data-testid="mobile-run-submit"
                 disabled={runBusy || quotedCost === null}
                 onClick={() => void submitRun()}
-                className="press rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3 py-2.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)]"
+                className="press rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3 py-2.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)]"
               >
                 {runBusy ? (
                   <span className="inline-flex items-center gap-1.5">
@@ -601,7 +611,7 @@ function BottomSheet({
         onClick={onClose}
         className="absolute inset-0 z-30 bg-black/55"
       />
-      <div className="seed-pop-in absolute inset-x-0 bottom-0 z-40 max-h-[70vh] overflow-y-auto rounded-t-[12px] border-[2.5px] border-b-0 border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-2.5">
+      <div className="seed-pop-in absolute inset-x-0 bottom-0 z-40 max-h-[70vh] overflow-y-auto rounded-t-[var(--radius-md)] border-[2.5px] border-b-0 border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-2.5">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[color:var(--color-muted-foreground)]" />
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-display text-[17px] font-black tracking-tight text-[color:var(--color-fg)]">

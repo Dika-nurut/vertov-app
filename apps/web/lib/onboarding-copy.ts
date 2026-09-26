@@ -1,4 +1,5 @@
 import type { Locale } from './locale';
+import { GIFT_TOKENS_UPFRONT } from './gift-tokens';
 
 export type FeatureHintSurface = 'boards' | 'scenario-list' | 'studio';
 export type TourStepKey = 'model' | 'prompt' | 'submit' | 'done';
@@ -25,6 +26,7 @@ export interface OnboardingCopy {
     title: string;
     body: string;
     link: string;
+    back: string;
   };
 }
 
@@ -32,7 +34,7 @@ const COPY: Record<Locale, OnboardingCopy> = {
   ru: {
     card: {
       lead: 'У тебя ',
-      gift: '210 токенов в подарок',
+      gift: `${GIFT_TOKENS_UPFRONT} токенов в подарок`,
       tail: ' — без карты. Начни с генерации — пресеты можно выбрать прямо внутри неё.',
       confirm: 'Понятно',
       skip: 'Пропустить',
@@ -74,12 +76,13 @@ const COPY: Record<Locale, OnboardingCopy> = {
       title: 'Полная версия — на десктопе',
       body: 'Эта часть Vertov рассчитана на большой экран. Открой генерацию на телефоне, чтобы создать кадр.',
       link: 'Открыть генерацию',
+      back: 'Вернуться к генерации',
     },
   },
   en: {
     card: {
       lead: 'You have ',
-      gift: '210 bonus tokens',
+      gift: `${GIFT_TOKENS_UPFRONT} bonus tokens`,
       tail: ' — no card required. Start with a generation; presets are available inside it.',
       confirm: 'Got it',
       skip: 'Skip',
@@ -121,6 +124,7 @@ const COPY: Record<Locale, OnboardingCopy> = {
       title: 'Full version available on desktop',
       body: 'This part of Vertov is built for a large screen. Open Generate on your phone to create a shot.',
       link: 'Open Generate',
+      back: 'Back to Generate',
     },
   },
 };

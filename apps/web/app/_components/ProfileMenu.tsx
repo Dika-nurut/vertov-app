@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
   Activity,
-  Archive,
   ChevronDown,
   ChevronUp,
   Settings,
@@ -17,6 +16,8 @@ import { PixelGlyph } from '@/components/ui/pixel-glyph';
 import { useBalance } from './BalanceWidget';
 import { useJobsTray, JobsTrayPanel } from './JobsTray';
 import { isSoundMuted, toggleSoundMuted, onSoundMuteChange } from '@/lib/sound';
+import { withLocale, type Locale } from '@/lib/locale';
+import { PlausibleEvent, trackEvent } from './PlausibleEvents';
 
 export interface ProfilePlan {
   tier: string;
@@ -32,7 +33,7 @@ function initials(email: string): string {
 const cellBase =
   'flex h-10 items-center gap-2 px-4 font-mono text-[12px] font-bold uppercase tracking-wide transition-colors';
 const rowBase =
-  'flex w-full items-center gap-3 border-t-[1.5px] border-[color:var(--color-line)]/16 px-4 py-2.5 text-left text-[13.5px] font-medium text-[color:var(--color-fg)] transition-colors hover:bg-[color:var(--color-surface2)]';
+  'flex min-h-11 w-full items-center gap-3 border-t-[1.5px] border-[color:var(--color-line)]/16 px-4 py-2.5 text-left text-[13.5px] font-medium text-[color:var(--color-fg)] transition-colors hover:bg-[color:var(--color-surface2)]';
 
 /**
  * The header's account segment — last cell of the fused action bar (2026-07-07
@@ -52,6 +53,7 @@ export function ProfileMenu({
   apiUrl,
   plan,
   isAnonymous = false,
+  locale = 'ru',
 }: {
   email: string;
   balance: number;
@@ -62,6 +64,7 @@ export function ProfileMenu({
    * (settings/billing/logout under a fake initial) reads as "you're logged
    * in" when you're not. Render a plain sign-in CTA instead, same cell shape. */
   isAnonymous?: boolean;
+  locale?: Locale;
 }) {
   const [open, setOpen] = useState(false);
   const liveBalance = useBalance(balance, apiUrl);
@@ -74,11 +77,12 @@ export function ProfileMenu({
   }, []);
 
   const close = () => setOpen(false);
+  const manageHref = plan ? '/settings/billing' : '/pricing';
 
   if (isAnonymous) {
     return (
       <Link
-        href="/login"
+        href={withLocale('/login', locale)}
         data-testid="profile-menu-trigger"
         className={
           cellBase +
@@ -156,15 +160,21 @@ export function ProfileMenu({
           </p>
           <div className="mt-2.5 flex">
             <Link
-              href="/pricing"
-              onClick={close}
+              href={withLocale(manageHref, locale)}
+              onClick={() => {
+                trackEvent(PlausibleEvent.checkoutStarted, { source: 'profile_menu' });
+                close();
+              }}
               className="flex h-8 flex-1 items-center justify-center border-2 border-[color:var(--color-line)] bg-[color:var(--color-accent)] font-mono text-[11px] font-bold uppercase text-[color:var(--color-primary-foreground)]"
             >
-              Апгрейд
+              {plan ? 'Управлять' : 'Апгрейд'}
             </Link>
             <Link
-              href="/pricing"
-              onClick={close}
+              href={withLocale('/pricing', locale)}
+              onClick={() => {
+                trackEvent(PlausibleEvent.checkoutStarted, { source: 'profile_menu' });
+                close();
+              }}
               className="flex h-8 flex-1 items-center justify-center border-2 border-l-0 border-[color:var(--color-line)] font-mono text-[11px] font-bold uppercase text-[color:var(--color-fg)]"
             >
               Пополнить
@@ -172,7 +182,9 @@ export function ProfileMenu({
           </div>
         </div>
 
-        <div
+        <Link
+          href={withLocale('/gallery', locale)}
+          onClick={close}
           className={rowBase.replace(
             'border-t-[1.5px] border-[color:var(--color-line)]/16',
             'border-t-0',
@@ -186,14 +198,13 @@ export function ProfileMenu({
               aria-hidden
             />
           )}
-        </div>
+        </Link>
         {(jobs.length > 0 || activeCount > 0) && (
           <div className="border-t-[1.5px] border-[color:var(--color-line)]/16">
-            <JobsTrayPanel jobs={jobs.slice(0, 4)} onNavigate={close} />
+            <JobsTrayPanel jobs={jobs.slice(0, 4)} onNavigate={close} locale={locale} />
           </div>
         )}
-
-        <Link href="/settings" onClick={close} className={rowBase}>
+        <Link href={withLocale('/settings', locale)} onClick={close} className={rowBase}>
           <Settings size={15} className="shrink-0 text-[color:var(--color-faint)]" aria-hidden />
           Настройки аккаунта
         </Link>
@@ -210,10 +221,6 @@ export function ProfileMenu({
           </span>
         </button>
 
-        <Link href="/gallery" onClick={close} className={rowBase}>
-          <Archive size={15} className="shrink-0 text-[color:var(--color-faint)]" aria-hidden />
-          Архив
-        </Link>
         <form
           action="/api/logout"
           method="post"

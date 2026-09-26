@@ -52,10 +52,10 @@ describe('isModelLocked', () => {
 describe('tierUpsellLabel', () => {
   it('names the plan that unlocks the model', () => {
     expect(tierUpsellLabel({ tierMin: 'start' })).toBe(`Открыть в тарифе «${TIER_LABEL['start']}»`);
-    expect(tierUpsellLabel({ tierMin: 'creator' })).toBe('Открыть в тарифе «Креатор»');
+    expect(tierUpsellLabel({ tierMin: 'creator' })).toBe('Открыть в тарифе «Плюс»');
   });
 
   it('falls back to the top plan for an unknown row', () => {
-    expect(tierUpsellLabel(undefined)).toBe('Открыть в тарифе «Креатор»');
+    expect(tierUpsellLabel(undefined)).toBe('Открыть в тарифе «Плюс»');
   });
 });

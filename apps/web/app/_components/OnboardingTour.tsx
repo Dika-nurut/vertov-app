@@ -10,7 +10,9 @@ const SPOTLIGHT_PADDING = 8;
 const TRANSITION_MS = 180;
 
 const DESKTOP_STEPS: TourStepKey[] = ['model', 'prompt', 'submit', 'done'];
-const MOBILE_STEPS: TourStepKey[] = ['model', 'prompt', 'submit'];
+// The done step stays on mobile too: the success confirmation is where the
+// tour ends, and dropping it leaves small screens without a finish state.
+const MOBILE_STEPS: TourStepKey[] = ['model', 'prompt', 'submit', 'done'];
 
 function Backdrop({
   anchor,
@@ -149,6 +151,16 @@ export function OnboardingTour({
     },
     [],
   );
+
+  // Body scroll lock while the spotlight tour is active; restored on unmount
+  // so the page never stays frozen after a dismissal path misses cleanup.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   useEffect(() => {
     nextRef.current?.focus();

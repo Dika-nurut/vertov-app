@@ -5,6 +5,13 @@ export function normalizeLocale(value: string | null | undefined): Locale {
   return value === 'en' ? 'en' : 'ru';
 }
 
+/** Preserve the active locale when a shell link crosses to another route. */
+export function withLocale(path: string, locale: Locale): string {
+  if (locale === 'ru') return path;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}lang=${locale}`;
+}
+
 /** Read the same URL/cookie locale that the existing LanguageToggle writes. */
 export function readClientLocale(fallback: Locale = 'ru'): Locale {
   if (typeof window === 'undefined') return fallback;

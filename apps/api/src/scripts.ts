@@ -49,6 +49,7 @@ import {
   boardLinksToScript,
   extractScenarioHandoffSources,
   mergeScenarioScenesIntoBoard,
+  scenarioHandoffLocks,
   ScenarioBoardMaterializationLimitError,
 } from './scenario-board-handoff';
 import { scenarioBoardHandoffs, scenarioMaterialCompactions } from './metrics';
@@ -106,6 +107,10 @@ const bibleSchema = z.object({
     .max(300)
     .optional(),
   characters: z
+    .array(z.object({ name: z.string().max(200), description: z.string().max(2_000) }))
+    .max(200)
+    .optional(),
+  locations: z
     .array(z.object({ name: z.string().max(200), description: z.string().max(2_000) }))
     .max(200)
     .optional(),
@@ -813,9 +818,10 @@ export function setupScriptRoutes(
       }
       plansBySource.set(row.sourceSceneId, parsedPlan.data);
     }
+    const locks = scenarioHandoffLocks(script.bible);
     const selectedScenesWithPlans = selectedScenes.map((scene) => {
       const shotPlan = plansBySource.get(scenarioTimingSourceUnitId(scene));
-      return shotPlan ? { ...scene, shotPlan } : scene;
+      return shotPlan ? { ...scene, shotPlan, locks } : scene;
     });
 
     if (parsed.data.destination === 'new') {

@@ -2,8 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearHandoff,
   parseHandoff,
+  parseAssetHandoff,
   peekHandoff,
+  serializeAssetHandoff,
   serializeHandoff,
+  stashAssetHandoff,
   stashHandoff,
   takeHandoff,
 } from './handoff';
@@ -22,6 +25,25 @@ describe('serializeHandoff / parseHandoff (pure)', () => {
     expect(parseHandoff('{not json')).toEqual([]);
     expect(parseHandoff('{"urls":"nope"}')).toEqual([]);
     expect(parseHandoff('{}')).toEqual([]);
+  });
+});
+
+describe('serializeAssetHandoff / parseAssetHandoff (pure)', () => {
+  it('round-trips stable media identity and accepts legacy URLs', () => {
+    expect(
+      parseAssetHandoff(
+        serializeAssetHandoff([
+          { url: 'https://a/video.mp4', assetId: 'asset-1' },
+          { url: 'https://a/legacy.mp4' },
+        ]),
+      ),
+    ).toEqual([
+      { url: 'https://a/video.mp4', assetId: 'asset-1' },
+      { url: 'https://a/legacy.mp4' },
+    ]);
+    expect(parseAssetHandoff('{"urls":["https://a/legacy.mp4"]}')).toEqual([
+      { url: 'https://a/legacy.mp4' },
+    ]);
   });
 });
 
@@ -52,6 +74,15 @@ describe('stashHandoff / takeHandoff (sessionStorage)', () => {
     stashHandoff('board', ['https://a/b.mp4']);
     expect(takeHandoff('board')).toEqual(['https://a/b.mp4']);
     expect(takeHandoff('studio')).toEqual(['https://a/s.mp4']);
+  });
+
+  it('stashes an asset-aware selection in the target slot', () => {
+    expect(stashAssetHandoff('studio', [{ url: 'https://a/video.mp4', assetId: 'asset-1' }])).toBe(
+      true,
+    );
+    expect(parseAssetHandoff(window.sessionStorage.getItem('seed.handoff.studio'))).toEqual([
+      { url: 'https://a/video.mp4', assetId: 'asset-1' },
+    ]);
   });
 
   it('does not stash an empty selection', () => {

@@ -10,7 +10,7 @@ import type {
 export const APP_NAME = 'Vertov';
 export const DEFAULT_LOCALE = 'ru' as const;
 
-export { FREE_MEDIA_RETENTION_COPY } from './media-retention';
+export { FREE_MEDIA_RETENTION_COPY, FREE_MEDIA_RETENTION_COPY_PARTS } from './media-retention';
 export { resolveGeneratePrompt } from './board-prompt';
 export { buildSceneContext, GROUP_SEP } from './scene-context';
 export { sceneObjectKindSchema } from './scene-objects';

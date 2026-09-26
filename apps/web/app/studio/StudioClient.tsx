@@ -107,7 +107,7 @@ import { CropModal } from './_preview/CropModal';
 import { Timeline } from './_timeline/Timeline';
 import { Inspector } from './_inspector/Inspector';
 import { Library } from './_library/Library';
-import { clearHandoff, peekHandoff } from '@/lib/handoff';
+import { clearHandoff, peekAssetHandoff } from '@/lib/handoff';
 import { buildAnimKeyframesEased } from '@/lib/studio-easing';
 import type { EasingId } from '@/lib/studio-easing';
 import { useResolvedAssets } from '@/lib/asset-lifecycle';
@@ -215,9 +215,10 @@ export function StudioClient({
     });
   }, [assetLifecycle, identifiedAssetIds.length, setTracks]);
   const [handoffClips] = useState<StudioClip[]>(() =>
-    peekHandoff('studio').map((assetUrl, index) => ({
-      id: `handoff-${index}-${assetUrl}`,
-      assetUrl,
+    peekAssetHandoff('studio').map((asset, index) => ({
+      id: `handoff-${index}-${asset.url}`,
+      assetUrl: asset.url,
+      ...(asset.assetId ? { assetId: asset.assetId } : {}),
     })),
   );
   useEffect(() => {
@@ -239,7 +240,11 @@ export function StudioClient({
   const mediaInitialClips = useMemo(() => {
     const byUrl = new Map<string, StudioClip>();
     for (const clip of [...initialClips, ...handoffClips]) {
-      if (clip.assetUrl) byUrl.set(clip.assetUrl, clip);
+      if (!clip.assetUrl) continue;
+      const existing = byUrl.get(clip.assetUrl);
+      // A legacy URL-only handoff must not erase a stable identity already
+      // loaded from the source bin.
+      if (!existing || clip.assetId || !existing.assetId) byUrl.set(clip.assetUrl, clip);
     }
     return [...byUrl.values()];
   }, [initialClips, handoffClips]);

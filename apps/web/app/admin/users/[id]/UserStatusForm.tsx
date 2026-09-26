@@ -33,12 +33,12 @@ export function UserStatusForm({
 
   async function submit() {
     if (reason.trim().length < 3) {
-      setMsg({ ok: false, text: 'Укажи причину не короче 3 символов.' });
+      setMsg({ ok: false, text: 'Укажите причину не короче 3 символов.' });
       return;
     }
     if (status === 'banned' && !confirmBan) {
       setConfirmBan(true);
-      setMsg({ ok: false, text: 'Нажми ещё раз, чтобы подтвердить блокировку.' });
+      setMsg({ ok: false, text: 'Нажмите ещё раз, чтобы подтвердить блокировку.' });
       return;
     }
     setBusy(true);
@@ -82,8 +82,8 @@ export function UserStatusForm({
             }}
             className="border-[2.5px] border-line bg-[color:var(--color-surface2)] px-3 py-2 text-sm outline-none"
           >
-            <option value="active">active</option>
-            <option value="banned">banned</option>
+            <option value="active">Активен</option>
+            <option value="banned">Заблокирован</option>
           </select>
         </label>
         <label className="flex flex-1 flex-col gap-1">

@@ -101,7 +101,7 @@ export function deriveShotList(nodes: ShotNodeLike[], edges: ShotEdgeLike[]): Sh
     return {
       id: n.id,
       shotNumber: i + 1,
-      title: trimmed ? trimmed.slice(0, 48) : `Кадр ${i + 1}`,
+      title: str(d['title'])?.trim() || trimmed.slice(0, 48) || `Кадр ${i + 1}`,
       prompt,
       mode,
       modelId: str(d['modelId']),

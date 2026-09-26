@@ -1,6 +1,5 @@
 import { and, desc, eq, inArray, or, sql, type SQL } from 'drizzle-orm';
 import { db as defaultDb, galleryItems, jobs, models, workflows } from '@seed/db';
-import { availableOwnedAssetCondition } from './asset-references';
 
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'refunded';
 
@@ -18,7 +17,10 @@ export interface JobListRow {
   modelId: string;
   modelDisplayName: string | null;
   resultAssets: string[];
+  resultExpiresAt: Date | null;
+  resultUnavailableReason: 'deleted' | 'expired' | null;
   errorCode: string | null;
+  errorMessage: string | null;
   createdAt: Date;
 }
 
@@ -65,35 +67,87 @@ export function decodeCursor(raw: string): { createdAt: Date; id: string } | nul
   return { createdAt, id };
 }
 
+interface JobAssetSummary {
+  liveUrls: Set<string>;
+  liveExpiresAt: Date | null;
+  expiredAt: Date | null;
+  hasDeleted: boolean;
+}
+
+function emptyJobAssetSummary(): JobAssetSummary {
+  return { liveUrls: new Set(), liveExpiresAt: null, expiredAt: null, hasDeleted: false };
+}
+
+function summarizeAssetRows(
+  rows: Array<{
+    jobId: string | null;
+    assetUrl: string;
+    expiresAt: Date | null;
+    deletedAt: Date | null;
+  }>,
+  now: Date,
+): Map<string, JobAssetSummary> {
+  const summaries = new Map<string, JobAssetSummary>();
+  for (const row of rows) {
+    if (!row.jobId) continue;
+    const summary = summaries.get(row.jobId) ?? emptyJobAssetSummary();
+    const live = !row.deletedAt && (!row.expiresAt || row.expiresAt > now);
+    if (live) {
+      summary.liveUrls.add(row.assetUrl);
+      if (
+        row.expiresAt &&
+        (!summary.liveExpiresAt || row.expiresAt.getTime() < summary.liveExpiresAt.getTime())
+      ) {
+        summary.liveExpiresAt = row.expiresAt;
+      }
+    } else if (row.deletedAt) {
+      summary.hasDeleted = true;
+    } else if (
+      row.expiresAt &&
+      (!summary.expiredAt || row.expiresAt.getTime() < summary.expiredAt.getTime())
+    ) {
+      summary.expiredAt = row.expiresAt;
+    }
+    summaries.set(row.jobId, summary);
+  }
+  return summaries;
+}
+
+function summaryExpiry(summary: JobAssetSummary | undefined): Date | null {
+  if (!summary) return null;
+  return summary.liveUrls.size > 0 ? summary.liveExpiresAt : summary.expiredAt;
+}
+
+function summaryUnavailableReason(
+  summary: JobAssetSummary | undefined,
+): 'deleted' | 'expired' | null {
+  if (!summary || summary.liveUrls.size > 0) return null;
+  if (summary.hasDeleted) return 'deleted';
+  return summary.expiredAt ? 'expired' : null;
+}
+
 /**
  * Jobs remain receipts after an asset expires, but their media URLs must obey
  * the same owner + retention boundary as the gallery. Query all rows for a
  * page in one pass so pagination does not reintroduce an N+1 media check.
  */
-async function liveAssetUrlsByJob(
+async function assetSummariesByJob(
   database: DbLike,
   userId: string,
   jobIds: readonly string[],
   now = new Date(),
-): Promise<Map<string, Set<string>>> {
+): Promise<Map<string, JobAssetSummary>> {
   if (jobIds.length === 0) return new Map();
   const rows = await database
-    .select({ jobId: galleryItems.jobId, assetUrl: galleryItems.assetUrl })
+    .select({
+      jobId: galleryItems.jobId,
+      assetUrl: galleryItems.assetUrl,
+      expiresAt: galleryItems.expiresAt,
+      deletedAt: galleryItems.deletedAt,
+    })
     .from(galleryItems)
-    .where(
-      and(
-        availableOwnedAssetCondition(userId, now),
-        inArray(galleryItems.jobId, [...new Set(jobIds)]),
-      ),
-    );
-  const byJob = new Map<string, Set<string>>();
-  for (const row of rows) {
-    if (!row.jobId) continue;
-    const urls = byJob.get(row.jobId) ?? new Set<string>();
-    urls.add(row.assetUrl);
-    byJob.set(row.jobId, urls);
-  }
-  return byJob;
+    .where(and(eq(galleryItems.userId, userId), inArray(galleryItems.jobId, [...new Set(jobIds)])));
+  return summarizeAssetRows(rows, now);
 }
 
 function visibleResultAssets(
@@ -137,6 +191,7 @@ export async function listJobsForUser(
       modelDisplayName: models.displayName,
       resultAssets: jobs.resultAssets,
       errorCode: jobs.errorCode,
+      errorMessage: jobs.errorMessage,
       queuedAt: jobs.queuedAt,
     })
     .from(jobs)
@@ -145,10 +200,13 @@ export async function listJobsForUser(
     .orderBy(desc(jobs.queuedAt), desc(jobs.id))
     .limit(safeLimit + 1);
 
-  const liveUrls = await liveAssetUrlsByJob(
+  const assetSummaries = await assetSummariesByJob(
     database,
     userId,
     rows.map((row) => row.id),
+  );
+  const liveUrls = new Map(
+    [...assetSummaries].map(([jobId, summary]) => [jobId, summary.liveUrls] as const),
   );
 
   const hasMore = rows.length > safeLimit;
@@ -158,7 +216,10 @@ export async function listJobsForUser(
     modelId: r.modelId,
     modelDisplayName: r.modelDisplayName,
     resultAssets: visibleResultAssets(r.id, r.resultAssets, liveUrls),
+    resultExpiresAt: summaryExpiry(assetSummaries.get(r.id)),
+    resultUnavailableReason: summaryUnavailableReason(assetSummaries.get(r.id)),
     errorCode: r.errorCode,
+    errorMessage: r.errorMessage,
     createdAt: r.queuedAt,
   }));
   const last = page[page.length - 1];
@@ -171,6 +232,8 @@ export interface JobDetail {
   status: string;
   modelId: string;
   resultAssets: string[];
+  resultExpiresAt: Date | null;
+  resultUnavailableReason: 'deleted' | 'expired' | null;
   errorCode: string | null;
   errorMessage: string | null;
   creditsReserved: number;
@@ -228,20 +291,31 @@ export async function getJobForUser(
   const giRows = await database
     .select({
       id: galleryItems.id,
+      jobId: galleryItems.jobId,
       isPublic: galleryItems.isPublic,
       publicSlug: galleryItems.publicSlug,
       assetUrl: galleryItems.assetUrl,
+      expiresAt: galleryItems.expiresAt,
+      deletedAt: galleryItems.deletedAt,
     })
     .from(galleryItems)
-    .where(and(eq(galleryItems.jobId, jobId), availableOwnedAssetCondition(userId, new Date())));
+    .where(and(eq(galleryItems.jobId, jobId), eq(galleryItems.userId, userId)));
+  const now = new Date();
+  const assetSummary = summarizeAssetRows(giRows, now).get(jobId);
+  const liveGalleryRows = giRows.filter(
+    (item) => !item.deletedAt && (!item.expiresAt || item.expiresAt > now),
+  );
   const liveUrls = new Map<string, Set<string>>();
-  const liveJobUrls = giRows.flatMap((item) => (item.assetUrl ? [item.assetUrl] : []));
+  const liveJobUrls = assetSummary ? [...assetSummary.liveUrls] : [];
   if (liveJobUrls.length > 0) liveUrls.set(jobId, new Set(liveJobUrls));
+  const resultExpiresAt = summaryExpiry(assetSummary);
   return {
     id: row.id,
     status: row.status,
     modelId: row.modelId,
     resultAssets: visibleResultAssets(row.id, row.resultAssets, liveUrls),
+    resultExpiresAt,
+    resultUnavailableReason: summaryUnavailableReason(assetSummary),
     errorCode: row.errorCode,
     errorMessage: row.errorMessage,
     creditsReserved: row.creditsReserved,
@@ -261,11 +335,11 @@ export async function getJobForUser(
             capabilities: row.modelCapabilities,
           }
         : null,
-    galleryItem: giRows[0]
+    galleryItem: liveGalleryRows[0]
       ? {
-          id: giRows[0].id,
-          isPublic: giRows[0].isPublic,
-          publicSlug: giRows[0].publicSlug,
+          id: liveGalleryRows[0].id,
+          isPublic: liveGalleryRows[0].isPublic,
+          publicSlug: liveGalleryRows[0].publicSlug,
         }
       : null,
   };

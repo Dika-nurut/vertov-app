@@ -162,6 +162,15 @@ describe('deriveShotList', () => {
     expect(rows[1]!.title).toBe('Кадр 2');
   });
 
+  it('prefers the persisted planner title over prompt text', () => {
+    const [row] = deriveShotList(
+      [gen('planned', 0, 0, { title: 'Письмо на столе', prompt: 'Крупный план письма.' })],
+      [],
+    );
+
+    expect(row!.title).toBe('Письмо на столе');
+  });
+
   it('carries mode/model/status/take through', () => {
     const [row] = deriveShotList(
       [

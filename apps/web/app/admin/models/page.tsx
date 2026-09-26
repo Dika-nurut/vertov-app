@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { fetchModels, apiBaseUrl } from '../_lib';
 import { Panel, Eyebrow } from '../_components/ui';
 import { ModelsTable } from './ModelsTable';
+import { ErrorState } from '../../_components/states/ErrorState';
 
-export const metadata: Metadata = { title: 'Вертов · Админ · Модели' };
+export const metadata: Metadata = { title: 'АДМИН · Модели' };
 export const dynamic = 'force-dynamic';
 
 export default async function ModelsPage() {
@@ -11,15 +12,13 @@ export default async function ModelsPage() {
   return (
     <>
       <header className="mb-6">
-        <h1 className="font-display text-3xl font-black tracking-tight">Модели</h1>
+        <h1 className="font-display text-3xl font-black tracking-tight">АДМИН · Модели</h1>
         <p className="mt-1 text-xs text-faint">
           Переключатели активности и цены · каждое изменение — в аудит-лог
         </p>
       </header>
       {!data ? (
-        <div className="flex h-48 items-center justify-center border-[2.5px] border-dashed border-[color:var(--color-line-soft)] text-sm text-faint">
-          Не удалось загрузить каталог.
-        </div>
+        <ErrorState message="Не удалось загрузить каталог. Попробуйте обновить страницу." />
       ) : (
         <>
           <Eyebrow>

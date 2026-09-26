@@ -8,13 +8,16 @@ import {
   rub,
   pct,
   apiBaseUrl,
+  tierLabel,
+  kindLabel,
 } from './_lib';
 import { WindowPills, Eyebrow, Panel, Tile, Bar } from './_components/ui';
 import { TokenStar } from '@/components/ui/token-star';
 import { modelDisplayName } from '@/lib/models';
 import { TextTiers } from './TextTiers';
+import { ErrorState } from '../_components/states/ErrorState';
 
-export const metadata: Metadata = { title: 'Vertov' };
+export const metadata: Metadata = { title: 'АДМИН · Кокпит' };
 export const dynamic = 'force-dynamic';
 
 export default async function CockpitPage({
@@ -42,7 +45,7 @@ export default async function CockpitPage({
     <>
       <header className="mb-6 flex items-end justify-between">
         <div>
-          <h1 className="font-display text-3xl font-black tracking-tight">Кокпит</h1>
+          <h1 className="font-display text-3xl font-black tracking-tight">АДМИН · Кокпит</h1>
           <p className="mt-1 text-xs text-faint">Бизнес-метрики · маржа · окно {days} дней</p>
         </div>
         <WindowPills days={days} basePath="/admin" />
@@ -167,7 +170,7 @@ export default async function CockpitPage({
           )}
           {c.subscriptions.byTier.map((t, i) => (
             <div key={t.tier} className="mb-3.5 grid grid-cols-[84px_1fr_auto] items-center gap-3">
-              <span className="text-[13px] font-semibold capitalize">{t.tier}</span>
+              <span className="text-[13px] font-semibold">{tierLabel(t.tier)}</span>
               <Bar pctWidth={(t.count / maxTierCount) * 100} lime={i % 2 === 1} />
               <span className="whitespace-nowrap font-mono text-[11px] text-faint">
                 {n(t.count)} · {rub(t.mrrRub)}
@@ -321,7 +324,7 @@ export default async function CockpitPage({
                   <td className="text-left">
                     <span className="text-[12px]">{modelDisplayName(m.model)}</span>
                     <span className="ml-2 border-2 border-[color:var(--color-line-soft)] px-1.5 py-0.5 font-mono text-[9px] uppercase text-faint">
-                      {m.kind}
+                      {kindLabel(m.kind)}
                     </span>
                     {m.approximate && (
                       <span className="ml-2 font-mono text-[9px] uppercase text-faint">
@@ -418,9 +421,5 @@ function MarginPill({
 }
 
 function Unavailable() {
-  return (
-    <div className="flex h-64 items-center justify-center border-[2.5px] border-dashed border-[color:var(--color-line-soft)] text-sm text-faint">
-      Не удалось загрузить метрики (API недоступен).
-    </div>
-  );
+  return <ErrorState message="Не удалось загрузить метрики. Попробуйте обновить страницу." />;
 }

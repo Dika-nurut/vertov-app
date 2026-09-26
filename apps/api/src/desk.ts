@@ -448,6 +448,38 @@ export function setupDeskRoutes(app: FastifyInstance, requireSession: SessionRes
       if (!session) return;
 
       const now = new Date();
+      const [project] = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(
+          and(
+            eq(projects.id, req.params.id),
+            eq(projects.userId, session.user.id),
+            isNull(projects.deletedAt),
+          ),
+        )
+        .limit(1);
+      if (!project) return reply.status(404).send({ error: 'not_found' });
+
+      const [assetState] = await db
+        .select({
+          id: galleryItems.id,
+          expiresAt: galleryItems.expiresAt,
+          deletedAt: galleryItems.deletedAt,
+        })
+        .from(galleryItems)
+        .where(
+          and(eq(galleryItems.id, req.params.assetId), eq(galleryItems.userId, session.user.id)),
+        )
+        .limit(1);
+      if (!assetState) return reply.status(404).send({ error: 'not_found' });
+      if (assetState.deletedAt || (assetState.expiresAt && assetState.expiresAt <= now)) {
+        return reply.status(410).send({
+          error: 'asset_unavailable',
+          reason: assetState.deletedAt ? 'deleted' : 'expired',
+        });
+      }
+
       const [row] = await db
         .select({
           asset: {
@@ -459,6 +491,8 @@ export function setupDeskRoutes(app: FastifyInstance, requireSession: SessionRes
             originalName: galleryItems.originalName,
             sourceKind: galleryItems.sourceKind,
             mimeType: galleryItems.mimeType,
+            expiresAt: galleryItems.expiresAt,
+            createdAt: galleryItems.createdAt,
           },
         })
         .from(projectAssets)
@@ -476,7 +510,7 @@ export function setupDeskRoutes(app: FastifyInstance, requireSession: SessionRes
         )
         .limit(1);
 
-      if (!row) return reply.status(404).send({ error: 'not_found' });
+      if (!row) return reply.status(403).send({ error: 'asset_not_in_project' });
       return {
         asset: {
           id: row.asset.id,
@@ -487,6 +521,8 @@ export function setupDeskRoutes(app: FastifyInstance, requireSession: SessionRes
           originalName: row.asset.originalName,
           sourceLine: sourceLine(row.asset.sourceKind),
           mimeType: row.asset.mimeType,
+          expiresAt: row.asset.expiresAt,
+          createdAt: row.asset.createdAt,
         },
       };
     },

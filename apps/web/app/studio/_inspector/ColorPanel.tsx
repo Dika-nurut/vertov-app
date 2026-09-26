@@ -143,7 +143,7 @@ export function ColorPanel({
                     'h-7 w-7 rounded-[var(--radius-sm)] transition-shadow ' +
                     (hslChannel === sw.ch
                       ? 'ring-2 ring-[color:var(--color-accent)]'
-                      : 'ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40')
+                      : 'ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40')
                   }
                   style={{ background: sw.color }}
                 />

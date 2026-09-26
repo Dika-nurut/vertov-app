@@ -31,14 +31,18 @@ export function LandingNav() {
         <div className="flex shrink-0 items-center gap-3">
           {/* final asterism mark (SPEC 11-04) — replaces the retired orchid logo.png (D14).
               Carries the accessible name since the wordmark is hidden on mobile. */}
+          {/* The header floats over the violet FeatureTabs chapter too, where the
+              periwinkle plate would vanish: a bone outline + hard ink shadow keeps
+              the mark legible on sky and on violet alike. */}
           <Mark
             variant="plate"
             size={38}
-            className="md:h-[42px] md:w-[42px]"
+            className="border-2 border-[color:var(--color-line)] shadow-[2px_2px_0_0_var(--color-bg)] md:h-[42px] md:w-[42px]"
             role="img"
             aria-label="Вертов"
           />
-          {/* outline wordmark (quiet-sky mockup pick, 2026-07-05) — decorative, mark names it */}
+          {/* outline wordmark (quiet-sky mockup pick, 2026-07-05) — decorative, mark names it.
+              Transparent, no chip (owner 2026-09-26): only the bone stroke is drawn. */}
           <span
             aria-hidden
             className="font-display hidden text-[20px] font-black tracking-[0.05em] text-transparent [-webkit-text-stroke:1.4px_var(--color-line)] sm:inline md:text-[23px] md:[-webkit-text-stroke:1.6px_var(--color-line)]"

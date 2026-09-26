@@ -99,6 +99,111 @@ test('board: shot list lists graph shots with connected cast', async ({
   expect(download.suggestedFilename()).toMatch(/\.html$/);
 });
 
+test('board: planner unresolved assets resolve from the fixed prompt inspector', async ({
+  signedInPage,
+  cookieHeader,
+  apiUrl,
+  context,
+}) => {
+  test.setTimeout(120_000);
+  const page = signedInPage;
+  const create = await context.request.post(`${apiUrl}/v1/boards`, {
+    headers: { cookie: cookieHeader, 'content-type': 'application/json' },
+    data: { title: 'E2E unresolved planner asset' },
+  });
+  expect(create.ok()).toBeTruthy();
+  const { id } = (await create.json()) as { id: string };
+
+  const state = {
+    schemaVersion: 1,
+    nodes: [
+      {
+        id: 'prompt-1',
+        type: 'prompt',
+        position: { x: 0, y: 100 },
+        data: { text: 'Рация в зелёном свете.', title: 'Рация Р-105', view: 'draft' },
+      },
+      {
+        id: 'shot-1',
+        type: 'generate',
+        position: { x: 380, y: 100 },
+        data: {
+          mode: 'video',
+          prompt: '',
+          status: 'idle',
+          count: 1,
+          unresolvedAssets: ['Рация Р-105'],
+        },
+      },
+      {
+        id: 'scenario-cast-placeholder',
+        type: 'cast',
+        position: { x: -360, y: 100 },
+        data: { castKind: 'character', name: 'Рация Р-105', imageUrls: [] },
+      },
+    ],
+    edges: [
+      {
+        id: 'prompt-edge',
+        source: 'prompt-1',
+        sourceHandle: 'text',
+        target: 'shot-1',
+        targetHandle: 'prompt',
+      },
+      {
+        id: 'asset-edge',
+        source: 'scenario-cast-placeholder',
+        sourceHandle: 'out',
+        target: 'shot-1',
+        targetHandle: 'images[0]',
+      },
+    ],
+    tray: [],
+  };
+  const put = await context.request.put(`${apiUrl}/v1/boards/${id}`, {
+    headers: { cookie: cookieHeader, 'content-type': 'application/json' },
+    data: { state, rev: 0 },
+  });
+  expect(put.ok()).toBeTruthy();
+
+  await page.goto(`/boards/${id}`);
+  await page.getByTestId('node-prompt-header').click();
+  await expect(page.getByTestId('board-prompt-inspector')).toBeVisible();
+  await expect(page.getByTestId('prompt-inspector-unresolved')).toContainText('Рация Р-105');
+  await expect(page.getByTestId('prompt-inspector-use-project-asset')).toBeVisible();
+  await expect(page.getByTestId('prompt-inspector-create-media')).toBeVisible();
+  await expect(page.getByTestId('prompt-inspector-create-visual')).toBeVisible();
+
+  await page.getByTestId('prompt-inspector-create-media').click();
+  await expect(page.locator('.react-flow__node-media')).toHaveCount(1);
+  await expect(page.getByTestId('prompt-inspector-unresolved')).toHaveCount(0);
+
+  await expect
+    .poll(async () => {
+      const response = await context.request.get(`${apiUrl}/v1/boards/${id}`, {
+        headers: { cookie: cookieHeader },
+      });
+      const body = (await response.json()) as {
+        state: {
+          nodes: Array<{ id: string; type: string; data: Record<string, unknown> }>;
+          edges: Array<{ source: string; target: string; targetHandle?: string }>;
+        };
+      };
+      const media = body.state.nodes.find((node) => node.type === 'media');
+      return [
+        body.state.nodes.some((node) => node.id === 'scenario-cast-placeholder'),
+        body.state.nodes.find((node) => node.id === 'shot-1')?.data.unresolvedAssets,
+        body.state.edges.some(
+          (edge) =>
+            edge.source === media?.id &&
+            edge.target === 'shot-1' &&
+            edge.targetHandle === 'images[0]',
+        ),
+      ];
+    })
+    .toEqual([false, undefined, true]);
+});
+
 test('board: best-take selection sets the shot result', async ({
   signedInPage,
   cookieHeader,

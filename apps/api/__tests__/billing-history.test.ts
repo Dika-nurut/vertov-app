@@ -68,13 +68,20 @@ afterEach(async () => {
 describe('GET /v1/billing/history', () => {
   it('returns paid + pending rows for the caller, ordered desc', async () => {
     currentUser = await makeUser();
-    await makePackOrder(currentUser, 'pack-200', 199, 'paid');
+    const paidOrderId = await makePackOrder(currentUser, 'pack-200', 199, 'paid');
     await new Promise((r) => setTimeout(r, 30));
-    await makePackOrder(currentUser, 'pack-1000', 899, 'pending');
+    const pendingOrderId = await makePackOrder(currentUser, 'pack-1000', 899, 'pending');
     const res = await app.inject({ method: 'GET', url: '/v1/billing/history' });
     expect(res.statusCode).toBe(200);
-    const rows = res.json() as Array<{ amountRub: number; status: string; title: string }>;
+    const rows = res.json() as Array<{
+      id: string;
+      amountRub: number;
+      status: string;
+      title: string;
+    }>;
     expect(rows).toHaveLength(2);
+    expect(rows[0]!.id).toBe(pendingOrderId);
+    expect(rows[1]!.id).toBe(paidOrderId);
     expect(rows[0]!.amountRub).toBe(899);
     expect(rows[1]!.amountRub).toBe(199);
     expect(rows[0]!.title).toBe('Стандарт');

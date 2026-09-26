@@ -675,6 +675,11 @@ app.get('/v1/me', async (req, reply) => {
   }
 
   const phoneBindingEnabled = await readBoolFlag(PHONE_BINDING_ENABLED, false);
+  let phoneWelcome: {
+    granted: boolean;
+    amount: number;
+    reason?: string;
+  } | null = null;
 
   // Welcome-program progression (free-token Phase 1). Anonymous sessions are
   // hard-walled out (unlimited-signup farm vector). Failures here must NEVER
@@ -704,7 +709,16 @@ app.get('/v1/me', async (req, reply) => {
         captchaToken,
         phoneHash:
           phoneBindingEnabled && phoneVerified && phoneNumber ? phoneHashFor(phoneNumber) : null,
-        record: recordWelcome,
+        record: (result) => {
+          recordWelcome(result);
+          if (result.level === 'L2') {
+            phoneWelcome = {
+              granted: result.granted,
+              amount: result.amount,
+              ...(result.reason ? { reason: result.reason } : {}),
+            };
+          }
+        },
         onError: (level, err) =>
           req.log.error({ err, userId, level }, 'welcome: grant failed (non-fatal)'),
       });
@@ -728,6 +742,7 @@ app.get('/v1/me', async (req, reply) => {
       isAnonymous,
     },
     session: { expiresAt: session.session.expiresAt },
+    welcome: { phone: phoneWelcome },
     // Feature flags the web app reads (e.g. /settings gates the phone-binding
     // block on this). Defaults false — SMSC operators are unpaid, so the flow
     // ships dark.

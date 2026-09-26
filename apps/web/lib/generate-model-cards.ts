@@ -39,8 +39,10 @@ export interface ModelCard<T extends ModelCardSource = ModelCardSource> {
 
 /** Vendor label per model family — the card subtitle. A model row has no vendor
  *  column, so it's derived from `family` (one obvious place to extend). Matched
- *  case-insensitively: the catalog stores some families lower-case («seedance»). */
-const FAMILY_VENDOR: Record<string, string> = {
+ *  case-insensitively: the catalog stores some families lower-case («seedance»).
+ *  Exported: ModelEffectPicker's family chips reuse this same map so the two
+ *  surfaces can never name a vendor differently (WS6). */
+export const FAMILY_VENDOR: Record<string, string> = {
   seedance: 'ByteDance',
   seededit: 'ByteDance',
   seedream: 'ByteDance',

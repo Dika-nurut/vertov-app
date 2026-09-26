@@ -371,7 +371,7 @@ export function AudioLibraryPanel({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={kind === 'music' ? 'Найти музыку…' : 'Найти звук…'}
-            className="h-[34px] w-full rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] pl-[30px] pr-2 text-[13px] text-[color:var(--color-fg)] outline-none ring-1 ring-inset ring-[color:var(--color-line)]/15 placeholder:text-[color:var(--color-faint)] focus:border-[color:var(--color-accent)]"
+            className="h-[34px] w-full rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] pl-[30px] pr-2 text-[13px] text-[color:var(--color-fg)] outline-none ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 placeholder:text-[color:var(--color-faint)] focus:border-[color:var(--color-accent)]"
           />
         </div>
 

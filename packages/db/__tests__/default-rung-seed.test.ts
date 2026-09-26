@@ -22,6 +22,7 @@ const expectedDefaults = {
   'happyhorse-1-1': '720p',
   'seedance-2-0': '480p',
   'seedance-2-0-fast': '480p',
+  'seedance-2-0-mini': '480p',
 } as const;
 
 const modelById = new Map(seedModels.map((model) => [model.id, model]));
@@ -107,7 +108,14 @@ describe('rev. 15 default rung binding', () => {
       ]),
     );
 
-    expect(actual).toEqual(expectedDefaults);
-    expect(updates).toHaveLength(Object.keys(expectedDefaults).length);
+    // Models added after rev. 15 carry their default inside their own insert migration.
+    const { 'seedance-2-0-mini': miniDefault, ...rev15Defaults } = expectedDefaults;
+    expect(actual).toEqual(rev15Defaults);
+    expect(updates).toHaveLength(Object.keys(rev15Defaults).length);
+    const mini = readFileSync(
+      new URL('../migrations/0113_seedance_2_0_mini_pixazo.sql', import.meta.url),
+      'utf8',
+    );
+    expect(mini).toContain(`"default_resolution":"${miniDefault}"`);
   });
 });

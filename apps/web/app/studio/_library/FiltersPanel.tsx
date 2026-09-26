@@ -27,7 +27,7 @@ export function FiltersPanel({
             aria-pressed={clip?.filter === f}
             onClick={() => clip && patchClip(clip.uid, { filter: f })}
             className={
-              'press-inset overflow-hidden rounded-[var(--radius-sm)] ring-1 ring-inset transition-shadow disabled:cursor-default ' +
+              'press-inset overflow-hidden rounded-[var(--radius-sm)] ring-[1.5px] ring-inset transition-shadow disabled:cursor-default ' +
               (clip?.filter === f
                 ? 'ring-2 ring-[color:var(--color-accent)]'
                 : 'ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40')

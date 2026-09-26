@@ -28,6 +28,8 @@ async function getPresetPacks(): Promise<PresetRow[]> {
  *  prompt bar. Intersected with the ACTIVE rows from the public /v1/models,
  *  so the landing never advertises an engine we can't run. */
 const KINOBAR_MODEL_IDS = [
+  // First and the default: the only video engine a new account's free tokens run.
+  'seedance-2-0-mini',
   'seedance-2-0',
   'seedance-2-0-fast',
   'seedance-1-0-pro-fast',

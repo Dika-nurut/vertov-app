@@ -22,13 +22,14 @@ import { projects } from './projects';
 
 /**
  * МИР ПРОЕКТА — canon injected into every AI call for this script. The current
- * model is a flat `notes` list (Claude-Projects style); `characters`/`tone`/
- * `rules` are legacy typed fields folded into notes on read (see
+ * model is a flat `notes` list (Claude-Projects style); `characters`/`locations`/
+ * `tone`/`rules` are legacy typed fields folded into notes on read (see
  * `bibleNotes` in @seed/shared) and dropped on the first save.
  */
 export interface ScriptBible {
   notes?: Array<string | { id: string; content: string; includeInAi: boolean }> | undefined;
   characters?: Array<{ name: string; description: string }> | undefined;
+  locations?: Array<{ name: string; description: string }> | undefined;
   tone?: string[] | undefined;
   rules?: string[] | undefined;
 }

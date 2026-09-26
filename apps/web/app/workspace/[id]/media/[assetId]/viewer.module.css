@@ -1,11 +1,11 @@
 .viewer {
   display: grid;
-  min-width: 1024px;
+  min-width: 0;
   min-height: 100vh;
-  grid-template-rows: 46px minmax(0, 1fr) 42px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   background: var(--color-bg);
   color: var(--color-fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 
 .viewer > header,
@@ -64,6 +64,29 @@
   background-color: var(--color-surface2);
 }
 
+.lifecycle {
+  padding: 8px 18px 0;
+}
+
+.stateMessage {
+  display: grid;
+  gap: 14px;
+  place-items: center;
+}
+
+.stateMessage button,
+.stateMessage a {
+  padding: 8px 12px;
+  border: 2px solid var(--color-line);
+  background: var(--color-accent);
+  color: var(--color-accent2-foreground);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .stage img,
 .stage video {
   max-width: 100%;
@@ -94,4 +117,44 @@
 
 .audioStage audio {
   width: 100%;
+}
+
+@media (max-width: 900px) {
+  .viewer > header,
+  .viewer > footer {
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .viewer > header {
+    min-height: 56px;
+    flex-wrap: wrap;
+  }
+
+  .viewer > header b {
+    flex: 1 1 140px;
+  }
+
+  .viewer > header span {
+    margin-left: 0;
+  }
+
+  .lifecycle {
+    padding: 8px 12px 0;
+  }
+
+  .stage {
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .audioStage {
+    width: 100%;
+    min-height: 200px;
+    padding: 24px;
+  }
+
+  .audioStage strong {
+    font-size: 48px;
+  }
 }

@@ -21,7 +21,7 @@ export function CreditGrantForm({ userId, apiUrl }: { userId: string; apiUrl: st
     e.preventDefault();
     const amt = Number(amount);
     if (!Number.isInteger(amt) || amt <= 0 || reason.trim().length < 3) {
-      setMsg({ ok: false, text: 'Введи целое количество > 0 и причину (≥3 симв.).' });
+      setMsg({ ok: false, text: 'Введите целое количество > 0 и причину (≥3 симв.).' });
       return;
     }
     setBusy(true);

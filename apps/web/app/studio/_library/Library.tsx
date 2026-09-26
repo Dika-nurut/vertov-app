@@ -107,7 +107,7 @@ export function Library({
       <nav
         aria-label="Библиотека"
         data-testid="studio-rail"
-        className="flex min-h-0 flex-col items-center gap-1 overflow-y-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] py-3 shadow-[var(--offset-sm)] ring-1 ring-inset ring-[color:var(--color-line)]/10"
+        className="flex min-h-0 flex-col items-center gap-1 overflow-y-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] py-3 shadow-[var(--offset-sm)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/10"
         style={{ gridArea: 'rail' }}
       >
         {RAIL_ITEMS.map((it) => {
@@ -141,7 +141,7 @@ export function Library({
 
       {/* ---------------- Library: source bin + audio lines ---------------- */}
       <aside
-        className="min-h-0 space-y-6 overflow-y-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] p-3 shadow-[var(--offset-sm)] ring-1 ring-inset ring-[color:var(--color-line)]/10"
+        className="min-h-0 space-y-6 overflow-y-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] p-3 shadow-[var(--offset-sm)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/10"
         style={{ gridArea: 'library' }}
       >
         {libSection === 'media' && (

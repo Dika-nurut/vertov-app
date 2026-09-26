@@ -37,7 +37,7 @@ const COUNTS = [1, 2, 4] as const;
 const ddButton =
   'flex h-full items-center gap-2 border-r-[2.5px] border-[color:var(--color-line)] px-3.5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--color-fg)] hover:bg-[color:var(--color-surface2)] md:px-4';
 const ddMenu =
-  'absolute -left-[2.5px] top-[calc(100%+12px)] z-20 min-w-full border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-bg)] shadow-[7px_7px_0_0_var(--color-primary-foreground)]';
+  'absolute -left-[2.5px] top-[calc(100%+12px)] z-20 min-w-full border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-bg)] shadow-[3px_3px_0_0_var(--color-shadow)]';
 // The selected row keeps its OWN hover (stays periwinkle) — two hover:bg-*
 // utilities on one element resolve by stylesheet order, not className order,
 // which is exactly the black-on-black hover bug this split fixes.
@@ -68,10 +68,10 @@ export function HeroPromptBar({ models }: { models: LandingModel[] }) {
   // Which dropdown is open — one at a time; any outside click closes it.
   const [open, setOpen] = useState<'model' | 'sec' | 'n' | null>(null);
   const [modelId, setModelId] = useState<string>(
-    () => (models.find((m) => m.id === 'seedance-2-0-fast') ?? models[0])?.id ?? '',
+    () => (models.find((m) => m.id === 'seedance-2-0-mini') ?? models[0])?.id ?? '',
   );
   const [sec, setSec] = useState<number>(() => {
-    const first = models.find((m) => m.id === 'seedance-2-0-fast') ?? models[0];
+    const first = models.find((m) => m.id === 'seedance-2-0-mini') ?? models[0];
     return snapSec(5, first?.durations ?? FALLBACK_SECS);
   });
   const [n, setN] = useState<(typeof COUNTS)[number]>(1);
@@ -132,10 +132,9 @@ export function HeroPromptBar({ models }: { models: LandingModel[] }) {
       data-testid="hero-prompt-form"
       className="relative mt-9 w-full max-w-[720px]"
     >
-      {/* ink offset-shadow: the bar sits on the hero sky's violet glow zone,
-          where a lime (or periwinkle) shadow fights the backdrop — dark ink
-          reads on both the night-sky top and the periwinkle bottom. */}
-      <div className="border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-bg)] text-left shadow-[9px_9px_0_0_var(--color-primary-foreground)]">
+      {/* ladder shadow: the bar is the hero CTA, so --offset-lg (7px) in the
+          signature shadow color — no off-ladder sizes, no ink shadow. */}
+      <div className="border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-bg)] text-left shadow-[7px_7px_0_0_var(--color-shadow)]">
         <div className="relative">
           <textarea
             rows={2}
@@ -156,15 +155,14 @@ export function HeroPromptBar({ models }: { models: LandingModel[] }) {
           />
           {value === '' && (
             // Bounded on BOTH sides so the nowrap ghost text can never grow its
-            // own box past the field (mobile scrollWidth guard). Lime block
-            // caret sits BEFORE the hint — it's an invitation, not input.
+            // own box past the field (mobile scrollWidth guard). Solid
+            // periwinkle block caret BEFORE the hint — an invitation, not
+            // input (no text glyph; the one lime spark lives on the Витрина).
             <span
               aria-hidden
               className="pointer-events-none absolute left-4 right-2 top-4 flex items-center overflow-hidden whitespace-nowrap font-mono text-[13px] font-medium text-[color:var(--color-muted-foreground)] md:left-5 md:top-5"
             >
-              <span className="seed-caret mr-[3px] shrink-0 text-[color:var(--color-accent2)]">
-                ▮
-              </span>
+              <span className="seed-caret mr-[6px] inline-block h-[15px] w-[8px] shrink-0 bg-[color:var(--color-accent)]" />
               <span className="truncate">{HINT.slice(0, hintLen)}</span>
             </span>
           )}

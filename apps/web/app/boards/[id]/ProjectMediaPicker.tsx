@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Image as ImageIcon, Loader2, X } from '@/components/ui/icons';
 import { assetSrc } from '@/lib/asset-src';
 
-interface ProjectMedia {
+export interface ProjectMedia {
   id: string;
   assetUrl: string;
   thumbnailUrl: string | null;

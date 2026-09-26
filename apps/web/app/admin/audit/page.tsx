@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { fetchAudit, dt } from '../_lib';
 import { Panel } from '../_components/ui';
+import { ErrorState } from '../../_components/states/ErrorState';
 
-export const metadata: Metadata = { title: 'Вертов · Админ · Аудит' };
+export const metadata: Metadata = { title: 'АДМИН · Аудит' };
 export const dynamic = 'force-dynamic';
 
 // Action → короткий русский ярлык (остальные показываем как есть).
@@ -18,15 +19,13 @@ export default async function AuditPage() {
   return (
     <>
       <header className="mb-6">
-        <h1 className="font-display text-3xl font-black tracking-tight">Аудит</h1>
+        <h1 className="font-display text-3xl font-black tracking-tight">АДМИН · Аудит</h1>
         <p className="mt-1 text-xs text-faint">Журнал действий · только чтение · последние 150</p>
       </header>
       {/* Distinguish an API outage from a genuinely empty log — an operator must not
           read "не удалось загрузить" as "ничего не произошло". */}
       {!data ? (
-        <div className="flex h-48 items-center justify-center border-[2.5px] border-dashed border-[color:var(--color-line-soft)] text-sm text-faint">
-          Не удалось загрузить журнал (API недоступен).
-        </div>
+        <ErrorState message="Не удалось загрузить журнал. Попробуйте обновить страницу." />
       ) : (
         <Panel className="px-5 py-1.5">
           <table className="w-full border-collapse text-[13px]">

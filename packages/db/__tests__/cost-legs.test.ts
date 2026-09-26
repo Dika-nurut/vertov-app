@@ -111,17 +111,17 @@ function refreshLegsDigest(lines: readonly string[]): string {
 
 describe('cost-legs.csv — the contract parses and self-checks', () => {
   it('parses every leg and both blocks', () => {
-    // Rev. 22 is a 140-row export: the two Wan reserve rows plus eight explicitly
-    // costed Gemini/GPT fallback rows (every mode and quality). The source metadata and
-    // digest make any unintended count change visible.
-    expect(file.legs).toHaveLength(140);
+    // Rev. 23 is a 144-row export: rev. 22's 140 plus Seedance 2.0 Mini on Pixazo
+    // (480p/720p × t2v/i2v, one leg each). The source metadata and digest make any
+    // unintended count change visible.
+    expect(file.legs).toHaveLength(144);
     expect(file.excluded.length).toBeGreaterThan(0);
   });
 
   it('the declared row count, credit sum and margin sum all hold', () => {
     // These three exist so a silently deleted row cannot look like a row that never
     // existed — which would take a configuration off sale with no error anywhere.
-    expect(file.declared.rows).toBe(140);
+    expect(file.declared.rows).toBe(144);
     expect(file.legs.reduce((a, l) => a + l.credits, 0)).toBe(file.declared.credits);
     // The margin sum was in this test's NAME and not in its body — the parser checks it
     // at module load, so corruption still failed somewhere, but this test did not prove
@@ -295,7 +295,7 @@ describe('parser strictness — each negative fixture must fail', () => {
 
   it('rejects a deleted row (count no longer matches)', () => {
     expect(() => parseCostLegs(rebuild((l) => [...l.slice(0, 3), ...l.slice(4)]))).toThrow(
-      /declared 140 rows, parsed 139/,
+      /declared 144 rows, parsed 143/,
     );
   });
 

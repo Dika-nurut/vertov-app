@@ -76,7 +76,7 @@ export function EmptyStage({
             type="button"
             data-testid="upload-cancel"
             onClick={cancelUpload}
-            className="press-inset rounded-[var(--radius-sm)] px-4 py-1.5 text-[13px] font-semibold text-[color:var(--color-muted-foreground)] ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:text-[color:var(--color-fg)]"
+            className="press-inset rounded-[var(--radius-sm)] px-4 py-1.5 text-[13px] font-semibold text-[color:var(--color-muted-foreground)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:text-[color:var(--color-fg)]"
           >
             Отменить
           </button>
@@ -143,7 +143,7 @@ export function EmptyStage({
                       key={c.id}
                       type="button"
                       data-testid="upload-project-clip"
-                      onClick={() => void addClip(c.assetUrl, c.id)}
+                      onClick={() => void addClip(c.assetUrl, c.assetId)}
                       title="Добавить на таймлайн"
                       className="group relative aspect-video h-14 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border-[1.5px] border-[color:var(--color-line)] bg-black transition-colors hover:border-[color:var(--color-accent)]"
                     >
@@ -210,7 +210,7 @@ export function EmptyStage({
             data-testid={`upload-ratio-${f.id}`}
             onClick={() => setFormat(f)}
             className={
-              'rounded-[var(--radius-sm)] px-3 py-1 text-[11px] font-semibold ring-1 ring-inset transition-colors ' +
+              'rounded-[var(--radius-sm)] px-3 py-1 text-[11px] font-semibold ring-[1.5px] ring-inset transition-colors ' +
               (f.id === format.id
                 ? 'bg-[color:var(--color-surface2)] text-[color:var(--color-fg)] ring-[color:var(--color-accent)]'
                 : 'text-[color:var(--color-muted-foreground)] ring-[color:var(--color-line)]/15 hover:text-[color:var(--color-fg)]')

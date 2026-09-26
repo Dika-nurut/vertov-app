@@ -68,3 +68,34 @@ export function StudioHandoffReceipt({
     </aside>
   );
 }
+
+export function StudioAutoCreateNotice({ projectTitle }: { projectTitle: string }) {
+  const [open, setOpen] = useState(true);
+  if (!open) return null;
+  return (
+    <aside
+      data-testid="studio-auto-create-notice"
+      className="fixed right-4 top-4 z-[90] w-[min(380px,calc(100vw-2rem))] rounded-[var(--radius-md)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-4 shadow-[4px_4px_0_0_var(--color-shadow)]"
+    >
+      <div className="flex items-start gap-3">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[var(--radius-xs)] bg-[color:var(--color-accent)] text-[color:var(--color-accent-foreground)]">
+          <Check size={15} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-bold">Монтаж создан</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-[color:var(--color-muted-foreground)]">
+            Новый монтаж «{projectTitle}» готов. Добавь видео из библиотеки или загрузи файл.
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-label="Скрыть уведомление"
+          onClick={() => setOpen(false)}
+          className="text-[color:var(--color-faint)] hover:text-[color:var(--color-fg)]"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </aside>
+  );
+}

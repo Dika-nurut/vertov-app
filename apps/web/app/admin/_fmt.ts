@@ -30,3 +30,49 @@ export function dt(iso: string | null): string {
     minute: '2-digit',
   });
 }
+
+const TIER_LABELS: Record<string, string> = {
+  free: 'Free',
+  start: 'Старт',
+  creator: 'Креатор',
+  studio: 'Студия',
+  plus: 'Плюс',
+  pro: 'Про',
+  max: 'Макс',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  active: 'Активен',
+  banned: 'Заблокирован',
+  deleted: 'Удалён',
+  trialing: 'Пробный период',
+  past_due: 'Просрочен',
+  canceled: 'Отменён',
+  succeeded: 'Успешно',
+  failed: 'Ошибка',
+  refunded: 'Возврат',
+  queued: 'В очереди',
+  running: 'В работе',
+  pending: 'Ожидает',
+  processing: 'В обработке',
+};
+
+const KIND_LABELS: Record<string, string> = {
+  image: 'Изображение',
+  'image-edit': 'Редактирование изображения',
+  video: 'Видео',
+  audio: 'Аудио',
+  text: 'Текст',
+};
+
+export function tierLabel(value: string): string {
+  return TIER_LABELS[value] ?? value;
+}
+
+export function statusLabel(value: string): string {
+  return STATUS_LABELS[value] ?? value;
+}
+
+export function kindLabel(value: string): string {
+  return KIND_LABELS[value] ?? value;
+}

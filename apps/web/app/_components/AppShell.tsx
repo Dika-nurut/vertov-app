@@ -13,7 +13,8 @@ import { ProjectChrome } from './ProjectChrome';
 import { SupportLink } from './SupportLink';
 import { PaymentResultToast } from './PaymentResultToast';
 import type { ParsedProjectContext } from '@/lib/project-context';
-import { normalizeLocale } from '@/lib/locale';
+import { cookies } from 'next/headers';
+import { normalizeLocale, withLocale } from '@/lib/locale';
 
 // Fused action-segment cell — verbatim NavLinks.tsx idiom (borders collapse
 // via -ml, first:ml-0 zeroes it for whichever cell is actually first-child).
@@ -64,10 +65,11 @@ export async function AppShell({
   projectContext?: ParsedProjectContext;
   children: ReactNode;
 }) {
-  const activeLang = normalizeLocale(lang);
+  const cookieStore = await cookies();
+  const activeLang = normalizeLocale(lang ?? cookieStore.get('lang')?.value);
 
   function legalLink(path: string) {
-    return `${path}?lang=${activeLang}`;
+    return withLocale(path, activeLang);
   }
 
   // Header redesign (2026-07-07, owner-approved mock mockups/header-v3.html):
@@ -125,21 +127,22 @@ export async function AppShell({
           apiUrl={apiUrl}
           plan={plan.data?.planAccess ?? null}
           isAnonymous={isAnonymous}
+          locale={activeLang}
         />
       ) : (
         <>
-          {/* Header shell (2026-07-07 redesign): NO background, NO border — the
-          bar is four floating groups directly on the page's own flat
-          --color-bg canvas (matches the landing hero's sky test: zero header
-          chrome reads as intentional there, and is invisible-but-correct here
-          since the canvas is already dark). Still `sticky` so it stays put. */}
-          <header className="sticky top-0 z-30 bg-transparent">
+          {/* Keep the sticky shell opaque so content never bleeds through the
+              action bar while a long page is being scrolled. */}
+          <header className="sticky top-0 z-30 border-b-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-bg)]">
             <nav className="mx-auto flex w-full max-w-[1600px] items-center gap-2 px-3 py-3 sm:px-4 md:gap-3 lg:gap-6 lg:px-6">
               {/* Brand — final asterism mark (SPEC 11-04) + outline wordmark (D14);
               the retired periwinkle plate-wordmark is gone (the plate now lives
               only in the logo symbol). Always points home: / renders the launchpad
               for real accounts and the landing for guests (guest-CJM, 2026-07-09). */}
-              <Link href="/" className="press flex shrink-0 items-center gap-1.5 lg:gap-2">
+              <Link
+                href={withLocale('/', activeLang)}
+                className="press flex shrink-0 items-center gap-1.5 lg:gap-2"
+              >
                 <Mark variant="plate" size={30} aria-hidden />
                 <span className="font-display text-[17px] font-black tracking-[0.05em] text-transparent [-webkit-text-stroke:1.4px_var(--color-line)] lg:text-[19px] md:[-webkit-text-stroke:1.6px_var(--color-line)]">
                   ВЕРТОВ
@@ -147,7 +150,7 @@ export async function AppShell({
               </Link>
 
               {/* Primary nav — route-aware active state (NavLinks is a client island). */}
-              <NavLinks items={nav} />
+              <NavLinks items={nav} locale={activeLang} />
 
               <div className="flex min-w-0 flex-1 items-center justify-end">
                 {/* Action segment — fused bar mirroring NavLinks' own idiom
@@ -167,7 +170,7 @@ export async function AppShell({
                   2026-07-07: "u have upgrade and войти on the same header").
                   Anonymous sessions just see their (always-zero) balance. */}
                   {!isAnonymous && (
-                    <Link href="/pricing" className={actionCellBase}>
+                    <Link href={withLocale('/pricing', activeLang)} className={actionCellBase}>
                       Апгрейд
                     </Link>
                   )}
@@ -183,6 +186,7 @@ export async function AppShell({
                   apiUrl={apiUrl}
                   plan={plan.data?.planAccess ?? null}
                   isAnonymous={isAnonymous}
+                  locale={activeLang}
                 />
               </div>
             </nav>
@@ -202,7 +206,7 @@ export async function AppShell({
         {children}
       </main>
 
-      <MobileTabBar isAnonymous={isAnonymous} />
+      <MobileTabBar isAnonymous={isAnonymous} locale={activeLang} />
 
       {!fullBleed && !hideFooter && (
         <footer className="hidden bg-[color:var(--color-surface)] md:block">
@@ -250,6 +254,12 @@ export async function AppShell({
               className="transition-colors hover:text-[color:var(--color-fg)]"
             >
               Возврат
+            </Link>
+            <Link
+              href={legalLink('/legal/consent')}
+              className="transition-colors hover:text-[color:var(--color-fg)]"
+            >
+              Согласие на обработку данных
             </Link>
             <Link
               href={legalLink('/legal/requisites')}

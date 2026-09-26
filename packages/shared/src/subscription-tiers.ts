@@ -50,3 +50,21 @@ export function subscriptionTierAllows(currentTier: unknown, requiredTier: unkno
 export function subscriptionTierLabel(tier: unknown): string | undefined {
   return isSubscriptionTier(tier) ? SUBSCRIPTION_TIER_LABELS[tier] : undefined;
 }
+
+/**
+ * Plans on sale today, cheapest first. `creator` («Креатор») is the retired
+ * pre-2026-07-25 plan: catalogue rows still carry it as `tierMin`, where it
+ * means «Плюс and above». Must match the active rows of
+ * `packages/db/seed/subscription-catalog.ts` (pinned by a web test).
+ */
+export const SOLD_SUBSCRIPTION_TIERS = ['start', 'plus', 'pro', 'studio', 'max'] as const;
+
+/**
+ * The cheapest plan a customer can actually buy that unlocks a model with this
+ * minimum tier — what an upgrade CTA must name. Undefined for an unknown tier.
+ */
+export function cheapestSoldTierFor(requiredTier: unknown): SubscriptionTier | undefined {
+  const required = subscriptionTierRank(requiredTier ?? 'free');
+  if (required === null) return undefined;
+  return SOLD_SUBSCRIPTION_TIERS.find((tier) => subscriptionTierRank(tier)! >= required);
+}

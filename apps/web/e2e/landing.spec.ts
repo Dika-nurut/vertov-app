@@ -33,14 +33,14 @@ test.describe('public landing v12', () => {
       .poll(async () => (await headlineText(page)) !== first, { timeout: 8000 })
       .toBe(true);
 
-    // FeatureTabs (Холст default): clicking «Студия» hard-cuts to that card
-    await expect(page.getByRole('heading', { name: 'Собери на холсте' })).toBeVisible();
+    // FeatureTabs (Генерация default): clicking «Студия» hard-cuts to that loop
+    await expect(page.getByRole('heading', { name: 'Одна строка — любая модель' })).toBeVisible();
     await page.getByRole('tab', { name: 'Студия' }).click();
     await expect(page.getByRole('tab', { name: 'Студия' })).toHaveAttribute(
       'aria-selected',
       'true',
     );
-    await expect(page.getByRole('heading', { name: 'Смонтируй и озвучь' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Смонтируй и выгрузи' })).toBeVisible();
 
     // CTA band + «Войти» route to the login flow
     await expect(page.getByRole('link', { name: /Снять бесплатно/ }).first()).toHaveAttribute(
@@ -207,7 +207,7 @@ test.describe('public landing v12', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Скажи');
     await expect(page.locator('[data-testid="headline-cycle"]')).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'Холст' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Генерация' })).toBeVisible();
 
     // P0 regression guard: «Смонтировано.» used to push scrollWidth → 542px
     // mid-cycle. Sample overflow while walking the FULL 3-word cycle.

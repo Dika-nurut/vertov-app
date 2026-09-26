@@ -21,6 +21,10 @@ import { LaozhangAdapter, LaozhangClient } from './laozhang-adapter';
 import { KieAdapter, KieClient } from './kie-adapter';
 import { GptprotoAdapter } from './gptproto-adapter';
 import { GptprotoClient } from './gptproto-client';
+import { GrsaiAdapter } from './grsai-adapter';
+import { GrsaiClient } from './grsai-client';
+import { PixazoAdapter } from './pixazo-adapter';
+import { PixazoClient } from './pixazo-client';
 import { NanoBananaAdapter } from './nano-banana-adapter';
 import { FallbackChainAdapter } from './fallback-chain-adapter';
 import { ServingLegAdapter } from './serving-leg';
@@ -64,6 +68,15 @@ export {
 export { LaozhangAdapter, LaozhangClient, buildLaozhangImageBody } from './laozhang-adapter';
 export { GptprotoAdapter, buildGptprotoImageBody, GP_BATCH_PREFIX } from './gptproto-adapter';
 export { GptprotoClient } from './gptproto-client';
+export { PixazoAdapter, buildPixazoSeedanceMini } from './pixazo-adapter';
+export { PixazoClient } from './pixazo-client';
+export {
+  GrsaiAdapter,
+  buildGrsaiDrawBody,
+  GRSAI_BATCH_PREFIX,
+  GRSAI_MODEL_FOR,
+} from './grsai-adapter';
+export { GrsaiClient } from './grsai-client';
 export {
   KieAdapter,
   KieClient,
@@ -99,6 +112,8 @@ export type Gateway =
   | 'geminiomni'
   | 'kie'
   | 'gptproto'
+  | 'pixazo'
+  | 'grsai'
   | 'stub'
   | 'mock';
 
@@ -127,6 +142,14 @@ export interface AdapterEnv {
   GPTPROTO_MODE?: string;
   GPTPROTO_BASE_URL?: string;
   GPTPROTO_API_KEY?: string;
+  /** Seedance 2.0 Mini relay (gateway.pixazo.ai) — the free/economy video tier. */
+  PIXAZO_MODE?: string;
+  PIXAZO_BASE_URL?: string;
+  PIXAZO_API_KEY?: string;
+  /** Nano Banana family relay billed in yuan (grsaiapi.com) — candidate leg. */
+  GRSAI_MODE?: string;
+  GRSAI_BASE_URL?: string;
+  GRSAI_API_KEY?: string;
   /** @deprecated No global default provider; routing is per-model. */
   PROVIDER_GATEWAY?: string;
   /** Deployment stage. When `production`, the dev-only mock/stub gateways are
@@ -215,6 +238,8 @@ const OPENROUTER_DEFAULT_BASE = 'https://openrouter.ai/api/v1';
 const LAOZHANG_DEFAULT_BASE = 'https://api.laozhang.ai';
 const KIE_DEFAULT_BASE = 'https://api.kie.ai';
 const GPTPROTO_DEFAULT_BASE = 'https://gptproto.com';
+const PIXAZO_DEFAULT_BASE = 'https://gateway.pixazo.ai';
+const GRSAI_DEFAULT_BASE = 'https://grsaiapi.com';
 
 /**
  * Build the LaoZhang adapter, or the stub when not armed for live use. The
@@ -592,6 +617,38 @@ function makeGptprotoAdapter(env: AdapterEnv, options: AdapterOptions = {}): Pro
 }
 
 /**
+ * Build the Pixazo adapter (Seedance 2.0 Mini), or the stub when not armed for
+ * live use. The vendor request id is durable, so the gateway IS resumable.
+ */
+function makePixazoAdapter(env: AdapterEnv, options: AdapterOptions = {}): ProviderAdapter {
+  const mode = (env.PIXAZO_MODE ?? 'stub').toLowerCase();
+  if (mode !== 'live' || !env.PIXAZO_API_KEY) return new StubBytePlusAdapter();
+  const baseUrl = env.PIXAZO_BASE_URL ?? PIXAZO_DEFAULT_BASE;
+  return journalLeaf(
+    'pixazo',
+    new PixazoAdapter(new PixazoClient({ baseUrl, apiKey: env.PIXAZO_API_KEY })),
+    env,
+    options,
+  );
+}
+
+/**
+ * Build the Grsai adapter (Nano Banana family), or the stub when not armed. The task
+ * id is durable on the vendor, so the gateway IS resumable.
+ */
+function makeGrsaiAdapter(env: AdapterEnv, options: AdapterOptions = {}): ProviderAdapter {
+  const mode = (env.GRSAI_MODE ?? 'stub').toLowerCase();
+  if (mode !== 'live' || !env.GRSAI_API_KEY) return new StubBytePlusAdapter();
+  const baseUrl = env.GRSAI_BASE_URL ?? GRSAI_DEFAULT_BASE;
+  return journalLeaf(
+    'grsai',
+    new GrsaiAdapter(new GrsaiClient({ baseUrl, apiKey: env.GRSAI_API_KEY })),
+    env,
+    options,
+  );
+}
+
+/**
  * Resolve a {@link ProviderAdapter} for the requested gateway. This is the
  * per-job seam the worker calls — chosen by the model's routing pins
  * (capabilities.forceGateway, gatewayOverride, fallbackGateway) or the dev
@@ -644,6 +701,8 @@ function buildAdapter(
   if (key === 'laozhang') return makeLaozhangAdapter(env, options);
   if (key === 'kie') return makeKieAdapter(env, options);
   if (key === 'gptproto') return makeGptprotoAdapter(env, options);
+  if (key === 'pixazo') return makePixazoAdapter(env, options);
+  if (key === 'grsai') return makeGrsaiAdapter(env, options);
   // Evolink / BytePlus-direct is no longer a supported gateway. Any stale
   // request that reaches here (including the old PROVIDER_GATEWAY=evolink default)
   // now fails loudly instead of silently routing to a dead provider.
@@ -812,6 +871,8 @@ const RESUMABLE_GATEWAYS: ReadonlySet<string> = new Set([
   OFFICIAL_LEG_GATEWAY,
   'kie',
   'gptproto',
+  'pixazo',
+  'grsai',
   'nanobanana',
   'geminiomni',
   'stub',
@@ -853,6 +914,18 @@ export function getResumeAdapter(
   if (
     gateway === 'gptproto' &&
     ((env.GPTPROTO_MODE ?? 'stub').toLowerCase() !== 'live' || !env.GPTPROTO_API_KEY)
+  ) {
+    return null;
+  }
+  if (
+    gateway === 'grsai' &&
+    ((env.GRSAI_MODE ?? 'stub').toLowerCase() !== 'live' || !env.GRSAI_API_KEY)
+  ) {
+    return null;
+  }
+  if (
+    gateway === 'pixazo' &&
+    ((env.PIXAZO_MODE ?? 'stub').toLowerCase() !== 'live' || !env.PIXAZO_API_KEY)
   ) {
     return null;
   }

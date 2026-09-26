@@ -53,6 +53,7 @@ export interface ScriptBible {
   notes?: Array<string | MemoryNote>;
   /** Legacy typed fields — folded into notes on read via `bibleNotes`. */
   characters?: { name: string; description: string }[];
+  locations?: { name: string; description: string }[];
   tone?: string[];
   rules?: string[];
 }

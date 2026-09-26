@@ -18,6 +18,7 @@
  */
 import {
   SUBSCRIPTION_TIER_LABELS,
+  cheapestSoldTierFor,
   subscriptionTierAllows,
   subscriptionTierRank,
   type SubscriptionTier,
@@ -46,7 +47,9 @@ export function isModelLocked(model: TierGatedModel, userTier?: string | null): 
   return !subscriptionTierAllows(userTier ?? 'free', model.tierMin ?? 'free');
 }
 
-/** «Открыть в тарифе «Креатор»» — the shared upsell copy. */
+/** «Открыть в тарифе «Плюс»» — the shared upsell copy. Names a plan on sale. */
 export function tierUpsellLabel(model: TierGatedModel | null | undefined): string {
-  return `Открыть в тарифе «${TIER_LABEL[model?.tierMin ?? 'creator'] ?? 'Креатор'}»`;
+  // No row → fail upward to the retired «Креатор» rank, as before (→ «Плюс»).
+  const tier = cheapestSoldTierFor(model?.tierMin ?? 'creator');
+  return tier ? `Открыть в тарифе «${TIER_LABEL[tier]}»` : 'Открыть в подходящем тарифе';
 }

@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { fetchGeneration, parseDays, n, pct, ms } from '../_lib';
+import { fetchGeneration, parseDays, n, pct, ms, kindLabel } from '../_lib';
 import { WindowPills, Eyebrow, Panel } from '../_components/ui';
 import { modelDisplayName } from '@/lib/models';
+import { ErrorState } from '../../_components/states/ErrorState';
 
-export const metadata: Metadata = { title: 'Вертов · Админ · Генерация' };
+export const metadata: Metadata = { title: 'АДМИН · Генерация' };
 export const dynamic = 'force-dynamic';
 
 export default async function GenerationPage({
@@ -16,11 +17,7 @@ export default async function GenerationPage({
   const days = parseDays((await searchParams).days, 30);
   const g = await fetchGeneration(days);
   if (!g) {
-    return (
-      <div className="flex h-64 items-center justify-center border-[2.5px] border-dashed border-[color:var(--color-line-soft)] text-sm text-faint">
-        Не удалось загрузить аналитику (API недоступен).
-      </div>
-    );
+    return <ErrorState message="Не удалось загрузить аналитику. Попробуйте обновить страницу." />;
   }
 
   // Pivot daily rows into per-day {image,video} totals for the stacked chart.
@@ -38,7 +35,7 @@ export default async function GenerationPage({
     <>
       <header className="mb-6 flex items-end justify-between">
         <div>
-          <h1 className="font-display text-3xl font-black tracking-tight">Генерация</h1>
+          <h1 className="font-display text-3xl font-black tracking-tight">АДМИН · Генерация</h1>
           <p className="mt-1 text-xs text-faint">
             Задачи · успех · латентность vs ожидание · окно {days} дней
           </p>
@@ -99,7 +96,7 @@ export default async function GenerationPage({
                   {pct(r.successPct)}
                 </div>
                 <div className="mt-1 font-mono text-[10px] uppercase text-faint">
-                  {r.kind} · {n(r.total)}
+                  {kindLabel(r.kind)} · {n(r.total)}
                 </div>
               </div>
             ))}

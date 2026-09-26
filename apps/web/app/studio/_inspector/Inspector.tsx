@@ -96,7 +96,7 @@ export function Inspector({
         className={
           'min-h-0 overflow-y-auto overflow-x-hidden ' +
           (selection
-            ? 'rounded-[var(--radius-md)] bg-[color:var(--color-surface)] p-3 shadow-[var(--offset-sm)] ring-1 ring-inset ring-[color:var(--color-line)]/10'
+            ? 'rounded-[var(--radius-md)] bg-[color:var(--color-surface)] p-3 shadow-[var(--offset-sm)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/10'
             : '')
         }
         style={{ gridArea: 'inspector' }}
@@ -262,9 +262,9 @@ export function Inspector({
                 },
               ].map((s, i) => (
                 <li key={s.title} className="flex items-start gap-3">
-                  <span className="relative mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[rgba(var(--accent-rgb),0.14)] text-[color:var(--color-accent)] ring-1 ring-inset ring-[rgba(var(--accent-rgb),0.25)]">
+                  <span className="relative mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[rgba(var(--accent-rgb),0.14)] text-[color:var(--color-accent)] ring-[1.5px] ring-inset ring-[rgba(var(--accent-rgb),0.25)]">
                     {s.icon}
-                    <span className="absolute -right-1 -top-1 grid h-3.5 w-3.5 place-items-center rounded-[var(--radius-xs)] bg-[color:var(--color-bg)] font-mono text-[11px] text-[color:var(--color-faint)] ring-1 ring-inset ring-[color:var(--color-line)]/20">
+                    <span className="absolute -right-1 -top-1 grid h-3.5 w-3.5 place-items-center rounded-[var(--radius-xs)] bg-[color:var(--color-bg)] font-mono text-[11px] text-[color:var(--color-faint)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/20">
                       {i + 1}
                     </span>
                   </span>
@@ -289,7 +289,7 @@ export function Inspector({
       <nav
         aria-label="Инспектор"
         data-testid="inspector-tabs"
-        className="flex min-h-0 flex-col items-center gap-1 overflow-y-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] py-3 shadow-[var(--offset-sm)] ring-1 ring-inset ring-[color:var(--color-line)]/10"
+        className="flex min-h-0 flex-col items-center gap-1 overflow-y-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] py-3 shadow-[var(--offset-sm)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/10"
         style={{ gridArea: 'rightrail' }}
       >
         {(() => {

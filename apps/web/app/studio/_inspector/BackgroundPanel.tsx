@@ -32,14 +32,14 @@ export function BackgroundPanel({
                 'h-8 rounded-[var(--radius-sm)] ring-inset transition-shadow ' +
                 (on
                   ? 'ring-2 ring-[color:var(--color-accent)]'
-                  : 'ring-1 ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40')
+                  : 'ring-[1.5px] ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40')
               }
               style={{ backgroundColor: c }}
             />
           );
         })}
       </div>
-      <label className="flex items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-2.5 ring-1 ring-inset ring-[color:var(--color-line)]/15">
+      <label className="flex items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-2.5 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15">
         <span className="text-[13px] text-[color:var(--color-muted-foreground)]">Свой цвет</span>
         <input
           type="color"

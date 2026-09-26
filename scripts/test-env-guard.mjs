@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Fail closed when a DB-backed Vitest project is about to use the persistent
  * developer stack. The zero-spend test pyramid passes explicit alternate ports;

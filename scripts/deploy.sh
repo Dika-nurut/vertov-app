@@ -137,6 +137,20 @@ else
   compose build
 fi
 
+# 1b) SECRETS (INF-13 Variant B) — on a host with Lockbox installed, re-materialise
+#     /run/secrets/seed.env from the current Lockbox version before migrations read
+#     DATABASE_URL and before containers start, so a rotation lands with the deploy.
+#     A failed refresh aborts: deploying on secrets we could not confirm is a guess.
+#     Hosts without the installer keep the hand-copied file (unchanged behaviour).
+SECRETS_REFRESH="${SEED_SECRETS_REFRESH:-/usr/local/sbin/seed-secrets-refresh}"
+if [ -x "${SECRETS_REFRESH}" ]; then
+  log "refreshing runtime secrets from Lockbox…"
+  if ! sudo -n "${SECRETS_REFRESH}"; then
+    log "FATAL: Lockbox secret refresh failed — aborting deploy (no traffic shifted)"
+    exit 1
+  fi
+fi
+
 # 2) MIGRATION GATE — apply migrations before any new container serves traffic.
 #    Forward-only; rollback of a bad migration is a restore (see backup runbook).
 #    On the registry path the host has no toolchain, so migrate inside the image.

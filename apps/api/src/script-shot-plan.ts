@@ -43,7 +43,7 @@ import {
   scenarioShotPlanSchema,
   type ScenarioShotPlan,
 } from '@seed/shared/scenario-shot-plan';
-import { extractScenarioHandoffSources } from './scenario-board-handoff';
+import { extractScenarioHandoffSources, scenarioHandoffLocks } from './scenario-board-handoff';
 import { egressFetch } from './egress-fetch';
 import { dailySpendCap, releaseDailyBudget, reserveDailyBudget } from './spend-guard';
 import { checkRateLimit } from './rate-limit';
@@ -54,7 +54,6 @@ import {
   buildScenarioShotPlanPrompt,
   parseScenarioShotPlanOutput,
   ScenarioShotPlanSchemaError,
-  type ScenarioShotPlanLock,
   type ScenarioShotPlanMediaRef,
 } from './scenario-shot-planner';
 import { scenarioTimingSourceRevisionId, scenarioTimingSourceUnitId } from './scenario-timing';
@@ -134,25 +133,6 @@ function scriptSources(script: typeof scripts.$inferSelect) {
     format: scenarioFormatSchema.parse(script.format),
     outline: scenarioOutlineV1Schema.parse(script.outline),
     fountain: script.fountain,
-  });
-}
-
-function buildLocks(bible: ScriptBible): ScenarioShotPlanLock[] {
-  const characters = Array.isArray(bible.characters) ? bible.characters : [];
-  return characters.slice(0, 32).flatMap((character, index) => {
-    const name = typeof character.name === 'string' ? character.name.trim() : '';
-    if (!name) return [];
-    return [
-      {
-        id: `canon:character:${index + 1}`,
-        kind: 'character' as const,
-        name: name.slice(0, 160),
-        description:
-          typeof character.description === 'string'
-            ? character.description.trim().slice(0, 300)
-            : undefined,
-      },
-    ];
   });
 }
 
@@ -313,7 +293,7 @@ export function setupScriptShotPlanRoutes(
       }
 
       const bible = (script.bible ?? {}) as ScriptBible;
-      const locks = buildLocks(bible);
+      const locks = scenarioHandoffLocks(bible);
       const mediaRefs = await approvedMediaRefs(script, session.user.id);
       const format = scenarioFormatSchema.parse(script.format);
       const promptBase = buildScenarioShotPlanPrompt({

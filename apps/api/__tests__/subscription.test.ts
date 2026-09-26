@@ -1368,6 +1368,7 @@ describe('W0: plan access on GET /v1/billing/subscription', () => {
         subscriptionId: string;
         tier: string;
         currentPeriodEnd: string;
+        orderId?: string;
       } | null;
     } | null;
   }
@@ -1510,6 +1511,58 @@ describe('W0: plan access on GET /v1/billing/subscription', () => {
       tier: 'plus',
       currentPeriodEnd: expect.any(String),
     });
+  });
+
+  it('carries the newest recoverable order for this subscription only', async () => {
+    const u = await makeUser();
+    const subId = await seedSubscription(u, {
+      tier: 'plus',
+      status: 'past_due',
+      periodEnd: new Date(Date.now() - DAY),
+    });
+    const now = Date.now();
+    const olderMatchingOrder = nid();
+    const newerMatchingOrder = nid();
+    const unrelatedOrder = nid();
+    await db.insert(orders).values([
+      {
+        id: olderMatchingOrder,
+        userId: u,
+        kind: 'subscription',
+        tierOrPackId: 'plus',
+        amountRub: 1290,
+        psp: 'tochka',
+        ourStatus: 'failed',
+        metadata: { purpose: 'renewal', subscriptionId: subId },
+        createdAt: new Date(now - 2_000),
+      },
+      {
+        id: newerMatchingOrder,
+        userId: u,
+        kind: 'subscription',
+        tierOrPackId: 'plus',
+        amountRub: 1290,
+        psp: 'tochka',
+        ourStatus: 'pending',
+        metadata: { purpose: 'renewal', subscriptionId: subId },
+        createdAt: new Date(now - 1_000),
+      },
+      {
+        id: unrelatedOrder,
+        userId: u,
+        kind: 'subscription',
+        tierOrPackId: 'start',
+        amountRub: 599,
+        psp: 'tochka',
+        ourStatus: 'pending',
+        metadata: { purpose: 'renewal', subscriptionId: nid() },
+        createdAt: new Date(now),
+      },
+    ]);
+
+    const body = await getSubscription(u);
+
+    expect(body?.planAccessBlock?.orderId).toBe(newerMatchingOrder);
   });
 
   it('reports no block while the plan is live', async () => {

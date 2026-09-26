@@ -25,7 +25,7 @@ describe('Generate subscription entitlements', () => {
 
   it('uses the model minimum tier in the Russian upgrade CTA', () => {
     expect(lockedModelCtaLabel('start')).toBe('Открыть в тарифе «Старт»');
-    expect(lockedModelCtaLabel('creator')).toBe('Открыть в тарифе «Креатор»');
+    expect(lockedModelCtaLabel('creator')).toBe('Открыть в тарифе «Плюс»');
     expect(lockedModelCtaLabel('plus')).toBe('Открыть в тарифе «Плюс»');
     expect(lockedModelCtaLabel('pro')).toBe('Открыть в тарифе «Про»');
     expect(lockedModelCtaLabel('studio')).toBe('Открыть в тарифе «Студия»');

@@ -1,7 +1,7 @@
 import type { ContractGateway } from './model-contract';
 
 /** The display-cased relay labels emitted by finance's cost export. */
-export type FinanceRelay = 'Kie' | 'OpenRouter' | 'LaoZhang' | 'AtlasCloud';
+export type FinanceRelay = 'Kie' | 'OpenRouter' | 'LaoZhang' | 'AtlasCloud' | 'Pixazo';
 
 /** Gateway keys accepted by the provider adapter registry. */
 export type AdapterGateway = ContractGateway | 'openrouter-official';
@@ -21,6 +21,8 @@ export const RELAY_TO_ADAPTER_GATEWAY: Readonly<Record<FinanceRelay, AdapterGate
   // Note this makes the relay TRANSLATABLE, not reachable: no AtlasCloud leg is
   // wired in model-contract-byteplus.ts, so nothing can route to it yet.
   AtlasCloud: 'atlascloud',
+  // Rev. 23 (2026-09-25): Seedance 2.0 Mini's single leg.
+  Pixazo: 'pixazo',
 };
 
 const ADAPTER_GATEWAY_TO_RELAY: Readonly<Record<string, FinanceRelay>> = {
@@ -28,6 +30,7 @@ const ADAPTER_GATEWAY_TO_RELAY: Readonly<Record<string, FinanceRelay>> = {
   openrouter: 'OpenRouter',
   laozhang: 'LaoZhang',
   atlascloud: 'AtlasCloud',
+  pixazo: 'Pixazo',
 };
 
 /** Normalize one CSV relay for the capability registry join. */
@@ -37,7 +40,8 @@ export function contractGatewayForRelay(relay: string): ContractGateway | null {
     gateway === 'kie' ||
     gateway === 'openrouter' ||
     gateway === 'laozhang' ||
-    gateway === 'atlascloud'
+    gateway === 'atlascloud' ||
+    gateway === 'pixazo'
   ) {
     return gateway;
   }

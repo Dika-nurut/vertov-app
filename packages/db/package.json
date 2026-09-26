@@ -11,8 +11,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "generate:cost-legs": "tsx scripts/generate-cost-legs.ts",
-    "import:llm-pricing": "tsx scripts/import-llm-pricing.ts",
-    "check:llm-pricing": "tsx scripts/import-llm-pricing.ts --check",
     "generate": "drizzle-kit generate",
     "migrate": "tsx scripts/migrate.ts",
     "backfill:script-thread-messages": "tsx scripts/backfill-script-thread-messages.ts",

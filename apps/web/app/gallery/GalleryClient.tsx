@@ -11,10 +11,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { assetSrc } from '@/lib/asset-src';
-import { FREE_MEDIA_RETENTION_COPY } from '@seed/shared/media-retention';
+import { FREE_MEDIA_RETENTION_COPY_PARTS } from '@seed/shared/media-retention';
 import { mediaDisplayTitle } from '@seed/shared/media-title';
 import { useProjectContext } from '../_components/ProjectContextProvider';
 import { withProjectContext } from '@/lib/project-context';
+import { AssetLifecycleNotice } from '../_components/AssetLifecycleNotice';
+import { stashAssetHandoff } from '@/lib/handoff';
 
 export interface GalleryItem {
   id: string;
@@ -263,9 +265,9 @@ export function GalleryClient({
         >
           <span aria-hidden className="mt-1.5 h-2 w-2 shrink-0 bg-[color:var(--color-accent)]" />
           <span>
-            {FREE_MEDIA_RETENTION_COPY.split(' · ').slice(0, 2).join(' · ')} ·{' '}
+            {FREE_MEDIA_RETENTION_COPY_PARTS.storage} · {FREE_MEDIA_RETENTION_COPY_PARTS.download} ·{' '}
             <Link href="/pricing" className="underline decoration-2 underline-offset-2">
-              {FREE_MEDIA_RETENTION_COPY.split(' · ')[2]}
+              {FREE_MEDIA_RETENTION_COPY_PARTS.permanent}
             </Link>
           </span>
         </div>
@@ -507,7 +509,12 @@ function GalleryTile({
           />
         ) : poster ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={poster} alt="" loading="lazy" className="h-full w-full object-cover" />
+          <img
+            src={assetSrc(poster)}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
         ) : (
           // No poster (legacy/expired asset) — hashed identity, never a black box.
           <div
@@ -540,6 +547,12 @@ function GalleryTile({
         </span>
       </Link>
 
+      {item.expiresAt && (
+        <div className="absolute inset-x-2 top-10 z-30">
+          <AssetLifecycleNotice compact expiresAt={item.expiresAt} assetUrl={item.assetUrl} />
+        </div>
+      )}
+
       {/* Quick actions — appear on hover, bottom-right over a soft gradient. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-end gap-1 bg-gradient-to-t from-black/65 to-transparent px-2 pb-2 pt-7 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100">
         <Link
@@ -562,6 +575,10 @@ function GalleryTile({
               workspaceProjectId ? withProjectContext('/studio', workspaceProjectId) : '/studio'
             }
             title="Открыть в студии"
+            data-testid="open-in-studio"
+            onClick={() => {
+              stashAssetHandoff('studio', [{ url: item.assetUrl, assetId: item.id }]);
+            }}
             className="pointer-events-auto grid h-7 w-7 place-items-center rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-black/70 text-white transition-colors hover:bg-[color:var(--color-accent)] hover:text-[color:var(--color-primary-foreground)]"
           >
             <Clapperboard size={12} aria-hidden />

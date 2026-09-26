@@ -53,7 +53,7 @@ export default async function StudioProjectsPage({
       ...(workspaceProjectId ? { projectId: workspaceProjectId } : {}),
     });
     if (created.data) {
-      const href = `/studio/${created.data.id}`;
+      const href = `/studio/${created.data.id}?created=1`;
       redirect(workspaceProjectId ? withProjectContext(href, workspaceProjectId) : href);
     }
   }

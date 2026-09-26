@@ -22,7 +22,8 @@ const seedModelById = (id: string): BreakEvenModel => {
 
 describe('every SSOT model resolves a break-even record', () => {
   it('covers all 24 distinct model ids in the 55-row table', () => {
-    expect(ssotModelIds.length).toBe(23);
+    // 24 since rev. 23 added seedance-2-0-mini.
+    expect(ssotModelIds.length).toBe(24);
   });
 
   // No exceptions any more. `seedream-4-5` used to THROW here — it force-routes to

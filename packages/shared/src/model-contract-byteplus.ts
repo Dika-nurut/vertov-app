@@ -183,6 +183,41 @@ const seedance20Fast: ModelGatewayContract[] = [
 ];
 
 /**
+ * Seedance 2.0 Mini — single leg on Pixazo (`seedance-2-0-mini`), the free/economy
+ * video tier. Text-to-video and first/last-frame image-to-video share one rate, so
+ * one route serves both. No reserve: kie's Mini is ~3× dearer and a reserve would
+ * force its break-even into the sell price (the four-term rule), killing the tier.
+ */
+const seedance20Mini: ModelGatewayContract[] = [
+  {
+    modelId: 'seedance-2-0-mini',
+    gateway: 'pixazo',
+    inputMode: 'video',
+    role: 'primary',
+    slug: 'seedance-2-0-mini',
+    // buildPixazoSeedanceMini throws on anything else: coercing to the vendor
+    // default (720p) would bill a dearer rung than the one quoted.
+    resolution: { kind: 'enum', values: ['480p', '720p'], default: '480p', onInvalid: 'reject' },
+    aspectRatio: { kind: 'enum', values: SEEDANCE_ASPECTS, default: '16:9', onInvalid: 'omit' },
+    duration: SEEDANCE_DURATION_KIE,
+    reference: {
+      imageRole: 'frame',
+      frameRoles: ['first', 'last'],
+      maxImages: 0,
+      maxVideos: 0,
+      maxAudios: 0,
+    },
+    audio: { output: true, control: true },
+    negativePrompt: false,
+    provenance: {
+      source: 'snapshot',
+      date: '2026-08-03',
+      note: 'pixazo-specs/seedance.md: text-to-video + first-last-frame-to-video, 480p/720p, 4–15 s, generate_audio toggle; live 402 quote 2026-09-03 (np8b)',
+    },
+  },
+];
+
+/**
  * Wan 2.7 — PRIMARY kie (`wan/2-7-text-to-video`, the cheaper leg), FALLBACK
  * OpenRouter. The kie primary is text-to-video only and emits audio it does not
  * let the caller toggle (output true / control false); the OpenRouter fallback is
@@ -1303,6 +1338,7 @@ const seedream50Lite: ModelGatewayContract[] = [
 export const byteplusRouteContracts: Readonly<Record<string, readonly ModelGatewayContract[]>> = {
   'seedance-2-0': seedance20,
   'seedance-2-0-fast': seedance20Fast,
+  'seedance-2-0-mini': seedance20Mini,
   'seedance-2-0-reference-to-video': seedance20Reference,
   'seedance-2-0-fast-reference-to-video': seedance20FastReference,
   'wan-2-7': wan27,

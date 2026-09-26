@@ -1,7 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { fetchUserDetail, apiBaseUrl, n, rub, dt } from '../../_lib';
+import {
+  fetchUserDetail,
+  apiBaseUrl,
+  n,
+  rub,
+  dt,
+  statusLabel,
+  tierLabel,
+  kindLabel,
+} from '../../_lib';
 import { Panel, Eyebrow, Tile } from '../../_components/ui';
 import { CreditGrantForm } from './CreditGrantForm';
 import { SubscriptionManagementForm } from './SubscriptionManagementForm';
@@ -9,7 +18,7 @@ import { UserStatusForm } from './UserStatusForm';
 import { TokenStar } from '@/components/ui/token-star';
 import { modelDisplayName, modelDisplayNameFromId } from '@/lib/models';
 
-export const metadata: Metadata = { title: 'Вертов · Админ · Пользователь' };
+export const metadata: Metadata = { title: 'АДМИН · Пользователь' };
 export const dynamic = 'force-dynamic';
 
 export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -27,10 +36,10 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
       </Link>
       <header className="mb-6 flex flex-wrap items-baseline gap-3">
         <h1 className="font-display text-2xl font-black tracking-tight">
-          {d.contact.email ?? d.user.displayName ?? d.user.id}
+          АДМИН · {d.contact.email ?? d.user.displayName ?? d.user.id}
         </h1>
         <span className="border-2 border-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest capitalize">
-          {d.user.tier}
+          {tierLabel(d.user.tier)}
         </span>
         <span
           className={
@@ -40,7 +49,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
               : 'border-destructive text-destructive')
           }
         >
-          {d.user.status}
+          {statusLabel(d.user.status)}
         </span>
       </header>
 
@@ -121,7 +130,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
               rows={d.recentJobs.map((j) => [
                 j.model ? modelDisplayName(j.model) : modelDisplayNameFromId(j.modelId),
                 j.modelId,
-                j.errorCode ? `${j.status} · ${j.errorCode}` : j.status,
+                j.errorCode ? `${statusLabel(j.status)} · ${j.errorCode}` : statusLabel(j.status),
                 n(j.creditsSpent),
                 dt(j.queuedAt),
               ])}
@@ -135,9 +144,9 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
             <MiniTable
               head={['Тип', 'Сумма', 'Статус', 'Когда']}
               rows={d.recentOrders.map((o) => [
-                o.kind,
+                kindLabel(o.kind),
                 rub(o.amountRub),
-                o.ourStatus,
+                statusLabel(o.ourStatus),
                 dt(o.createdAt),
               ])}
               empty="Платежей нет."

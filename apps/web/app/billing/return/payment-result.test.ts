@@ -50,9 +50,60 @@ describe('payment return UX wiring', () => {
     expect(RETURN_SOURCE).toContain('Продолжить оплату');
     expect(RETURN_SOURCE).toContain('resume-payment-button');
     expect(RETURN_SOURCE).toContain('resumeUrl');
-    // External provider page in a new tab; re-check + history stay.
-    expect(RETURN_SOURCE).toContain('target="_blank"');
+    // WS2 same-tab: the resume anchor itself carries no new-tab target;
+    // no-double-charge reassurance + re-check + history + tariffs stay.
+    const resumePart =
+      RETURN_SOURCE.split('data-testid="resume-payment-button"')[1]?.slice(0, 300) ?? '';
+    expect(resumePart, 'resume button must stay same-tab').not.toContain('target="_blank"');
+    expect(RETURN_SOURCE).toContain('повторное списание исключено');
     expect(RETURN_SOURCE).toContain('Проверить снова');
+    expect(RETURN_SOURCE).toContain('К тарифам');
     expect(RETURN_SOURCE).toContain('История платежей');
+  });
+});
+
+describe('resume-payment follow-through (WS2)', () => {
+  const RETURN_PAGE_SOURCE = readFileSync(join(__dirname, 'page.tsx'), 'utf8');
+
+  it('consumes the one-shot slot on read so a reload never replays the popup', () => {
+    // readResult drops the key immediately after a successful parse and
+    // keeps only the in-memory copy; corrupt slots are dropped too.
+    const readBlock = TOAST_SOURCE.split('function readResult')[1]?.split('function fmt')[0] ?? '';
+    expect(readBlock).toContain('window.sessionStorage.removeItem(PAYMENT_RESULT_STORAGE_KEY)');
+    expect(TOAST_SOURCE).toContain('consume-on-read');
+    expect(TOAST_SOURCE).toContain('setResult(next)');
+  });
+
+  it('never stacks the result card over the packs chooser (sequence, then focus)', () => {
+    expect(TOAST_SOURCE).toContain('packs-modal');
+    expect(TOAST_SOURCE).toContain('packsModalNode');
+    expect(TOAST_SOURCE).toContain('focusFirstPackAction');
+    expect(TOAST_SOURCE).toContain('backToPacks');
+    // Pack primary hands back to the chooser; subscription primary generates.
+    expect(TOAST_SOURCE).toContain('К пакетам');
+    expect(TOAST_SOURCE).toContain("router.push('/pricing?packs=1')");
+    expect(TOAST_SOURCE).toContain("router.push('/generate')");
+  });
+
+  it('keeps the paid fallback contextual (packs vs generation)', () => {
+    expect(RETURN_SOURCE).toContain('К пакетам');
+    expect(RETURN_SOURCE).toContain("'/pricing?packs=1'");
+    expect(RETURN_SOURCE).toContain('Начать генерировать');
+    expect(RETURN_SOURCE).toContain('paidKind');
+  });
+
+  it('gives the error state retry (when orderId) + tariffs + history', () => {
+    expect(RETURN_SOURCE).toContain("status === 'error'");
+    expect(RETURN_SOURCE).toContain('canRetry');
+    expect(RETURN_SOURCE).toContain('Проверить снова');
+    expect(RETURN_SOURCE).toContain('К тарифам');
+    expect(RETURN_SOURCE).toContain('href="/pricing"');
+    expect(RETURN_SOURCE).toContain('История платежей');
+  });
+
+  it('gates forceSuccess to non-prod on both return layers', () => {
+    expect(RETURN_SOURCE).toContain("process.env.NODE_ENV !== 'production'");
+    expect(RETURN_PAGE_SOURCE).toContain("process.env.NODE_ENV !== 'production'");
+    expect(RETURN_PAGE_SOURCE).toContain("forceSuccess === '1'");
   });
 });

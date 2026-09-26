@@ -26,7 +26,8 @@ export type ContractGateway =
   | 'atlascloud'
   | 'laozhang'
   | 'nanobanana'
-  | 'geminiomni';
+  | 'geminiomni'
+  | 'pixazo';
 
 /** The coarse input mode the registry is keyed on. Fine-grained slug splits
  * (text-to-image vs image-to-image, text-to-video vs image-to-video) are a

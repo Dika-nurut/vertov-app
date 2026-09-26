@@ -9,6 +9,7 @@ import { PixelGlyph } from '@/components/ui/pixel-glyph';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { assetSrc } from '@/lib/asset-src';
 import { formatUtcDate, planBlockNotice, type PlanAccessBlock } from '@/lib/plan-block';
+import { GIFT_TOKENS_UPFRONT } from '@/lib/gift-tokens';
 import { BetaPaymentBanner } from './BetaPaymentBanner';
 import {
   arePacksUnlocked,
@@ -93,9 +94,9 @@ function fmt(n: number): string {
 const PACK_SUBSCRIPTION_REQUIRED_COPY =
   'Разовые пакеты — докупка для подписчиков. Сначала выберите подписку ниже — пакеты откроются автоматически.';
 
-/** One pixel-glyph tick + label. Neutral by default — lime lives ONLY on the
- *  recommended (popular) plate, never as an every-row flood. */
-function Check({ children, hot = false }: { children: ReactNode; hot?: boolean }) {
+/** One pixel-glyph tick + label. Always neutral — the popular plate carries its
+ *  single lime marker on the «Популярно» badge, never as an every-row flood. */
+function Check({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-center gap-2.5">
       <PixelGlyph
@@ -103,7 +104,7 @@ function Check({ children, hot = false }: { children: ReactNode; hot?: boolean }
         size={13}
         aria-hidden
         className="shrink-0"
-        style={{ color: hot ? LIME : 'var(--color-muted-foreground)' }}
+        style={{ color: 'var(--color-muted-foreground)' }}
       />
       <span className="whitespace-nowrap">{children}</span>
     </div>
@@ -152,7 +153,8 @@ function PlateCta({
   /** True when this sits below another control in the action zone (tighter top margin). */
   secondary?: boolean;
 }) {
-  // Current tier — a LIME, non-interactive status marker (not an action).
+  // Current tier — a bone status marker with the one lime dot (WS6 lime
+  // discipline: the full lime plate is gone; lime marks, it never fills).
   if (cta.status) {
     return (
       <div
@@ -160,10 +162,15 @@ function PlateCta({
         data-action="current"
         className={
           (secondary ? 'mt-2.5' : 'mt-5') +
-          ' w-full border-[2.5px] border-[color:var(--color-line)] py-3.5 text-center font-mono text-[13px] font-bold uppercase tracking-[0.1em]'
+          ' flex w-full items-center justify-center gap-2 border-[2.5px] border-[color:var(--color-line)] py-3.5 font-mono text-[13px] font-bold uppercase tracking-[0.1em]'
         }
-        style={{ background: LIME, color: LIME_INK }}
+        style={{ background: 'var(--color-surface2)', color: 'var(--color-fg)' }}
       >
+        <span
+          aria-hidden
+          className="inline-block h-2 w-2 shrink-0 rounded-full"
+          style={{ background: LIME }}
+        />
         {cta.label}
       </div>
     );
@@ -261,10 +268,9 @@ function PlateShell({
     <div
       data-testid="tier-plate"
       data-tier={tier}
-      className={
-        'relative flex flex-col border-[2.5px] p-[26px_22px_22px] shadow-[5px_5px_0_0_var(--color-accent)] ' +
-        (popular ? 'border-[color:var(--color-accent)]' : 'border-[color:var(--color-line)]')
-      }
+      // Bone borders on every plate, popular included — the popular plate's
+      // single lime marker is its badge, not a colored frame (WS6).
+      className="relative flex flex-col border-[2.5px] border-[color:var(--color-line)] p-[26px_22px_22px] shadow-[5px_5px_0_0_var(--color-accent)]"
       style={{ background: 'var(--color-card)', padding: '26px 22px 22px' }}
     >
       <div className="flex min-h-[22px] items-center justify-between">
@@ -274,7 +280,7 @@ function PlateShell({
         {popular && (
           <span
             className="px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em]"
-            style={{ background: ACCENT, color: INK }}
+            style={{ background: LIME, color: LIME_INK }}
           >
             Популярно
           </span>
@@ -282,7 +288,7 @@ function PlateShell({
         {bestValue && !popular && (
           <span
             className="px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em]"
-            style={{ background: LIME, color: LIME_INK }}
+            style={{ background: ACCENT, color: INK }}
           >
             Лучшая цена
           </span>
@@ -314,9 +320,7 @@ function PlateShell({
 
       <div className="mt-[18px] flex flex-col gap-2.5 border-t-[1.5px] border-[color:var(--color-line-soft)] pt-4 text-[13px] text-[color:var(--color-muted-foreground)]">
         {content.checks.map((c, i) => (
-          <Check key={i} hot={popular}>
-            {c}
-          </Check>
+          <Check key={i}>{c}</Check>
         ))}
       </div>
 
@@ -710,12 +714,16 @@ export function PricingClient({
             видна до запуска.
           </p>
         </div>
-        <div className="flex max-md:flex-wrap">
+        {/* Payment marks — ONE wrapper frame, hairline dividers (not a 2.5px
+            frame per chip). */}
+        <div
+          className="flex border-[2.5px] border-[color:var(--color-line)] max-md:flex-wrap"
+          style={{ background: 'var(--color-surface2)' }}
+        >
           {['Точка Банк', 'СБП', 'Карты «Мир»', 'Чек 54-ФЗ'].map((chip) => (
             <span
               key={chip}
-              className="whitespace-nowrap border-[2.5px] border-[color:var(--color-line)] px-3 py-[7px] font-mono text-[11px] uppercase tracking-[0.1em] text-[color:var(--color-muted-foreground)] [&:not(:first-child)]:ml-[-2.5px]"
-              style={{ background: 'var(--color-surface2)' }}
+              className="whitespace-nowrap px-3 py-[7px] font-mono text-[11px] uppercase tracking-[0.1em] text-[color:var(--color-muted-foreground)] [&:not(:first-child)]:border-l-[1.5px] [&:not(:first-child)]:border-[color:var(--color-line-soft)]"
             >
               {chip}
             </span>
@@ -729,7 +737,7 @@ export function PricingClient({
         </div>
       )}
       {error && (
-        <p className="mt-4 text-[13px] text-destructive">
+        <p role="alert" className="mt-4 text-[13px] text-destructive">
           {error}{' '}
           {error === PACK_SUBSCRIPTION_REQUIRED_COPY && (
             <a href="#subscription-tiers" className="font-bold underline underline-offset-2">
@@ -923,7 +931,7 @@ export function PricingClient({
                           className="px-1.5 py-0.5 font-bold"
                           style={
                             effectiveBezelTier === 'max'
-                              ? { background: LIME, color: LIME_INK }
+                              ? { background: ACCENT, color: INK }
                               : { color: 'var(--color-faint)' }
                           }
                         >
@@ -981,87 +989,94 @@ export function PricingClient({
 
       {/* Explicit receipt-contact step before Tochka creates the payment link.
           The bank cannot collect this later because 54-ФЗ receipt data is part
-          of the create-subscription request. */}
-      {checkoutContact && (
-        <div
+          of the create-subscription request. Radix Dialog (like PacksModal):
+          role=dialog + aria-modal + focus trap + Escape, overlay token. */}
+      <Dialog
+        open={checkoutContact !== null}
+        onOpenChange={(o) => {
+          if (!o) setCheckoutContact(null);
+        }}
+      >
+        <DialogContent
           data-testid="checkout-contact-modal"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'color-mix(in srgb, var(--color-bg) 72%, transparent)' }}
-          onClick={() => setCheckoutContact(null)}
+          className="max-w-[440px] gap-5 border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-card)] p-6 shadow-[7px_7px_0_0_var(--color-accent)]"
         >
-          <div
-            className="w-full max-w-[440px] border-[2.5px] border-[color:var(--color-line)] p-6 shadow-[7px_7px_0_0_var(--color-accent)]"
-            style={{ background: 'var(--color-card)' }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[color:var(--color-faint)]">
-              Перед оплатой
-            </p>
-            <h3 className="mt-2 font-display text-[20px] font-black uppercase leading-[1.1]">
-              Тариф «{checkoutContact.title}»
-            </h3>
-            <p className="mt-3 text-[13px] leading-[1.5] text-[color:var(--color-muted-foreground)]">
-              Укажите email — на него придёт электронный чек. Дальше откроется защищённая форма
-              Точка Банка для карты или СБП.
-            </p>
-            {error && <p className="mt-3 text-[13px] text-destructive">{error}</p>}
-            <label
-              htmlFor="checkout-receipt-email"
-              className="mt-5 block text-[13px] font-semibold"
-            >
-              Email для чека
-            </label>
-            <input
-              id="checkout-receipt-email"
-              type="email"
-              autoFocus
-              value={receiptEmail}
-              onChange={(event) => setReceiptEmail(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  void checkout(
-                    checkoutContact.path,
-                    checkoutContact.payloadKey,
-                    checkoutContact.itemId,
-                    checkoutContact.kind,
-                    `sub-${checkoutContact.itemId}`,
-                  );
-                }
-              }}
-              placeholder="pochta@example.com"
-              autoComplete="email"
-              className="mt-2 w-full border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-3 py-3 text-[13px] outline-none focus:border-[color:var(--color-accent)]"
-            />
-            <div className="mt-5 flex gap-2.5">
-              <button
-                type="button"
-                onClick={() => setCheckoutContact(null)}
-                className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em]"
-                style={{ background: 'var(--color-surface2)', color: 'var(--color-fg)' }}
-              >
-                Назад
-              </button>
-              <button
-                type="button"
-                disabled={pendingId !== null}
-                onClick={() =>
-                  void checkout(
-                    checkoutContact.path,
-                    checkoutContact.payloadKey,
-                    checkoutContact.itemId,
-                    checkoutContact.kind,
-                    `sub-${checkoutContact.itemId}`,
-                  )
-                }
-                className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em] shadow-[3px_3px_0_0_var(--color-shadow)]"
-                style={{ background: ACCENT, color: INK }}
-              >
-                {pendingId ? 'Открываем оплату…' : `Оплатить ${fmt(checkoutContact.priceRub)} ₽`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          {checkoutContact && (
+            <>
+              <DialogHeader>
+                <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[color:var(--color-faint)]">
+                  Перед оплатой
+                </p>
+                <DialogTitle className="mt-2 font-display text-[20px] font-black uppercase leading-[1.1]">
+                  Тариф «{checkoutContact.title}»
+                </DialogTitle>
+              </DialogHeader>
+              <p className="text-[13px] leading-[1.5] text-[color:var(--color-muted-foreground)]">
+                Укажите email — на него придёт электронный чек. Дальше откроется защищённая форма
+                Точка Банка для карты или СБП.
+              </p>
+              {error && (
+                <p role="alert" className="text-[13px] text-destructive">
+                  {error}
+                </p>
+              )}
+              <div>
+                <label htmlFor="checkout-receipt-email" className="block text-[13px] font-semibold">
+                  Email для чека
+                </label>
+                <input
+                  id="checkout-receipt-email"
+                  type="email"
+                  autoFocus
+                  value={receiptEmail}
+                  onChange={(event) => setReceiptEmail(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      void checkout(
+                        checkoutContact.path,
+                        checkoutContact.payloadKey,
+                        checkoutContact.itemId,
+                        checkoutContact.kind,
+                        `sub-${checkoutContact.itemId}`,
+                      );
+                    }
+                  }}
+                  placeholder="pochta@example.com"
+                  autoComplete="email"
+                  className="mt-2 w-full border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-3 py-3 text-[13px] outline-none focus:border-[color:var(--color-accent)]"
+                />
+              </div>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setCheckoutContact(null)}
+                  className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em]"
+                  style={{ background: 'var(--color-surface2)', color: 'var(--color-fg)' }}
+                >
+                  Назад
+                </button>
+                <button
+                  type="button"
+                  disabled={pendingId !== null}
+                  onClick={() =>
+                    void checkout(
+                      checkoutContact.path,
+                      checkoutContact.payloadKey,
+                      checkoutContact.itemId,
+                      checkoutContact.kind,
+                      `sub-${checkoutContact.itemId}`,
+                    )
+                  }
+                  className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em] shadow-[3px_3px_0_0_var(--color-shadow)]"
+                  style={{ background: ACCENT, color: INK }}
+                >
+                  {pendingId ? 'Открываем оплату…' : `Оплатить ${fmt(checkoutContact.priceRub)} ₽`}
+                </button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* COST TABLE */}
       <section className="py-8">
@@ -1131,11 +1146,11 @@ export function PricingClient({
         style={{ background: 'var(--color-surface2)' }}
       >
         <h2 className="font-display text-[36px] font-black uppercase leading-[1.05] max-md:text-[24px]">
-          Первые кадры — <span className="text-[color:var(--color-fg)]">бесплатно</span>
+          Первые токены — <span className="text-[color:var(--color-fg)]">бесплатно</span>
         </h2>
         <div className="mt-3 flex items-center justify-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-[color:var(--color-muted-foreground)]">
           <TokenStar size={12} style={{ color: ACCENT }} />
-          До 400 токенов в подарок · без карты
+          {GIFT_TOKENS_UPFRONT} токенов в подарок · без карты
         </div>
         <a
           href={guest ? '/login?next=/pricing' : '/generate'}
@@ -1162,59 +1177,64 @@ export function PricingClient({
         </footer>
       )}
 
-      {/* Downgrade confirm — scheduled, not immediate; states the terms plainly. */}
-      {confirmDowngrade && (
-        <div
+      {/* Downgrade confirm — scheduled, not immediate; states the terms plainly.
+          Radix Dialog (like PacksModal): role=dialog + aria-modal + focus trap
+          + Escape, overlay token. */}
+      <Dialog
+        open={confirmDowngrade !== null}
+        onOpenChange={(o) => {
+          if (!o) setConfirmDowngrade(null);
+        }}
+      >
+        <DialogContent
           data-testid="downgrade-confirm"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'color-mix(in srgb, var(--color-bg) 72%, transparent)' }}
-          onClick={() => setConfirmDowngrade(null)}
+          className="max-w-[440px] gap-5 border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-card)] p-6 shadow-[7px_7px_0_0_var(--color-accent)]"
         >
-          <div
-            className="w-full max-w-[440px] border-[2.5px] border-[color:var(--color-line)] p-6 shadow-[7px_7px_0_0_var(--color-accent)]"
-            style={{ background: 'var(--color-card)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="font-display text-[20px] font-black uppercase leading-[1.1]">
-              Сменить тариф на «{confirmDowngrade.title}»?
-            </h3>
-            <p className="mt-3 text-[13px] leading-[1.5] text-[color:var(--color-muted-foreground)]">
-              Тариф сменится на «{confirmDowngrade.title}»
-              {scheduledDate ? ` с ${scheduledDate}` : ' со следующего платёжного периода'} —
-              спишется {fmt(byTier.get(confirmDowngrade.tier)?.priceRub ?? 0)}&nbsp;₽/мес,
-              автопродление включится. Текущие токены и уровень сохраняются до конца оплаченного
-              месяца.
-            </p>
-            <div className="mt-5 flex gap-2.5">
-              <button
-                type="button"
-                data-testid="downgrade-confirm-cancel"
-                onClick={() => setConfirmDowngrade(null)}
-                className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em]"
-                style={{ background: 'var(--color-surface2)', color: 'var(--color-fg)' }}
-              >
-                Отмена
-              </button>
-              <button
-                type="button"
-                data-testid="downgrade-confirm-submit"
-                disabled={pendingId === `down-${confirmDowngrade.tier}`}
-                onClick={() =>
-                  void postBilling(
-                    '/v1/billing/downgrade',
-                    { newTier: confirmDowngrade.tier },
-                    `down-${confirmDowngrade.tier}`,
-                  )
-                }
-                className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em] shadow-[3px_3px_0_0_var(--color-shadow)]"
-                style={{ background: ACCENT, color: INK }}
-              >
-                {pendingId === `down-${confirmDowngrade.tier}` ? 'Планируем…' : 'Подтвердить'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          {confirmDowngrade && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display text-[20px] font-black uppercase leading-[1.1]">
+                  Сменить тариф на «{confirmDowngrade.title}»?
+                </DialogTitle>
+              </DialogHeader>
+              <p className="text-[13px] leading-[1.5] text-[color:var(--color-muted-foreground)]">
+                Тариф сменится на «{confirmDowngrade.title}»
+                {scheduledDate ? ` с ${scheduledDate}` : ' со следующего платёжного периода'} —
+                спишется {fmt(byTier.get(confirmDowngrade.tier)?.priceRub ?? 0)}&nbsp;₽/мес,
+                автопродление включится. Текущие токены и уровень сохраняются до конца оплаченного
+                месяца.
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  data-testid="downgrade-confirm-cancel"
+                  onClick={() => setConfirmDowngrade(null)}
+                  className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em]"
+                  style={{ background: 'var(--color-surface2)', color: 'var(--color-fg)' }}
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  data-testid="downgrade-confirm-submit"
+                  disabled={pendingId === `down-${confirmDowngrade.tier}`}
+                  onClick={() =>
+                    void postBilling(
+                      '/v1/billing/downgrade',
+                      { newTier: confirmDowngrade.tier },
+                      `down-${confirmDowngrade.tier}`,
+                    )
+                  }
+                  className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em] shadow-[3px_3px_0_0_var(--color-shadow)]"
+                  style={{ background: ACCENT, color: INK }}
+                >
+                  {pendingId === `down-${confirmDowngrade.tier}` ? 'Планируем…' : 'Подтвердить'}
+                </button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1267,9 +1287,17 @@ function PacksModal({
               <button
                 type="button"
                 data-testid="buy-button"
-                disabled={pendingId !== null}
-                onClick={() => onBuy(p.id)}
-                className="press shrink-0 border-[2.5px] border-[color:var(--color-line)] px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] shadow-[3px_3px_0_0_var(--color-accent)]"
+                // Focusable while busy: aria-disabled (not disabled) + described
+                // by the packs note, so keyboard/SR users keep context instead
+                // of meeting a dead control. The guard below preserves the
+                // single-checkout invariant the disabled attr used to hold.
+                aria-disabled={pendingId !== null}
+                aria-describedby="packs-note"
+                onClick={() => {
+                  if (pendingId !== null) return;
+                  onBuy(p.id);
+                }}
+                className="press shrink-0 border-[2.5px] border-[color:var(--color-line)] px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] shadow-[3px_3px_0_0_var(--color-accent)] aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
                 style={{ background: 'var(--color-fg)', color: INK }}
               >
                 {pendingId === p.id ? 'Ждите…' : 'Купить'}
@@ -1277,7 +1305,7 @@ function PacksModal({
             </div>
           ))}
         </div>
-        <p className="text-[13px] text-[color:var(--color-muted-foreground)]">
+        <p id="packs-note" className="text-[13px] text-[color:var(--color-muted-foreground)]">
           Токены из пакетов не сгорают.
         </p>
       </DialogContent>

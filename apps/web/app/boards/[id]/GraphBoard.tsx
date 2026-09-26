@@ -307,13 +307,16 @@ import {
   type CanvasTool,
 } from './BoardCanvasChrome';
 import { BoardExportMenu, BoardStudioSheet } from './BoardExportSurfaces';
-import { ProjectMediaPicker } from './ProjectMediaPicker';
+import { ProjectMediaPicker, type ProjectMedia } from './ProjectMediaPicker';
 import { useResolvedAssets } from '@/lib/asset-lifecycle';
 import { ScenarioSourcePicker } from './ScenarioSourcePicker';
+import { ScenarioShotPlanPanel } from './ScenarioShotPlanPanel';
+import { BoardPromptInspector } from './BoardPromptInspector';
 import { StudioDestinationDialog } from './StudioDestinationDialog';
 
 const BOARD_JOB_NETWORK_TIMEOUT_MS = 30_000;
 const SCENE_OBJECTS_NETWORK_TIMEOUT_MS = 120_000;
+type UnresolvedAssetAction = 'project' | 'media' | 'visual';
 
 function sceneObjectsErrorMessage(status: number, error: unknown): string {
   switch (error) {
@@ -744,6 +747,10 @@ function Inner({
   // B-3: linear shot-list review derived live from the graph.
   const [shotListOpen, setShotListOpen] = useState(false);
   const [scenarioPickerOpen, setScenarioPickerOpen] = useState(false);
+  const [scenarioArrival, setScenarioArrival] = useState<{
+    scriptId: string;
+    ordinals: number[];
+  } | null>(null);
   const shotList = useMemo(
     () => deriveShotList(documentNodes as unknown as ShotNodeLike[], documentEdges),
     [documentNodes, documentEdges],
@@ -776,6 +783,10 @@ function Inner({
   const [addOpen, setAddOpen] = useState(false);
   const [addKeep, setAddKeep] = useState(false);
   const [projectMediaPickerOpen, setProjectMediaPickerOpen] = useState(false);
+  const [projectMediaResolution, setProjectMediaResolution] = useState<{
+    targetId: string;
+    asset: string;
+  } | null>(null);
   const identifiedAssetIds = useMemo(
     () =>
       nodes.flatMap((node) => {
@@ -1409,6 +1420,24 @@ function Inner({
     },
     [boardId, recoveryClientId, rf, setEdges, setNodes, showToast, takeSnapshot],
   );
+  const handleScenarioSourceApplied = useCallback(
+    (
+      incoming: BoardDocument,
+      summary: string,
+      source: { scriptId: string; ordinals: number[] },
+    ) => {
+      applyScenarioBoardState(incoming, summary);
+      setScenarioArrival(source);
+    },
+    [applyScenarioBoardState],
+  );
+  const handleScenarioPlanApplied = useCallback(
+    (incoming: BoardDocument, summary: string) => {
+      applyScenarioBoardState(incoming, summary);
+      setScenarioArrival(null);
+    },
+    [applyScenarioBoardState],
+  );
   // A durable local snapshot is written before the best-effort keepalive. If an
   // older in-flight request wins the race, the rejected newer document is still
   // offered for recovery on the next visit.
@@ -1848,8 +1877,10 @@ function Inner({
   const chooseCatalogItem = useCallback(
     (item: AddCatalogItem) => {
       if (item.t === 'scene') setScenarioPickerOpen(true);
-      else if (item.t === 'media' && workspaceProjectId) setProjectMediaPickerOpen(true);
-      else addNode(item.t, item.d);
+      else if (item.t === 'media' && workspaceProjectId) {
+        setProjectMediaResolution(null);
+        setProjectMediaPickerOpen(true);
+      } else addNode(item.t, item.d);
     },
     [addNode, workspaceProjectId],
   );
@@ -2189,6 +2220,65 @@ function Inner({
           (node.data as Record<string, unknown>)['sourceSceneNodeId'] === sceneId,
       ).length,
     [],
+  );
+
+  const createVariant = useCallback(
+    (nodeId: string) => {
+      const source = nodesRef.current.find((node) => node.id === nodeId);
+      if (source?.type !== 'generate') return;
+      const sourceData = source.data as unknown as GenerateData;
+      const variantId = uid();
+      const variantData: GenerateData = {
+        ...sourceData,
+        count: 1,
+        status: 'idle',
+        jobId: undefined,
+        jobIds: undefined,
+        resultUrl: undefined,
+        resultKind: undefined,
+        assetId: undefined,
+        lastFrameUrl: undefined,
+        takes: undefined,
+        failureMessage: undefined,
+        failureAction: undefined,
+        drifted: undefined,
+        variantOf: nodeId,
+        ...(sourceData.title ? { title: `${sourceData.title} · вариант` } : {}),
+      };
+      const position = findFreePosition(
+        { x: source.position.x + (source.width ?? NODE_W) + 80, y: source.position.y },
+        nodesRef.current.map((node) => node.position),
+      );
+      const variant: Node = withWholeNodeDrag({
+        ...source,
+        id: variantId,
+        position,
+        selected: true,
+        data: variantData as unknown as Record<string, unknown>,
+      });
+      const clonedEdges = edgesRef.current
+        .filter((edge) => edge.target === nodeId)
+        .map((edge) => ({
+          ...edge,
+          id: uid(),
+          target: variantId,
+          selected: false,
+          type: 'typed',
+          animated: true,
+        }));
+      takeSnapshot(`variant:${nodeId}`);
+      setNodes((current) => [...current.map((node) => ({ ...node, selected: false })), variant]);
+      setEdges((current) => [...current, ...clonedEdges]);
+      requestAnimationFrame(() => {
+        void rf.fitView({
+          nodes: [{ id: nodeId }, { id: variantId }],
+          padding: 0.25,
+          duration: 250,
+        });
+      });
+      showToast('Вариант добавлен рядом с исходным кадром.');
+    },
+    [rf, setEdges, setNodes, showToast, takeSnapshot],
   );
 
   /** Commit a planned reference-pack edit; both directions share the write. */
@@ -2629,6 +2719,187 @@ function Inner({
       return id;
     },
     [modelForNode, rf, rfStore, setEdges, setNodes, showToast, takeSnapshot],
+  );
+
+  const resolveUnresolvedAsset = useCallback(
+    (
+      targetId: string,
+      asset: string,
+      action: UnresolvedAssetAction,
+      projectMedia?: ProjectMedia,
+    ) => {
+      const target = nodesRef.current.find((node) => node.id === targetId);
+      if (target?.type !== 'generate') return;
+      const targetData = target.data as unknown as GenerateData;
+      const unresolved = Array.isArray(targetData.unresolvedAssets)
+        ? targetData.unresolvedAssets.filter((entry): entry is string => typeof entry === 'string')
+        : [];
+      if (!unresolved.includes(asset)) return;
+
+      if (action === 'project' && !projectMedia) {
+        if (!workspaceProjectId) {
+          showToast('Для выбора ассета нужен проект, связанный с этим бордом.');
+          return;
+        }
+        setProjectMediaResolution({ targetId, asset });
+        setProjectMediaPickerOpen(true);
+        return;
+      }
+
+      const normalizedAsset = asset.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+      const requiredLockIds = Array.isArray(targetData.requiredLocks)
+        ? targetData.requiredLocks.filter((lockId): lockId is string => typeof lockId === 'string')
+        : [];
+      const requiredLockIdSet = new Set(requiredLockIds);
+      const requiredLockCount = requiredLockIds.length;
+      const unresolvedAssetIndex = unresolved.indexOf(asset);
+      const candidateEdges = edgesRef.current.filter((edge) => {
+        if (edge.target !== targetId) return false;
+        if (
+          !edge.targetHandle?.startsWith('images[') &&
+          !edge.targetHandle?.startsWith('referenceImages[')
+        ) {
+          return false;
+        }
+        const source = nodesRef.current.find((node) => node.id === edge.source);
+        if (source?.type !== 'cast') return false;
+        const sourceData = source.data as unknown as CastData;
+        if (sourceData.scenarioLockId && requiredLockIdSet.has(sourceData.scenarioLockId))
+          return false;
+        const sourceName = sourceData.name;
+        return sourceName.trim().replace(/\s+/g, ' ').toLocaleLowerCase() === normalizedAsset;
+      });
+      const expectedHandle =
+        unresolvedAssetIndex >= 0 ? `images[${requiredLockCount + unresolvedAssetIndex}]` : null;
+      const unresolvedEdge =
+        candidateEdges.find((edge) => edge.targetHandle === expectedHandle) ?? candidateEdges[0];
+      if (!unresolvedEdge?.targetHandle) {
+        showToast('Не удалось найти незакреплённый референс. Обновите борд.');
+        return;
+      }
+
+      const sourceType = action === 'visual' ? 'generate' : 'media';
+      const sourceData =
+        action === 'visual'
+          ? boardNodeDefaultData('generate', {
+              mode: 'image',
+              prompt: asset,
+              title: asset,
+              sourceSceneNodeId: targetData.sourceSceneNodeId,
+              originCastNodeId: unresolvedEdge.source,
+            })
+          : boardNodeDefaultData('media', {
+              url: projectMedia?.assetUrl ?? '',
+              mediaKind: projectMedia?.kind ?? 'image',
+              ...(projectMedia?.id ? { assetId: projectMedia.id } : {}),
+            });
+      const sourceId = uid();
+      const sourceNode: Node = withWholeNodeDrag({
+        id: sourceId,
+        type: sourceType,
+        width: NODE_W,
+        height: NODE_H,
+        position: findFreePosition(
+          { x: target.position.x - NODE_W - 100, y: target.position.y },
+          nodesRef.current.map((node) => node.position),
+        ),
+        data: sourceData as Record<string, unknown>,
+      });
+      const replacementEdge: Edge = {
+        id: uid(),
+        source: sourceId,
+        sourceHandle: 'out',
+        target: targetId,
+        targetHandle: unresolvedEdge.targetHandle,
+        type: 'typed',
+        animated: true,
+      };
+      const existingEdges = edgesRef.current.filter((edge) => edge.id !== unresolvedEdge.id);
+      const nextEdges = existingEdges.concat(replacementEdge);
+      const validationPolicy = createBoardConnectionPolicy({
+        nodes: [...nodesRef.current, sourceNode],
+        edges: existingEdges,
+        modelForNode: (candidate) =>
+          candidate.type === 'generate'
+            ? modelForNode(candidate.data as unknown as GenerateData)
+            : undefined,
+      });
+      const validation = validationPolicy.validate({
+        source: replacementEdge.source,
+        sourceHandle: replacementEdge.sourceHandle ?? null,
+        target: replacementEdge.target,
+        targetHandle: replacementEdge.targetHandle ?? null,
+      });
+      if (!validation.ok) {
+        showToast(validation.reason);
+        return;
+      }
+
+      const nextUnresolved = unresolved.filter((entry) => entry !== asset);
+      const nextNodes = [
+        ...nodesRef.current
+          .filter((node) => {
+            if (
+              action === 'visual' ||
+              node.id !== unresolvedEdge.source ||
+              !node.id.startsWith('scenario-cast-')
+            ) {
+              return true;
+            }
+            return edgesRef.current.some(
+              (edge) => edge.source === node.id && edge.id !== unresolvedEdge.id,
+            );
+          })
+          .map((node) =>
+            node.id === targetId
+              ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    unresolvedAssets: nextUnresolved.length > 0 ? nextUnresolved : undefined,
+                  },
+                }
+              : node,
+          ),
+        sourceNode,
+      ];
+      const base = currentBoardDocument();
+      const projected = documentGraphCacheRef.current!.update(nextNodes, nextEdges);
+      const candidate = validateBoardCommit({
+        ...base,
+        nodes: projected.documentNodes,
+        edges: projected.documentEdges,
+      });
+      if (!candidate.ok) {
+        showToast(candidate.reason);
+        return;
+      }
+      takeSnapshot(`scenario:resolve:${targetId}:${asset}`);
+      nodesRef.current = nextNodes;
+      edgesRef.current = nextEdges;
+      boardStateRef.current = {
+        nodes: projected.documentNodes,
+        edges: projected.documentEdges,
+        tray: trayRef.current,
+      };
+      setNodes(nextNodes);
+      setEdges(nextEdges);
+      setProjectMediaResolution(null);
+      setProjectMediaPickerOpen(false);
+      requestAnimationFrame(() => {
+        void rf.fitView({
+          nodes: [{ id: targetId }, { id: sourceId }],
+          padding: 0.25,
+          duration: 250,
+        });
+      });
+      showToast(
+        action === 'visual'
+          ? 'Визуальный референс добавлен. Запустите его вручную.'
+          : 'Референс подключён к кадру.',
+      );
+    },
+    [modelForNode, rf, setEdges, setNodes, showToast, takeSnapshot, workspaceProjectId],
   );
 
   /* ---- connection validation (typed ports) ---- */
@@ -3754,7 +4025,15 @@ function Inner({
             (n.data as unknown as GenerateData)?.resultKind === 'video' &&
             (n.data as unknown as GenerateData)?.resultUrl,
         )
-        .map((n) => ({ id: n.id, assetUrl: (n.data as unknown as GenerateData).resultUrl! })),
+        .map((n) => {
+          const data = n.data as unknown as GenerateData;
+          const assetId = typeof data.assetId === 'string' ? data.assetId : undefined;
+          return {
+            id: n.id,
+            assetUrl: data.resultUrl!,
+            ...(assetId ? { assetId } : {}),
+          };
+        }),
     [nodes],
   );
 
@@ -4045,6 +4324,68 @@ function Inner({
     [apiUrl, patch, mentionsForPrompt],
   );
 
+  const improvePrompt = useCallback(
+    async (nid: string, model: 'claude' | 'gpt' | 'gemini'): Promise<boolean> => {
+      const node = nodesRef.current.find((candidate) => candidate.id === nid);
+      if (node?.type !== 'prompt') return false;
+      const data = node.data as unknown as BoardPromptData;
+      const brief = data.text.trim();
+      if (!brief) return false;
+      const downstream = edgesRef.current.find(
+        (edge) => edge.source === nid && edge.targetHandle === 'prompt',
+      );
+      const target =
+        downstream && nodesRef.current.find((candidate) => candidate.id === downstream.target);
+      const kind =
+        target?.type === 'generate'
+          ? ((target.data as unknown as GenerateData).mode ?? 'video')
+          : 'video';
+      const sourceScene = data.sourceSceneNodeId
+        ? nodesRef.current.find((candidate) => candidate.id === data.sourceSceneNodeId)
+        : undefined;
+      const sceneContext =
+        sourceScene?.type === 'scene' ? buildSceneContext(sourceScene.data as SceneData) : '';
+      try {
+        const response = await fetch(`${apiUrl}/v1/prompt-studio/draft`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            brief,
+            kind,
+            model,
+            sceneContext,
+            refMentions: mentionsForPrompt(nid).map((mention) => ({
+              token: mention.token,
+              kind: mention.kind,
+              label: mention.label,
+            })),
+            idempotencyKey: randomKey(),
+          }),
+        });
+        const body = (await response.json().catch(() => ({}))) as {
+          prompt?: string;
+          error?: string;
+        };
+        if (!response.ok || !body.prompt?.trim()) {
+          showToast(
+            body.error === 'insufficient_credits'
+              ? 'Недостаточно кредитов для улучшения промпта.'
+              : 'Не удалось улучшить промпт.',
+          );
+          return false;
+        }
+        patch(nid, { result: body.prompt.trim(), view: 'result' });
+        showToast('Улучшенный промпт сохранён в карточке.');
+        return true;
+      } catch {
+        showToast('Не удалось улучшить промпт. Попробуйте ещё раз.');
+        return false;
+      }
+    },
+    [apiUrl, mentionsForPrompt, patch, showToast],
+  );
+
   // Consistency bridge (previz S4): spawn a Seedream keyframe node that takes
   // over the shot's reference wiring and feeds the shot as its first frame —
   // identity from the still, motion from the video model.
@@ -4223,6 +4564,8 @@ function Inner({
       upload,
       makeKeyframe,
       draftPrompt,
+      improvePrompt,
+      resolveUnresolvedAsset,
       extractSceneObjects,
       mentionsForPrompt,
       createShotFromScene,
@@ -4236,6 +4579,7 @@ function Inner({
       removeCastStill,
       generateCastReference,
       appendCastReference,
+      createVariant,
       assetLifecycleFor: (assetId) => (assetId ? assetLifecycle.get(assetId) : undefined),
       resolveQuoteAssetUrl,
       publishNodeQuote,
@@ -4264,6 +4608,8 @@ function Inner({
       upload,
       makeKeyframe,
       draftPrompt,
+      improvePrompt,
+      resolveUnresolvedAsset,
       extractSceneObjects,
       mentionsForPrompt,
       createShotFromScene,
@@ -4277,6 +4623,7 @@ function Inner({
       removeCastStill,
       generateCastReference,
       appendCastReference,
+      createVariant,
       assetLifecycle,
       resolveQuoteAssetUrl,
       publishNodeQuote,
@@ -4328,6 +4675,23 @@ function Inner({
     }
     return { nodesById, resolvedPrompts };
   }, [documentNodes, documentEdges, promptIndexNeeded]);
+  const inspectedPrompt = nodes.find((node) => node.selected && node.type === 'prompt');
+  const inspectedPromptEdge = inspectedPrompt
+    ? edges.find((edge) => edge.source === inspectedPrompt.id && edge.targetHandle === 'prompt')
+    : undefined;
+  const inspectedTarget = inspectedPromptEdge
+    ? nodes.find((node) => node.id === inspectedPromptEdge.target)
+    : undefined;
+  const inspectedGenerationModel =
+    inspectedTarget?.type === 'generate'
+      ? modelForNode(inspectedTarget.data as unknown as GenerateData)
+      : undefined;
+  const inspectedUnresolvedAssets =
+    inspectedTarget?.type === 'generate'
+      ? ((inspectedTarget.data as unknown as GenerateData).unresolvedAssets ?? []).filter(
+          (asset): asset is string => typeof asset === 'string' && asset.trim().length > 0,
+        )
+      : [];
   const runAllRerunCount =
     runAllPlan?.items.reduce((count, item) => {
       const data = nodesById.get(item.id)?.data as unknown as GenerateData | undefined;
@@ -4575,7 +4939,7 @@ function Inner({
                   type="button"
                   data-testid="frame-delete-cancel"
                   onClick={() => setFrameDeleteRequest(null)}
-                  className="press-inset rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] px-3 py-1.5 text-[13px] font-semibold"
+                  className="press-inset rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 py-1.5 text-[13px] font-semibold"
                 >
                   Отмена
                 </button>
@@ -4583,7 +4947,7 @@ function Inner({
                   type="button"
                   data-testid="frame-detach-children"
                   onClick={() => applyFrameDelete(false)}
-                  className="press-inset rounded-[var(--radius-sm)] border-2 border-[color:var(--color-accent)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-accent)]"
+                  className="press-inset rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-accent)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-accent)]"
                 >
                   Удалить рамку, оставить содержимое
                 </button>
@@ -4591,7 +4955,7 @@ function Inner({
                   type="button"
                   data-testid="frame-delete-children"
                   onClick={() => applyFrameDelete(true)}
-                  className="press rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-destructive)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-destructive-foreground)]"
+                  className="press rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-destructive)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-destructive-foreground)]"
                 >
                   Удалить вместе с содержимым
                 </button>
@@ -4653,7 +5017,7 @@ function Inner({
                   data-testid="board-conflict-reload"
                   disabled={recoveryAction !== null}
                   onClick={reloadServerBoard}
-                  className="press-inset rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-muted-foreground)] disabled:opacity-50"
+                  className="press-inset rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-muted-foreground)] disabled:opacity-50"
                 >
                   Загрузить серверную
                 </button>
@@ -4662,7 +5026,7 @@ function Inner({
                   data-testid="board-conflict-duplicate"
                   disabled={recoveryAction !== null}
                   onClick={() => void duplicateRecoveredBoard()}
-                  className="press-inset inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border-2 border-[color:var(--color-accent)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-accent)] disabled:opacity-50"
+                  className="press-inset inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-accent)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-accent)] disabled:opacity-50"
                 >
                   {recoveryAction === 'duplicate' && <Loader2 size={12} className="seed-spin" />}
                   Создать копию
@@ -4672,7 +5036,7 @@ function Inner({
                   data-testid="board-conflict-overwrite"
                   disabled={recoveryAction !== null}
                   onClick={() => void overwriteServerBoard()}
-                  className="press inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-destructive)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-destructive-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-50"
+                  className="press inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-destructive)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-destructive-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-50"
                 >
                   {recoveryAction === 'overwrite' && <Loader2 size={12} className="seed-spin" />}
                   Перезаписать
@@ -4824,7 +5188,7 @@ function Inner({
                   type="button"
                   data-testid="model-change-cancel"
                   onClick={() => setModelChange(null)}
-                  className="press-inset rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-muted-foreground)]"
+                  className="press-inset rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-muted-foreground)]"
                 >
                   Отмена
                 </button>
@@ -4833,7 +5197,7 @@ function Inner({
                     type="button"
                     data-testid="model-change-suggestion"
                     onClick={applySuggestedModel}
-                    className="press-inset rounded-[var(--radius-sm)] border-2 border-[color:var(--color-accent)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-accent)]"
+                    className="press-inset rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-accent)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-accent)]"
                   >
                     {modelChange.current?.id === modelChange.suggestion.id
                       ? `Оставить ${modelChange.suggestion.family}`
@@ -4844,7 +5208,7 @@ function Inner({
                   type="button"
                   data-testid="model-change-apply"
                   onClick={applyModelChange}
-                  className="press rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-destructive)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-destructive-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)]"
+                  className="press rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-destructive)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-destructive-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)]"
                 >
                   {modelChangeEdgeCount > 0
                     ? `Удалить связи (${modelChangeEdgeCount}) и сменить`
@@ -4866,6 +5230,31 @@ function Inner({
             </div>
           </div>
         )}
+
+        <BoardPromptInspector
+          node={
+            inspectedPrompt
+              ? {
+                  id: inspectedPrompt.id,
+                  data: inspectedPrompt.data as Record<string, unknown>,
+                }
+              : null
+          }
+          generationMode={
+            inspectedTarget?.type === 'generate'
+              ? ((inspectedTarget.data as unknown as GenerateData).mode ?? 'video')
+              : null
+          }
+          generationModel={
+            inspectedGenerationModel ? modelDisplayName(inspectedGenerationModel) : null
+          }
+          unresolvedAssets={inspectedUnresolvedAssets}
+          hasProject={Boolean(workspaceProjectId)}
+          onClose={clearSelection}
+          onPatch={(id, data) => patch(id, data as Partial<BoardPromptData>)}
+          onImprove={improvePrompt}
+          onResolveAsset={resolveUnresolvedAsset}
+        />
 
         {/* minimal canvas header — back · project name · save status */}
         <div className="pointer-events-none absolute left-4 top-3 z-30 flex items-center gap-2">
@@ -4981,31 +5370,38 @@ function Inner({
                     data-testid="shot-row"
                     className="rounded-[var(--radius-sm)] border-[1.5px] border-[color:var(--color-line)] p-2.5"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[13px] font-semibold text-[color:var(--color-fg)]">
-                        #{s.shotNumber}
-                      </span>
-                      <span className="text-[11px] text-[color:var(--color-muted-foreground)]">
-                        {s.status === 'done'
-                          ? 'Готово'
-                          : s.status === 'running'
-                            ? 'Генерация…'
-                            : s.status === 'failed'
-                              ? 'Ошибка'
-                              : '—'}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 truncate text-[13px] text-[color:var(--color-fg)]">
-                      {s.title}
-                    </p>
-                    <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-[color:var(--color-muted-foreground)]">
-                      <span>{s.mode === 'video' ? 'Видео' : 'Кадр'}</span>
-                      {s.cast.length > 0 && <span>· {s.cast.join(', ')}</span>}
-                      {s.locations.length > 0 && <span>· {s.locations.join(', ')}</span>}
-                      {s.grammarLabel && (
-                        <span data-testid="shot-grammar-label">· {s.grammarLabel}</span>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => focusBoardNode(s.id)}
+                      aria-label={`Открыть кадр ${s.shotNumber}: ${s.title}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[13px] font-semibold text-[color:var(--color-fg)]">
+                          #{s.shotNumber}
+                        </span>
+                        <span className="text-[11px] text-[color:var(--color-muted-foreground)]">
+                          {s.status === 'done'
+                            ? 'Готово'
+                            : s.status === 'running'
+                              ? 'Генерация…'
+                              : s.status === 'failed'
+                                ? 'Ошибка'
+                                : '—'}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 truncate text-[13px] text-[color:var(--color-fg)]">
+                        {s.title}
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-[color:var(--color-muted-foreground)]">
+                        <span>{s.mode === 'video' ? 'Видео' : 'Кадр'}</span>
+                        {s.cast.length > 0 && <span>· {s.cast.join(', ')}</span>}
+                        {s.locations.length > 0 && <span>· {s.locations.join(', ')}</span>}
+                        {s.grammarLabel && (
+                          <span data-testid="shot-grammar-label">· {s.grammarLabel}</span>
+                        )}
+                      </div>
+                    </button>
                   </li>
                 ))}
               </ol>
@@ -5145,7 +5541,19 @@ function Inner({
             workspaceProjectId={workspaceProjectId}
             onClose={() => setScenarioPickerOpen(false)}
             beforeApply={saveBeforeScenarioImport}
-            onApplied={applyScenarioBoardState}
+            onApplied={handleScenarioSourceApplied}
+          />
+        )}
+
+        {scenarioArrival && (
+          <ScenarioShotPlanPanel
+            apiUrl={apiUrl}
+            boardId={boardId}
+            scriptId={scenarioArrival.scriptId}
+            ordinals={scenarioArrival.ordinals}
+            beforeApply={saveBeforeScenarioImport}
+            onClose={() => setScenarioArrival(null)}
+            onApplied={handleScenarioPlanApplied}
           />
         )}
 
@@ -5153,15 +5561,27 @@ function Inner({
           <ProjectMediaPicker
             apiUrl={apiUrl}
             projectId={workspaceProjectId}
-            onClose={() => setProjectMediaPickerOpen(false)}
-            onChoose={(media) => {
-              addNode('media', {
-                url: media.assetUrl,
-                mediaKind: media.kind,
-                assetId: media.id,
-              });
+            onClose={() => {
+              setProjectMediaResolution(null);
               setProjectMediaPickerOpen(false);
-              showToast('Материал проекта добавлен на борд.');
+            }}
+            onChoose={(media) => {
+              if (projectMediaResolution) {
+                resolveUnresolvedAsset(
+                  projectMediaResolution.targetId,
+                  projectMediaResolution.asset,
+                  'project',
+                  media,
+                );
+              } else {
+                addNode('media', {
+                  url: media.assetUrl,
+                  mediaKind: media.kind,
+                  assetId: media.id,
+                });
+                setProjectMediaPickerOpen(false);
+                showToast('Материал проекта добавлен на борд.');
+              }
             }}
           />
         )}
@@ -5321,7 +5741,7 @@ function Inner({
                       <button
                         data-testid="run-all-cancel"
                         onClick={() => setRunAllPlan(null)}
-                        className="inline-flex h-9 items-center rounded-[var(--radius-md)] border-2 border-[color:var(--color-line)] px-4 text-[13px] text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]"
+                        className="inline-flex h-9 items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] px-4 text-[13px] text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]"
                       >
                         Отмена
                       </button>

@@ -10,6 +10,11 @@
 
 export type HandoffTarget = 'studio' | 'board';
 
+export interface HandoffAsset {
+  url: string;
+  assetId?: string;
+}
+
 const KEYS: Record<HandoffTarget, string> = {
   studio: 'seed.handoff.studio',
   board: 'seed.handoff.board',
@@ -34,6 +39,44 @@ export function parseHandoff(raw: string | null): string[] {
   }
 }
 
+/** Serialize a media selection while retaining its stable gallery identity. */
+export function serializeAssetHandoff(assets: HandoffAsset[]): string {
+  return JSON.stringify({
+    assets: assets
+      .filter((asset) => isNonEmptyString(asset.url))
+      .map((asset) => ({
+        url: asset.url,
+        ...(isNonEmptyString(asset.assetId) ? { assetId: asset.assetId } : {}),
+      })),
+  });
+}
+
+/** Read the current asset payload and the older URL-only payload. */
+export function parseAssetHandoff(raw: string | null): HandoffAsset[] {
+  if (!raw) return [];
+  try {
+    const data = JSON.parse(raw) as { assets?: unknown; urls?: unknown };
+    if (Array.isArray(data.assets)) {
+      return data.assets.flatMap((value) => {
+        if (!value || typeof value !== 'object') return [];
+        const asset = value as { url?: unknown; assetId?: unknown };
+        if (!isNonEmptyString(asset.url)) return [];
+        return [
+          {
+            url: asset.url,
+            ...(isNonEmptyString(asset.assetId) ? { assetId: asset.assetId } : {}),
+          },
+        ];
+      });
+    }
+    return Array.isArray(data.urls)
+      ? data.urls.filter(isNonEmptyString).map((url) => ({ url }))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Stash a selection for a target surface (no-op outside the browser / empty). */
 export function stashHandoff(target: HandoffTarget, urls: string[]): boolean {
   const clean = urls.filter(isNonEmptyString);
@@ -42,10 +85,23 @@ export function stashHandoff(target: HandoffTarget, urls: string[]): boolean {
   return true;
 }
 
+/** Stash a selection with ownership identity for the Studio resolver. */
+export function stashAssetHandoff(target: HandoffTarget, assets: HandoffAsset[]): boolean {
+  const clean = assets.filter((asset) => isNonEmptyString(asset.url));
+  if (typeof window === 'undefined' || clean.length === 0) return false;
+  window.sessionStorage.setItem(KEYS[target], serializeAssetHandoff(clean));
+  return true;
+}
+
 /** Read without clearing so React Strict Mode can initialize deterministically. */
 export function peekHandoff(target: HandoffTarget): string[] {
   if (typeof window === 'undefined') return [];
   return parseHandoff(window.sessionStorage.getItem(KEYS[target]));
+}
+
+export function peekAssetHandoff(target: HandoffTarget): HandoffAsset[] {
+  if (typeof window === 'undefined') return [];
+  return parseAssetHandoff(window.sessionStorage.getItem(KEYS[target]));
 }
 
 export function clearHandoff(target: HandoffTarget): void {

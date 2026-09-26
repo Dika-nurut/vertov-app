@@ -3,12 +3,13 @@
 import type React from 'react';
 import { Volume2, VolumeX } from '../_icons';
 import { LaneLockBtn } from '../_components/timeline-clips';
-import type { TAudio, TClip } from '../_model';
+import type { TAudio, TClip, TSfx } from '../_model';
 
 export function TrackHeaders({
   upperClips,
   music,
   voiceover,
+  sfx,
   isLocked,
   toggleLock,
   allMuted,
@@ -18,6 +19,7 @@ export function TrackHeaders({
   upperClips: TClip[];
   music: TAudio | null;
   voiceover: TAudio | null;
+  sfx: TSfx[];
   isLocked: (id: string) => boolean;
   toggleLock: (id: string) => void;
   allMuted: boolean;
@@ -27,12 +29,12 @@ export function TrackHeaders({
     <div className="w-[92px] shrink-0 select-none" data-testid="track-headers">
       <div className="h-5" /> {/* ruler spacer */}
       {upperClips.length > 0 && (
-        <div className="mb-1 flex h-[48px] items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 ring-1 ring-inset ring-[color:var(--color-line)]/15">
+        <div className="mb-1 flex h-[48px] items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15">
           <span className="label-eyebrow text-[color:var(--color-faint)]">PiP</span>
           <LaneLockBtn id="overlay" locked={isLocked('overlay')} onToggle={toggleLock} />
         </div>
       )}
-      <div className="flex h-[64px] flex-col justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 py-1.5 ring-1 ring-inset ring-[color:var(--color-line)]/15">
+      <div className="flex h-[64px] flex-col justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 py-1.5 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15">
         <span className="label-eyebrow text-[color:var(--color-muted-foreground)]">Видео</span>
         <div className="flex items-center gap-1">
           <button
@@ -47,20 +49,29 @@ export function TrackHeaders({
           <LaneLockBtn id="video" locked={isLocked('video')} onToggle={toggleLock} />
         </div>
       </div>
-      <div className="mt-1 flex h-7 items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 ring-1 ring-inset ring-[color:var(--color-line)]/15">
+      <div className="mt-1 flex h-7 items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15">
         <span className="label-eyebrow text-[color:var(--color-faint)]">Текст</span>
         <LaneLockBtn id="text" locked={isLocked('text')} onToggle={toggleLock} />
       </div>
       {music && (
-        <div className="mt-1 flex h-9 items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 ring-1 ring-inset ring-[color:var(--color-line)]/15">
+        <div className="mt-1 flex h-9 items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15">
           <span className="label-eyebrow text-[color:var(--color-faint)]">Музыка</span>
           <LaneLockBtn id="music" locked={isLocked('music')} onToggle={toggleLock} />
         </div>
       )}
       {voiceover && (
-        <div className="mt-1 flex h-9 items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 ring-1 ring-inset ring-[color:var(--color-line)]/15">
+        <div className="mt-1 flex h-9 items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15">
           <span className="label-eyebrow text-[color:var(--color-faint)]">Озвучка</span>
           <LaneLockBtn id="voiceover" locked={isLocked('voiceover')} onToggle={toggleLock} />
+        </div>
+      )}
+      {sfx.length > 0 && (
+        <div
+          data-testid="sfx-track-header"
+          className="mt-1 flex h-8 items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-2 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15"
+        >
+          <span className="label-eyebrow text-[color:var(--color-faint)]">SFX</span>
+          <LaneLockBtn id="sfx" locked={isLocked('sfx')} onToggle={toggleLock} />
         </div>
       )}
     </div>

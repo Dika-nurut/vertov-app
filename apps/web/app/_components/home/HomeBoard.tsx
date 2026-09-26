@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { assetSrc } from '@/lib/asset-src';
 import { cardVisual } from '@/lib/visual-hash';
 import { plural } from '@/lib/home-utils';
+import { LoopVideo } from '../LoopVideo';
+import { productLoop, type ProductLoopKey } from '../product-loops';
 
 /**
  * «Доска пользователя» — the authenticated home's upper half (owner-approved
@@ -176,22 +178,60 @@ function TrendTile({
   );
 }
 
-/** Small solid feature tile — one tap into a tool. */
+/** Empty-state tile for a new account: until the user has their own frames or
+ *  projects, the tile plays that tool's product loop («вот что здесь будет») and still
+ *  opens the tool in one tap. The first real generation or project replaces it. */
+function PreviewTile({
+  href,
+  loopKey,
+  title,
+  area,
+}: {
+  href: string;
+  loopKey: ProductLoopKey;
+  title: string;
+  area: string;
+}) {
+  const l = productLoop(loopKey);
+  return (
+    <Link href={href} data-testid="home-preview" className={`${tileBase} ${area}`}>
+      <LoopVideo
+        webm={l.webm}
+        src={l.src}
+        poster={l.poster}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <span className={scrim} />
+      <TileLabel eyebrow={`Так это выглядит · ${l.label}`} title={title} big />
+    </Link>
+  );
+}
+
+/** Small solid feature tile — one tap into a tool. With a `loopKey`, pointing at it
+ *  (or focusing it) plays that tool's loop inside the tile; on touch it stays solid. */
 function FeatureTile({
   href,
   label,
   area,
   primary,
+  loopKey,
 }: {
   href: string;
   label: string;
   area: string;
   primary?: boolean;
+  loopKey?: ProductLoopKey;
 }) {
+  const [hover, setHover] = useState(false);
+  const l = loopKey ? productLoop(loopKey) : null;
   return (
     <Link
       href={href}
       data-testid="home-feature"
+      onPointerEnter={(e) => e.pointerType === 'mouse' && setHover(true)}
+      onPointerLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={() => setHover(false)}
       className={
         'press relative flex items-end overflow-hidden border-2 border-[color:var(--color-line)] shadow-[3px_3px_0_0_var(--color-shadow)] ' +
         area +
@@ -199,12 +239,25 @@ function FeatureTile({
         (primary ? 'bg-[color:var(--color-accent)]' : 'bg-[color:var(--color-surface)]')
       }
     >
+      {l && hover && (
+        <>
+          <LoopVideo
+            webm={l.webm}
+            src={l.src}
+            poster={l.poster}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <span className={scrim} />
+        </>
+      )}
       <span
         className={
-          'w-full min-w-0 break-words p-2.5 font-display text-[12px] font-black uppercase leading-[0.92] tracking-[-0.02em] sm:p-3 sm:text-[13px] ' +
-          (primary
-            ? 'text-[color:var(--color-primary-foreground)]'
-            : 'text-[color:var(--color-fg)]')
+          'relative z-[3] w-full min-w-0 break-words p-2.5 font-display text-[12px] font-black uppercase leading-[0.92] tracking-[-0.02em] sm:p-3 sm:text-[13px] ' +
+          (hover && l
+            ? 'text-white'
+            : primary
+              ? 'text-[color:var(--color-primary-foreground)]'
+              : 'text-[color:var(--color-fg)]')
         }
       >
         {label}
@@ -260,22 +313,38 @@ export function HomeBoard({
         {generations.length > 0 ? (
           <GenerationsTile frames={generations} />
         ) : (
-          <FeatureTile href="/generate" label="Снять первый кадр" area="home-t-gen" primary />
+          <PreviewTile
+            href="/generate"
+            loopKey="generate"
+            title="Снять первый кадр"
+            area="home-t-gen"
+          />
         )}
         {projects.length > 0 ? (
           <ProjectsTile frames={projects} />
         ) : (
-          <FeatureTile href="/scenario" label="Начать проект" area="home-t-proj" />
+          <PreviewTile
+            href="/scenario"
+            loopKey="scenario"
+            title="Начать проект"
+            area="home-t-proj"
+          />
         )}
         {trendAreas.map((area, idx) =>
           trending.length > 0 ? (
             <TrendTile key={area} frames={trending} offset={idx} area={area} />
           ) : null,
         )}
-        <FeatureTile href="/generate" label="Генерация" area="home-t-f1" primary />
-        <FeatureTile href="/scenario" label="Сценарий" area="home-t-f2" />
-        <FeatureTile href="/boards" label="Борды" area="home-t-f3" />
-        <FeatureTile href="/studio/projects" label="Студия" area="home-t-f4" />
+        <FeatureTile
+          href="/generate"
+          label="Генерация"
+          area="home-t-f1"
+          primary
+          loopKey="generate"
+        />
+        <FeatureTile href="/scenario" label="Сценарий" area="home-t-f2" loopKey="scenario" />
+        <FeatureTile href="/boards" label="Борды" area="home-t-f3" loopKey="boards" />
+        <FeatureTile href="/studio/projects" label="Студия" area="home-t-f4" loopKey="studio" />
       </div>
     </div>
   );

@@ -193,7 +193,7 @@ export function Timeline({
   addText: () => void;
 }) {
   return (
-    <div className="seed-scroll h-[238px] shrink-0 overflow-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] p-2.5 shadow-[var(--offset-sm)] ring-1 ring-inset ring-[color:var(--color-line)]/10">
+    <div className="seed-scroll h-[238px] shrink-0 overflow-auto rounded-[var(--radius-md)] bg-[color:var(--color-surface)] p-2.5 shadow-[var(--offset-sm)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/10">
       <TimelineToolbar
         canUndo={canUndo}
         undo={undo}
@@ -218,6 +218,7 @@ export function Timeline({
           upperClips={upperClips}
           music={music}
           voiceover={voiceover}
+          sfx={sfx}
           isLocked={isLocked}
           toggleLock={toggleLock}
           allMuted={allMuted}
@@ -270,7 +271,7 @@ export function Timeline({
             {upperClips.length > 0 && (
               <div
                 data-testid="overlay-lane"
-                className="relative mb-1 h-[48px] rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-1 ring-inset ring-[color:var(--color-line)]/15"
+                className="relative mb-1 h-[48px] rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15"
               >
                 {upperClips.map((o) => {
                   const w = Math.max(28, (o.outSec - o.inSec) * pps);
@@ -310,7 +311,7 @@ export function Timeline({
                           window.addEventListener('pointerup', up);
                         }}
                         className={
-                          'relative block h-[40px] w-full cursor-grab overflow-hidden rounded-[var(--radius-xs)] text-left ring-1 ring-inset transition-[box-shadow] ' +
+                          'relative block h-[40px] w-full cursor-grab overflow-hidden rounded-[var(--radius-xs)] text-left ring-[1.5px] ring-inset transition-[box-shadow] ' +
                           (sel
                             ? 'z-10 ring-2 ring-[color:var(--color-accent)]'
                             : 'ring-[rgba(var(--accent-rgb),0.35)] hover:ring-[rgba(var(--accent-rgb),0.6)]')
@@ -385,7 +386,7 @@ export function Timeline({
               onPointerDown={onScrubDown}
               onPointerMove={onScrubMove}
               onPointerUp={onScrubUp}
-              className="relative h-[64px] touch-none rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-1 ring-inset ring-[color:var(--color-line)]/15"
+              className="relative h-[64px] touch-none rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15"
             >
               {timeline.map((c, i) => {
                 const isPrimary = selection?.kind === 'clip' && selection.uid === c.uid;
@@ -414,7 +415,7 @@ export function Timeline({
                         ? 'z-50 opacity-80 shadow-[6px_6px_0_0_var(--color-shadow)] ring-2 ring-[color:var(--color-accent)] '
                         : isSel
                           ? 'z-10 ring-2 ring-[color:var(--color-accent)]'
-                          : 'ring-1 ring-[color:var(--color-line2)] hover:ring-[color:var(--color-line)]/40')
+                          : 'ring-[1.5px] ring-[color:var(--color-line2)] hover:ring-[color:var(--color-line)]/40')
                     }
                   >
                     {/* Selection + drag surface — a real <button> (keyboard-
@@ -473,7 +474,7 @@ export function Timeline({
                         data-testid="clip-hover-toolbar"
                         onPointerDown={(e) => e.stopPropagation()}
                         className={
-                          'glass-menu absolute right-1 top-1 z-30 flex items-center gap-0.5 rounded-[var(--radius-sm)] p-0.5 shadow-[var(--offset-sm)] ring-1 ring-inset ring-[color:var(--color-line)]/20 transition-opacity duration-100 ' +
+                          'glass-menu absolute right-1 top-1 z-30 flex items-center gap-0.5 rounded-[var(--radius-sm)] p-0.5 shadow-[var(--offset-sm)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/20 transition-opacity duration-100 ' +
                           (hoverClip === c.uid && !isSel
                             ? 'opacity-100'
                             : 'pointer-events-none opacity-0')
@@ -614,7 +615,7 @@ export function Timeline({
                         'absolute bottom-0.5 z-20 h-2.5 w-2.5 -translate-x-1/2 rotate-45 cursor-ew-resize rounded-[var(--radius-xs)] bg-[color:var(--color-accent)] transition-[filter] hover:brightness-125 ' +
                         (Math.abs(start + t - playhead) < 0.12
                           ? 'scale-125 ring-2 ring-[color:var(--color-line)]'
-                          : 'ring-1 ring-[color:var(--color-line)]')
+                          : 'ring-[1.5px] ring-[color:var(--color-line)]')
                       }
                     />
                   ));
@@ -642,7 +643,7 @@ export function Timeline({
                     }}
                     style={{ left: x }}
                     className={
-                      'absolute top-1/2 z-30 grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[var(--radius-sm)] ring-1 ring-inset transition-[colors,transform] ' +
+                      'absolute top-1/2 z-30 grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[var(--radius-sm)] ring-[1.5px] ring-inset transition-[colors,transform] ' +
                       (txDragId
                         ? 'scale-125 bg-[color:var(--color-accent)] text-[color:var(--color-primary-foreground)] ring-2 ring-[color:var(--color-line)]'
                         : c.transition === 'cut'
@@ -664,7 +665,7 @@ export function Timeline({
 
             {/* Text track */}
             <div
-              className="relative mt-1 h-7 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-1 ring-inset ring-[color:var(--color-line)]/15"
+              className="relative mt-1 h-7 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15"
               onPointerDown={onScrubDown}
               onPointerMove={onScrubMove}
               onPointerUp={onScrubUp}
@@ -730,7 +731,7 @@ export function Timeline({
             {music && (
               <div
                 data-testid="music-lane"
-                className="relative mt-1 h-9 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-1 ring-inset ring-[color:var(--color-line)]/15"
+                className="relative mt-1 h-9 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15"
               >
                 <AudioLaneClip
                   url={music.url}
@@ -745,7 +746,7 @@ export function Timeline({
             {voiceover && (
               <div
                 data-testid="vo-lane"
-                className="relative mt-1 h-9 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-1 ring-inset ring-[color:var(--color-line)]/15"
+                className="relative mt-1 h-9 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15"
               >
                 <AudioLaneClip
                   url={voiceover.url}
@@ -763,11 +764,12 @@ export function Timeline({
             {sfx.length > 0 && (
               <div
                 data-testid="sfx-lane"
-                className="relative mt-1 h-8 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-1 ring-inset ring-[color:var(--color-line)]/15"
+                className="relative mt-1 h-8 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15"
               >
                 {sfx.map((s) => {
                   const w = Math.max(28, (s.durSec ?? 1) * pps);
                   const startDrag = (e: React.PointerEvent) => {
+                    if (isLocked('sfx')) return;
                     e.preventDefault();
                     e.stopPropagation();
                     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -794,7 +796,7 @@ export function Timeline({
                       title={`${s.name} · ${s.atSec.toFixed(1)}s`}
                       onPointerDown={startDrag}
                       style={{ left: s.atSec * pps, width: w }}
-                      className="absolute inset-y-1 flex cursor-ew-resize touch-none items-center gap-1 overflow-hidden rounded-[var(--radius-xs)] bg-[color:var(--color-accent)]/25 px-1.5 ring-1 ring-inset ring-[color:var(--color-accent)]/50"
+                      className="absolute inset-y-1 flex cursor-ew-resize touch-none items-center gap-1 overflow-hidden rounded-[var(--radius-xs)] bg-[color:var(--color-accent)]/25 px-1.5 ring-[1.5px] ring-inset ring-[color:var(--color-accent)]/50"
                     >
                       <span className="truncate text-[11px] font-medium text-[color:var(--color-fg)]">
                         {s.name}
@@ -808,7 +810,8 @@ export function Timeline({
                           e.stopPropagation();
                           setSfx((prev) => prev.filter((x) => x.uid !== s.uid));
                         }}
-                        className="ml-auto grid h-3.5 w-3.5 shrink-0 place-items-center rounded-[2px] text-[11px] leading-none text-[color:var(--color-muted-foreground)] hover:bg-black/20 hover:text-[color:var(--color-fg)]"
+                        disabled={isLocked('sfx')}
+                        className="ml-auto grid h-3.5 w-3.5 shrink-0 place-items-center rounded-[2px] text-[11px] leading-none text-[color:var(--color-muted-foreground)] hover:bg-black/20 hover:text-[color:var(--color-fg)] disabled:pointer-events-none disabled:opacity-40"
                       >
                         ✕
                       </button>
@@ -880,7 +883,7 @@ export function Timeline({
             onClick={togglePlay}
             disabled={timeline.length === 0}
             aria-label={playing ? 'Пауза' : 'Воспроизвести'}
-            className="press-inset grid h-8 w-8 place-items-center rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] text-[color:var(--color-fg)] ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface)] disabled:opacity-40"
+            className="press-inset grid h-8 w-8 place-items-center rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] text-[color:var(--color-fg)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface)] disabled:opacity-40"
           >
             {playing ? <Pause size={13} /> : <Play size={13} className="ml-0.5" />}
           </button>

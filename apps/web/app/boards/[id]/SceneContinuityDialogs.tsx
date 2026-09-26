@@ -84,9 +84,9 @@ function DialogShell({
 }
 
 const PRIMARY_BUTTON =
-  'press inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-40';
+  'press inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-40';
 const SECONDARY_BUTTON =
-  'press-inset rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-muted-foreground)]';
+  'press-inset rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-muted-foreground)]';
 
 /* --------------------- per-shot object subset sheet --------------------- */
 
@@ -364,7 +364,7 @@ export function CastPackDetachDialog({
           type="button"
           data-testid="cast-detach-confirm"
           onClick={onConfirm}
-          className="press inline-flex items-center justify-center rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-destructive)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-destructive-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)]"
+          className="press inline-flex items-center justify-center rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-destructive)] px-3 py-2 text-[13px] font-semibold text-[color:var(--color-destructive-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)]"
         >
           Удалить и отсоединить
         </button>

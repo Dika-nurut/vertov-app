@@ -5,6 +5,7 @@ import { ProjectChromeContext } from './ProjectChromeContext';
 import { SearchLauncher } from '@/components/search/SearchLauncher';
 import { Mark } from '@/components/ui/mark';
 import type { ParsedProjectContext } from '@/lib/project-context';
+import { withLocale, type Locale } from '@/lib/locale';
 import styles from './ProjectChrome.module.css';
 
 /**
@@ -18,6 +19,7 @@ export function ProjectChrome({
   apiUrl,
   plan,
   isAnonymous = false,
+  locale = 'ru',
 }: {
   projectContext: ParsedProjectContext;
   email: string;
@@ -25,6 +27,7 @@ export function ProjectChrome({
   apiUrl: string;
   plan: ProfilePlan | null;
   isAnonymous?: boolean;
+  locale?: Locale;
 }) {
   return (
     <header className={styles.bar}>
@@ -37,12 +40,12 @@ export function ProjectChrome({
       </span>
       <span className={styles.separator} aria-hidden="true" />
 
-      <ProjectChromeContext projectContext={projectContext} />
+      <ProjectChromeContext projectContext={projectContext} locale={locale} />
 
       <div className={styles.account}>
         <SearchLauncher apiUrl={apiUrl} className={styles.search} />
         {!isAnonymous && (
-          <Link href="/pricing" className={styles.upgrade}>
+          <Link href={withLocale('/pricing', locale)} className={styles.upgrade}>
             Апгрейд
           </Link>
         )}
@@ -56,6 +59,7 @@ export function ProjectChrome({
             apiUrl={apiUrl}
             plan={plan}
             isAnonymous={isAnonymous}
+            locale={locale}
           />
         </div>
       </div>

@@ -49,8 +49,14 @@ interface MediaDetailRow {
   kind: 'image' | 'video' | 'audio';
   mimeType: string | null;
   createdAt: string;
+  expiresAt: string | null;
   projects: Array<{ id: string; title: string }>;
   projectCount: number;
+}
+
+interface MediaLifecycleRow {
+  expiresAt: Date | null;
+  deletedAt: Date | null;
 }
 
 /**
@@ -221,6 +227,7 @@ SELECT
   g.kind::text AS kind,
   g.mime_type AS "mimeType",
   g.created_at AS "createdAt",
+  g.expires_at AS "expiresAt",
   coalesce(m.projects, '[]'::json) AS projects,
   coalesce(m.project_count, 0) AS "projectCount"
 FROM gallery_items g
@@ -245,6 +252,13 @@ WHERE g.id = $2
   AND g.user_id = $1
   AND g.deleted_at IS NULL
   AND (g.expires_at IS NULL OR g.expires_at > CURRENT_TIMESTAMP)
+LIMIT 1
+`;
+
+export const MEDIA_LIFECYCLE_SQL = `
+SELECT expires_at AS "expiresAt", deleted_at AS "deletedAt"
+FROM gallery_items
+WHERE id = $1 AND user_id = $2
 LIMIT 1
 `;
 
@@ -374,7 +388,23 @@ export function setupSearchRoutes(app: FastifyInstance, requireSession: SessionR
       parsedId.data,
     ]);
     const media = result.rows[0];
-    if (!media) return reply.status(404).send({ error: 'not_found' });
+    if (!media) {
+      // Keep foreign/missing ids opaque, but give the owner an actionable
+      // terminal state for a durable receipt whose media has crossed its
+      // retention boundary or was deleted.
+      const lifecycle = await pool.query<MediaLifecycleRow>(MEDIA_LIFECYCLE_SQL, [
+        parsedId.data,
+        session.user.id,
+      ]);
+      const row = lifecycle.rows[0];
+      if (row && (row.deletedAt || (row.expiresAt && row.expiresAt <= new Date()))) {
+        return reply.status(410).send({
+          error: 'asset_unavailable',
+          reason: row.deletedAt ? 'deleted' : 'expired',
+        });
+      }
+      return reply.status(404).send({ error: 'not_found' });
+    }
 
     reply.header('cache-control', 'private, no-store');
     return {

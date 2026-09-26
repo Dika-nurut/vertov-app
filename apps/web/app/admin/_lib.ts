@@ -266,4 +266,4 @@ export async function fetchProviderBalances(): Promise<ProviderBalancesResp | nu
 
 // Pure formatters + window constants live in the client-safe _fmt module;
 // re-export so server pages can keep importing them from here.
-export { WINDOWS, parseDays, n, rub, pct, ms, dt } from './_fmt';
+export { WINDOWS, parseDays, n, rub, pct, ms, dt, tierLabel, statusLabel, kindLabel } from './_fmt';

@@ -79,9 +79,12 @@ export function StudioHeader({
           data-testid="studio-to-projects"
           title={isAnonymous ? 'На главную' : 'Все проекты'}
           aria-label={isAnonymous ? 'На главную' : 'Все проекты'}
-          className="glass glass-hover grid h-8 w-8 shrink-0 place-items-center rounded-[var(--radius-sm)] text-[color:var(--color-fg)]"
+          className="glass glass-hover inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 text-[color:var(--color-fg)]"
         >
           <FolderOpen size={16} />
+          <span className="hidden font-mono text-[10px] font-bold uppercase tracking-wide sm:inline">
+            {isAnonymous ? 'НА ГЛАВНУЮ' : 'ПРОЕКТЫ'}
+          </span>
         </Link>
         <span
           className="truncate font-display text-[15px] font-medium tracking-tight text-[color:var(--color-fg)]"
@@ -148,7 +151,7 @@ export function StudioHeader({
                         setExportFps('30');
                         setExportFmt('mp4');
                       }}
-                      className="press-inset rounded-[var(--radius-xs)] bg-[color:var(--color-surface2)] px-2 py-1.5 text-[11px] font-semibold text-[color:var(--color-muted-foreground)] ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:text-[color:var(--color-fg)]"
+                      className="press-inset rounded-[var(--radius-xs)] bg-[color:var(--color-surface2)] px-2 py-1.5 text-[11px] font-semibold text-[color:var(--color-muted-foreground)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:text-[color:var(--color-fg)]"
                     >
                       {p.label}
                     </button>

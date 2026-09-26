@@ -70,8 +70,9 @@ describe('BRD-3 active video catalog → provider-body conformance', () => {
       if (override && !orFallback) return false;
       return capabilities['forceGateway'] === 'openrouter' || model.providerModelId?.includes('/');
     });
-    // 12 since 2026-08-04: happyhorse-1-0 withdrawn (finance ruling Q8).
-    expect(activeVideos).toHaveLength(12);
+    // 12 since 2026-08-04: happyhorse-1-0 withdrawn (finance ruling Q8); 13 with Seedance
+    // 2.0 Mini (2026-09-25), which is Pixazo-only — its body mapping is pixazo-adapter.test.ts.
+    expect(activeVideos).toHaveLength(13);
     expect(rows).toHaveLength(7);
 
     for (const model of rows) {

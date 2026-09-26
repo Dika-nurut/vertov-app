@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 // Icons: Phosphor (the project's chosen family), aliased to the prior lucide
-// names so call-sites stay unchanged. Default weight reads crisp on dark.
+// names so call-sites stay unchanged. Canon weight is ALWAYS bold — every
+// call-site below passes weight="bold" explicitly (the SSR entry carries no
+// IconContext, so there is no global default to lean on).
 import {
   ArrowRight,
   Check,
@@ -55,6 +58,7 @@ import {
   type InflightGeneration,
 } from '@/lib/inflight-generations';
 import { jobFailureGuidance } from '@/lib/job-failure';
+import { GIFT_TOKENS_UPFRONT } from '@/lib/gift-tokens';
 import { isModelLocked, tierRank, TIER_LABEL } from '@/lib/model-tier';
 import { Button } from '@/components/ui/button';
 import { TokenStar } from '@/components/ui/token-star';
@@ -548,8 +552,10 @@ function StatusBadge({ kind }: { kind: Phase['kind'] }) {
   const m = STATUS_META[kind];
   const animated = kind === 'submitting' || kind === 'polling';
   const isError = kind === 'failed' || kind === 'insufficient';
-  // Errors stay coral; every other state is the lime status chip (owner: same
-  // green as the «кр» chip). Borderless — no «lame» bone outline.
+  // Errors stay coral; active/waiting states are the accent (periwinkle)
+  // status chip — lime is reserved for the CTA quote + the done receipt, never
+  // for idle/polling (WS6 lime discipline). Done keeps the lime treatment as
+  // the one status spark; everything else non-error is accent.
   if (isError) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-xs)] bg-[rgba(var(--destructive-rgb),0.16)] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-destructive)]">
@@ -558,14 +564,19 @@ function StatusBadge({ kind }: { kind: Phase['kind'] }) {
       </span>
     );
   }
+  const doneKind = kind === 'done';
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-[var(--radius-xs)] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em]"
-      style={{ background: 'var(--color-accent2)', color: 'var(--color-accent2-foreground)' }}
+      style={
+        doneKind
+          ? { background: 'var(--color-accent2)', color: 'var(--color-accent2-foreground)' }
+          : { background: 'var(--color-accent)', color: 'var(--color-primary-foreground)' }
+      }
     >
       <span
         className={
-          'h-1.5 w-1.5 rounded-full bg-[color:var(--color-accent2-foreground)] ' +
+          'h-1.5 w-1.5 rounded-full bg-[color:var(--color-primary-foreground)] ' +
           (animated ? 'seed-pulse-dot' : '')
         }
       />
@@ -666,7 +677,8 @@ function FailedState({
         /* Refund is async — don't assert it landed; the failed path above
            already re-polled the balance via invalidateBalance(). */
         <p className="mt-2 flex items-center gap-1.5 text-[13px] text-[color:var(--color-positive)]">
-          <Check size={14} /> Возврат токенов обрабатывается — баланс обновится автоматически.
+          <Check size={14} weight="bold" /> Возврат токенов обрабатывается — баланс обновится
+          автоматически.
         </p>
       )}
       <button
@@ -674,7 +686,8 @@ function FailedState({
         onClick={onRetry}
         className="press-inset mt-6 inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 text-[13px] font-semibold text-[color:var(--color-fg)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)]"
       >
-        <RefreshCw size={16} /> {stillRunning ? 'Новая генерация' : 'Попробовать снова'}
+        <RefreshCw size={16} weight="bold" />{' '}
+        {stillRunning ? 'Новая генерация' : 'Попробовать снова'}
       </button>
       {!stillRunning && (
         <SupportLink
@@ -703,7 +716,7 @@ function UnavailableState({ message, onReset }: { message: string; onReset: () =
         onClick={onReset}
         className="press-inset mt-6 inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 text-[13px] font-semibold text-[color:var(--color-fg)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)]"
       >
-        <Plus size={16} /> Создать ещё
+        <Plus size={16} weight="bold" /> Создать ещё
       </button>
     </div>
   );
@@ -734,7 +747,7 @@ function InsufficientState({ balance, cost }: { balance: number; cost: number })
           href="/pricing"
           className="press-inset inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-4 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors"
         >
-          <Wallet size={16} /> Пополнить баланс
+          <Wallet size={16} weight="bold" /> Пополнить баланс
         </a>
         <a
           href="/pricing"
@@ -829,7 +842,10 @@ export function GenerateClient({
   const [tourStep, setTourStep] = useState(0);
   const [tourActive, setTourActive] = useState(false);
   const isMobileViewport = useMediaQuery('(max-width: 767px)');
-  const tourStepCount = isMobileViewport ? 3 : 4;
+  // Desktop and mobile both run the full 4-step tour (the done step is the
+  // finish state on small screens too).
+  const tourStepCount = 4;
+  const router = useRouter();
   useEffect(() => {
     if (!onboarding || isAnonymous || typeof window === 'undefined') return;
     const controller = new AbortController();
@@ -859,7 +875,18 @@ export function GenerateClient({
   const endTour = useCallback(() => {
     setTourActive(false);
     if (!isAnonymous) void postOnboarding(apiUrl, {});
-  }, [apiUrl, isAnonymous]);
+    // Strip ?onboarding=1 so a reload or Back never replays the tour; other
+    // query (prompt/preset/model prefills) is preserved untouched.
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('onboarding')) {
+        url.searchParams.delete('onboarding');
+        router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
+      }
+    } catch {
+      // Tour state is already closed; the param is cosmetic from here.
+    }
+  }, [apiUrl, isAnonymous, router]);
   function changeGateway(g: Gateway) {
     setGateway(g);
     if (typeof window !== 'undefined') window.localStorage.setItem('seed.gateway', g);
@@ -1674,6 +1701,13 @@ export function GenerateClient({
   // There is deliberately no presence-based auto-swap any more: the user's model
   // pick is authoritative, which is what makes the first/last-frame path
   // reachable on the base Seedance rows again.
+  //
+  // WS6 DECISION (twin-cards-vs-presence, recorded 2026-09-06): twins stay two
+  // explicit cards; presence of an attachment NEVER retargets the model. Rationale:
+  // auto-swap made the frame path unreachable on the two most-used video models
+  // and silently rebound a priced quote to a different tool. Behavior unchanged
+  // by this comment — it pins the decision so a future "simplification" does not
+  // reintroduce presence routing without revisiting the pricing-quote argument.
   const videoCards = useMemo(() => modelCards(allModels, 'video'), [allModels]);
   const imageCards = useMemo(() => modelCards(allModels, 'image'), [allModels]);
   const currentCard = useMemo(
@@ -3039,7 +3073,7 @@ export function GenerateClient({
             aria-label="Сбросить"
             className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
           >
-            <RotateCcw size={15} />
+            <RotateCcw size={15} weight="bold" />
           </button>
         </div>
       </div>
@@ -3049,8 +3083,12 @@ export function GenerateClient({
         <div className="flex rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] p-0.5">
           {(
             [
-              { id: 'controls', label: 'Управление', icon: <SlidersHorizontal size={15} /> },
-              { id: 'preview', label: 'Результат', icon: <Eye size={15} /> },
+              {
+                id: 'controls',
+                label: 'Управление',
+                icon: <SlidersHorizontal size={15} weight="bold" />,
+              },
+              { id: 'preview', label: 'Результат', icon: <Eye size={15} weight="bold" /> },
             ] as const
           ).map((p) => {
             const on = pane === p.id;
@@ -3166,9 +3204,12 @@ export function GenerateClient({
                         <span
                           key={s}
                           className={
-                            'shrink-0 rounded-[var(--radius-xs)] border-[1.5px] px-1.5 py-0.5 font-mono text-[7.5px] font-bold uppercase ' +
+                            // 11px floor — capability signs never render smaller
+                            // (WS6); AUDIO is accent here, the CTA quote keeps
+                            // the one lime spark.
+                            'shrink-0 rounded-[var(--radius-xs)] border-[1.5px] px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase ' +
                             (s === 'AUDIO'
-                              ? 'border-[color:var(--color-accent2)] text-[color:var(--color-accent2)]'
+                              ? 'border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
                               : s === 'REF'
                                 ? 'border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
                                 : 'border-[color:var(--color-line)]/40 text-[color:var(--color-muted-foreground)]')
@@ -3299,7 +3340,7 @@ export function GenerateClient({
                             onClick={clearAppliedPreset}
                             className="press-inset shrink-0 text-[color:var(--color-faint)] transition-colors hover:text-[color:var(--color-fg)]"
                           >
-                            <X size={11} />
+                            <X size={11} weight="bold" />
                           </button>
                         </span>
                       ) : presetApplied ? (
@@ -3330,7 +3371,7 @@ export function GenerateClient({
                           }}
                           className="press-inset inline-flex items-center gap-1 text-[11px] text-[color:var(--color-faint)] transition-colors hover:text-[color:var(--color-fg)]"
                         >
-                          <X size={12} /> очистить
+                          <X size={12} weight="bold" /> очистить
                         </button>
                       )}
                       <span className="tnum text-[11px] text-[color:var(--color-faint)]">
@@ -3378,7 +3419,7 @@ export function GenerateClient({
                 <div className="grid shrink-0 grid-cols-3 gap-2">
                   {/* Duration */}
                   <PillControl
-                    icon={<Clock size={15} />}
+                    icon={<Clock size={15} weight="bold" />}
                     label="Длина"
                     value={durationAuto ? 'авто' : `${clampedDuration}с`}
                     width="w-[18rem]"
@@ -3425,7 +3466,7 @@ export function GenerateClient({
 
                   {/* Aspect ratio */}
                   <PillControl
-                    icon={<RectangleHorizontal size={15} />}
+                    icon={<RectangleHorizontal size={15} weight="bold" />}
                     label="Формат"
                     value={effectiveAspect === 'adaptive' ? 'авто' : effectiveAspect}
                     width="w-[16rem]"
@@ -3471,7 +3512,7 @@ export function GenerateClient({
 
                   {/* Quality */}
                   <PillControl
-                    icon={<MonitorPlay size={15} />}
+                    icon={<MonitorPlay size={15} weight="bold" />}
                     label="Качество"
                     value={effectiveResolution}
                     width="w-[15rem]"
@@ -3524,7 +3565,7 @@ export function GenerateClient({
                       disabled={count <= 1}
                       className="press-inset grid h-7 w-7 place-items-center rounded-[var(--radius-xs)] text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-30"
                     >
-                      <Minus size={14} />
+                      <Minus size={14} weight="bold" />
                     </button>
                     <span className="tnum text-[13px] font-semibold text-[color:var(--color-fg)]">
                       ×{count}
@@ -3537,7 +3578,7 @@ export function GenerateClient({
                       disabled={count >= 4}
                       className="press-inset grid h-7 w-7 place-items-center rounded-[var(--radius-xs)] text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-30"
                     >
-                      <Plus size={14} />
+                      <Plus size={14} weight="bold" />
                     </button>
                   </div>
                 </div>
@@ -3545,7 +3586,7 @@ export function GenerateClient({
                 <div className="grid shrink-0 grid-cols-3 gap-2">
                   {/* Size */}
                   <PillControl
-                    icon={<Crop size={15} />}
+                    icon={<Crop size={15} weight="bold" />}
                     label="Размер"
                     value={sizePx}
                     width="w-[16rem]"
@@ -3599,7 +3640,7 @@ export function GenerateClient({
 
                   {imageQualityOptions.length > 0 && (
                     <PillControl
-                      icon={<MonitorPlay size={15} />}
+                      icon={<MonitorPlay size={15} weight="bold" />}
                       label="Качество"
                       value={boardImageQualityLabel(imageQuality ?? imageQualityOptions[0] ?? '')}
                       width="w-[15rem]"
@@ -3650,7 +3691,7 @@ export function GenerateClient({
                       disabled={count <= 1}
                       className="press-inset grid h-7 w-7 place-items-center rounded-[var(--radius-xs)] text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-30"
                     >
-                      <Minus size={14} />
+                      <Minus size={14} weight="bold" />
                     </button>
                     <span className="tnum text-[13px] font-semibold text-[color:var(--color-fg)]">
                       ×{count}
@@ -3663,7 +3704,7 @@ export function GenerateClient({
                       disabled={count >= 4}
                       className="press-inset grid h-7 w-7 place-items-center rounded-[var(--radius-xs)] text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-30"
                     >
-                      <Plus size={14} />
+                      <Plus size={14} weight="bold" />
                     </button>
                   </div>
                   {/* Seed is API-only now — removed from the UI (Метро-док, D16). */}
@@ -3703,7 +3744,7 @@ export function GenerateClient({
                           : 'bg-[color:var(--color-surface2)] text-[color:var(--color-muted-foreground)] hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]')
                       }
                     >
-                      <Zap size={14} />
+                      <Zap size={14} weight="bold" />
                       Черновик
                       {draft && (
                         <span className="tnum text-[11px] text-[color:var(--color-bg)] opacity-70">
@@ -3733,9 +3774,9 @@ export function GenerateClient({
                     }
                   >
                     {audioCapable && genAudio ? (
-                      <SpeakerHigh size={14} />
+                      <SpeakerHigh size={14} weight="bold" />
                     ) : (
-                      <SpeakerSlash size={14} />
+                      <SpeakerSlash size={14} weight="bold" />
                     )}
                     Звук
                   </button>
@@ -3773,10 +3814,11 @@ export function GenerateClient({
                   className="group h-12 w-full rounded-[var(--radius-md)] px-7 text-[15px]"
                 >
                   <a href={lockedCtaHref} data-testid="upsell-cta">
-                    <Lock size={16} />
+                    <Lock size={16} weight="bold" />
                     <span>{lockedModelCtaLabel(model?.tierMin)}</span>
                     <ArrowRight
                       size={17}
+                      weight="bold"
                       className="transition-transform duration-150 group-hover:translate-x-0.5"
                     />
                   </a>
@@ -3802,6 +3844,32 @@ export function GenerateClient({
                       </a>
                     </p>
                   )}
+                  {/* Anonymous guests hold no balance (no welcome grants until
+                      signup), so the authed nudge above never fires for them —
+                      route to login/signup, with pricing as a separate honest
+                      option instead of inventing a top-up amount. */}
+                  {isAnonymous && cost !== null && balance < cost && (
+                    <p
+                      className="font-mono text-[11px] leading-relaxed text-[color:var(--color-muted-foreground)]"
+                      data-testid="low-balance-hint"
+                    >
+                      Баланса не хватит ({balance} из {cost}) —{' '}
+                      <a
+                        href="/login?next=/generate"
+                        className="text-[color:var(--color-accent)] underline decoration-2 underline-offset-2"
+                      >
+                        войдите или зарегистрируйтесь
+                      </a>
+                      {', новым аккаунтам начислим '}
+                      {GIFT_TOKENS_UPFRONT} токенов.{' '}
+                      <a
+                        href="/pricing"
+                        className="text-[color:var(--color-accent)] underline decoration-2 underline-offset-2"
+                      >
+                        Смотреть тарифы
+                      </a>
+                    </p>
+                  )}
                   <Button
                     type="submit"
                     data-testid="submit"
@@ -3812,7 +3880,7 @@ export function GenerateClient({
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 size={18} className="seed-spin" /> Отправляем…
+                        <Loader2 size={18} weight="bold" className="seed-spin" /> Отправляем…
                       </>
                     ) : (
                       <>
@@ -3836,6 +3904,7 @@ export function GenerateClient({
                         </span>
                         <ArrowRight
                           size={17}
+                          weight="bold"
                           className="transition-transform duration-150 group-hover:translate-x-0.5"
                         />
                       </>
@@ -3908,7 +3977,7 @@ export function GenerateClient({
                         onClick={() => setSelectedAsset(null)}
                         className="press-inset mr-1 inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
                       >
-                        <Layers size={13} /> Все ({doneAssets.length})
+                        <Layers size={13} weight="bold" /> Все ({doneAssets.length})
                       </button>
                     )}
                     {phase.kind === 'done' && curAsset && !inGridView && (
@@ -3920,7 +3989,7 @@ export function GenerateClient({
                           aria-label="На весь экран"
                           className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
                         >
-                          <Maximize2 size={15} />
+                          <Maximize2 size={15} weight="bold" />
                         </button>
                         <button
                           type="button"
@@ -3929,7 +3998,7 @@ export function GenerateClient({
                           aria-label="Поделиться"
                           className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
                         >
-                          <Share2 size={15} />
+                          <Share2 size={15} weight="bold" />
                         </button>
                         <a
                           href={assetSrc(curAsset)}
@@ -3938,7 +4007,7 @@ export function GenerateClient({
                           aria-label="Скачать"
                           className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
                         >
-                          <Download size={15} />
+                          <Download size={15} weight="bold" />
                         </a>
                       </>
                     )}
@@ -4046,7 +4115,7 @@ export function GenerateClient({
                         } as React.CSSProperties
                       }
                     />
-                    <span className="tnum font-mono text-[16px] text-[color:var(--color-faint)]">
+                    <span className="tnum font-mono text-[15px] text-[color:var(--color-faint)]">
                       {fmtClock(elapsedSec)}
                       {elapsedSec < stageEtaSec
                         ? ` · обычно ${fmtEtaHint(stageEtaSec)}`
@@ -4061,7 +4130,7 @@ export function GenerateClient({
                       title="Вернуться к редактированию — ролик до-генерируется в фоне"
                       className="press-inset inline-flex h-11 items-center gap-2 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
                     >
-                      <X size={16} /> Отменить
+                      <X size={16} weight="bold" /> Отменить
                     </button>
                   </div>
                 )}
@@ -4200,7 +4269,7 @@ export function GenerateClient({
                           onClick={() => animateImage(curAsset)}
                           className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors"
                         >
-                          <Clapperboard size={14} /> Оживить
+                          <Clapperboard size={14} weight="bold" /> Оживить
                         </button>
                       )}
                       {curIsVideo && lastFrameAsset && (
@@ -4210,7 +4279,7 @@ export function GenerateClient({
                           onClick={() => extendVideo(lastFrameAsset)}
                           className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors"
                         >
-                          <Clapperboard size={14} /> Продолжить видео
+                          <Clapperboard size={14} weight="bold" /> Продолжить видео
                         </button>
                       )}
                       <button
@@ -4227,7 +4296,7 @@ export function GenerateClient({
                         }
                         className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-50"
                       >
-                        <RefreshCw size={14} /> Вариации
+                        <RefreshCw size={14} weight="bold" /> Вариации
                       </button>
                       <button
                         type="button"
@@ -4236,7 +4305,7 @@ export function GenerateClient({
                         disabled={isSubmitting || repeatValidation || !projectContextReady}
                         className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-50"
                       >
-                        <Repeat size={14} /> Повторить
+                        <Repeat size={14} weight="bold" /> Повторить
                         <span
                           className="tnum inline-flex items-center gap-1 rounded-[var(--radius-xs)] px-2 py-0.5 text-[11px] font-bold"
                           style={{
@@ -4257,9 +4326,9 @@ export function GenerateClient({
                           className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-50"
                         >
                           {handingOff ? (
-                            <Loader2 size={14} className="seed-spin" />
+                            <Loader2 size={14} weight="bold" className="seed-spin" />
                           ) : (
-                            <Scissors size={14} />
+                            <Scissors size={14} weight="bold" />
                           )}{' '}
                           В Studio
                         </button>
@@ -4271,7 +4340,7 @@ export function GenerateClient({
                           onClick={() => addVideoReference(curAsset)}
                           className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
                         >
-                          <AtSign size={14} /> В референсы
+                          <AtSign size={14} weight="bold" /> В референсы
                         </button>
                       )}
                       {!curIsVideo && editModelAvailable && (
@@ -4281,7 +4350,7 @@ export function GenerateClient({
                           onClick={() => editImage(curAsset)}
                           className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
                         >
-                          <Pencil size={14} /> Редактировать
+                          <Pencil size={14} weight="bold" /> Редактировать
                         </button>
                       )}
                       {!curIsVideo && (
@@ -4291,7 +4360,7 @@ export function GenerateClient({
                           onClick={() => addReference(curAsset)}
                           className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
                         >
-                          <AtSign size={14} /> В референсы
+                          <AtSign size={14} weight="bold" /> В референсы
                         </button>
                       )}
                     </div>
@@ -4308,13 +4377,13 @@ export function GenerateClient({
                         onClick={reset}
                         className="ml-auto inline-flex items-center gap-1.5 font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-fg)]"
                       >
-                        <Plus size={14} /> Создать ещё
+                        <Plus size={14} weight="bold" /> Создать ещё
                       </button>
                       <Link
                         href="/studio"
                         className="ml-2 inline-flex items-center gap-1.5 font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-accent)]"
                       >
-                        <Scissors size={14} /> В студию
+                        <Scissors size={14} weight="bold" /> В студию
                       </Link>
                     </div>
                   )}
@@ -4327,7 +4396,7 @@ export function GenerateClient({
                     </p>
                   )}
                   <p className="flex items-start gap-1.5 text-[13px] leading-relaxed text-[color:var(--color-faint)]">
-                    <Info size={13} className="mt-0.5 shrink-0" />
+                    <Info size={13} weight="bold" className="mt-0.5 shrink-0" />
                     <span>
                       Стоимость подтверждается перед запуском
                       {resultAudio !== null

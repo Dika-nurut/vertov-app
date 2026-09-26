@@ -117,7 +117,7 @@ describe('deriveCta — authenticated user whose subscription lookup failed', ()
 });
 
 describe('deriveCta — authed with active «Про» subscription', () => {
-  it('marks the Про plate as the current tier — a lime status marker, not an action', () => {
+  it('marks the Про plate as the current tier — a bone status marker + lime dot, not an action', () => {
     const cta = deriveCta({ tier: 'pro', priceRub: 3799 }, authedPro);
     expect(cta).toEqual({
       label: 'Текущий тариф',
@@ -173,7 +173,7 @@ describe('deriveCta — a scheduled downgrade (Про → Старт)', () => {
     });
   });
 
-  it('keeps the current Про plate a lime status marker while the downgrade is pending', () => {
+  it('keeps the current Про plate a status marker while the downgrade is pending', () => {
     expect(deriveCta({ tier: 'pro', priceRub: 3799 }, proDowngradingToStart).status).toBe(true);
   });
 

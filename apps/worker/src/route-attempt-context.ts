@@ -65,6 +65,7 @@ export function routeAttemptContext(input: {
     'openrouter',
     'openrouter-official',
     'atlascloud',
+    'pixazo',
   ];
   const legs: Record<string, AttemptLegContext> = {};
   for (const gateway of names) {
@@ -127,6 +128,8 @@ function relayForGateway(gateway: string): string | null {
       return 'openrouter';
     case 'atlascloud':
       return 'atlascloud';
+    case 'pixazo':
+      return 'pixazo';
     default:
       return null;
   }

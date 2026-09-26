@@ -1,11 +1,11 @@
 .home {
   position: relative;
-  min-width: 1024px;
+  min-width: 0;
   min-height: 100vh;
-  overflow: hidden;
+  overflow: auto;
   background: var(--color-bg);
   color: var(--color-fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 
 .topbar {
@@ -43,7 +43,7 @@
   border: 2px solid var(--color-line);
   background: var(--color-surface);
   color: var(--color-fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -151,7 +151,7 @@
   border: 0;
   background: transparent;
   color: var(--color-fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   text-align: center;
 }
 
@@ -323,7 +323,7 @@
 }
 
 .dialog {
-  width: min(460px, calc(100vw - 48px));
+  width: min(460px, calc(100vw - 2rem));
   padding: 22px;
   border: 2.5px solid var(--color-line);
   background: var(--color-surface2);
@@ -378,4 +378,49 @@
   bottom: 7px;
   color: rgb(236 238 243 / 25%);
   font-size: 7px;
+}
+
+@media (max-width: 1023px) {
+  .topbar {
+    min-height: 46px;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .actions {
+    min-width: 0;
+    margin-left: auto;
+    overflow-x: auto;
+  }
+
+  .topbar time {
+    display: none;
+  }
+
+  .projectPlane {
+    min-height: calc(100vh - 46px);
+    padding: 32px 24px 56px;
+  }
+
+  .projectGrid {
+    grid-template-columns: repeat(auto-fill, minmax(112px, 132px));
+    gap: 28px 20px;
+  }
+
+  .projectGrid button {
+    width: 100%;
+  }
+
+  .guidance {
+    right: 12px;
+    width: min(360px, calc(100vw - 24px));
+  }
+
+  .trashInspection {
+    right: 12px;
+    bottom: 12px;
+    width: min(310px, calc(100vw - 24px));
+  }
 }

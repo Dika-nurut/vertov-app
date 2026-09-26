@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { fetchUsers, dt } from '../_lib';
+import { fetchUsers, dt, statusLabel, tierLabel } from '../_lib';
 import { Panel } from '../_components/ui';
+import { ErrorState } from '../../_components/states/ErrorState';
 
-export const metadata: Metadata = { title: 'Вертов · Админ · Пользователи' };
+export const metadata: Metadata = { title: 'АДМИН · Пользователи' };
 export const dynamic = 'force-dynamic';
 
 export default async function UsersPage({
@@ -17,7 +18,7 @@ export default async function UsersPage({
   return (
     <>
       <header className="mb-6">
-        <h1 className="font-display text-3xl font-black tracking-tight">Пользователи</h1>
+        <h1 className="font-display text-3xl font-black tracking-tight">АДМИН · Пользователи</h1>
         <p className="mt-1 text-xs text-faint">Поиск по email или точному id · баланс · история</p>
       </header>
 
@@ -39,9 +40,7 @@ export default async function UsersPage({
       {/* A failed fetch (data === null) must not read as "user not found" — an
           operator could re-grant credits believing the account doesn't exist. */}
       {q && !data && (
-        <div className="flex h-32 items-center justify-center border-[2.5px] border-dashed border-[color:var(--color-line-soft)] text-sm text-faint">
-          Не удалось выполнить поиск (API недоступен).
-        </div>
+        <ErrorState message="Не удалось выполнить поиск. Попробуйте обновить страницу." />
       )}
       {q && data && (
         <Panel className="px-5 py-1.5">
@@ -72,8 +71,8 @@ export default async function UsersPage({
                     <div className="font-mono text-[10px] text-faint">{u.id}</div>
                   </td>
                   <td>{u.displayName ?? '—'}</td>
-                  <td className="font-mono text-[11px] capitalize">{u.tier}</td>
-                  <td className="font-mono text-[11px]">{u.status}</td>
+                  <td className="font-mono text-[11px]">{tierLabel(u.tier)}</td>
+                  <td className="font-mono text-[11px]">{statusLabel(u.status)}</td>
                   <td className="font-mono text-[11px] text-faint">{dt(u.createdAt)}</td>
                 </tr>
               ))}
@@ -81,7 +80,7 @@ export default async function UsersPage({
           </table>
         </Panel>
       )}
-      {!q && <p className="text-sm text-faint">Введи email или id, чтобы найти пользователя.</p>}
+      {!q && <p className="text-sm text-faint">Введите email или id, чтобы найти пользователя.</p>}
     </>
   );
 }

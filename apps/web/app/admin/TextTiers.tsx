@@ -81,6 +81,7 @@ export function TextTiers({ items, apiUrl }: { items: TextTier[]; apiUrl: string
                   (m.isActive ? 'bg-accent' : 'bg-[color:var(--color-surface2)]')
                 }
                 aria-pressed={m.isActive}
+                aria-label={m.isActive ? 'Отключить текстовую модель' : 'Включить текстовую модель'}
                 title={m.isActive ? 'Выключить' : 'Включить'}
               >
                 <span

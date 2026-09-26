@@ -18,7 +18,7 @@ const SOON: string[] = [];
 export function AdminRail() {
   const path = usePathname();
   return (
-    <aside className="sticky top-0 flex h-screen w-[232px] flex-col gap-7 border-r-[2.5px] border-line bg-surface p-5">
+    <aside className="sticky top-0 flex h-screen w-[232px] flex-col gap-7 border-r-[2.5px] border-line bg-surface p-5 shadow-[var(--offset)]">
       <div className="flex items-baseline gap-2">
         <Wordmark size={26} />
         <span className="border-2 border-line bg-accent2 px-1.5 py-0.5 font-mono text-[9px] tracking-widest text-[color:var(--color-accent2-foreground)]">

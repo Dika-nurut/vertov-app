@@ -148,7 +148,8 @@ function MosaicCell({
         </span>
       )}
       <span className="pointer-events-none absolute inset-0 z-[3] hidden group-hover:block group-focus-within:block">
-        <span className="absolute inset-x-0 bottom-0 top-[55%] bg-gradient-to-b from-transparent to-[rgba(12,14,18,.88)]" />
+        {/* Legibility scrim (the one legitimate gradient use) — token-tinted. */}
+        <span className="absolute inset-x-0 bottom-0 top-[55%] bg-gradient-to-b from-transparent to-[color:var(--color-overlay)]" />
         <span className="absolute inset-[7px]">
           <i className="absolute left-0 top-0 h-[14px] w-[14px] border-l-2 border-t-2 border-[color:var(--color-fg)]" />
           <i className="absolute right-0 top-0 h-[14px] w-[14px] border-r-2 border-t-2 border-[color:var(--color-fg)]" />
@@ -174,7 +175,7 @@ function MosaicCell({
         href={`/generate?preset=${encodeURIComponent(pack.slug)}`}
         data-testid="vitrina-cell-cta"
         onClick={() => trackEvent(PlausibleEvent.landingCta, { cta: 'preset' })}
-        className="absolute bottom-[13px] right-[14px] z-[5] hidden border-2 border-[color:var(--color-fg)] bg-[color:var(--color-accent)] px-[13px] py-[7px] font-mono text-[11px] font-extrabold tracking-[0.04em] text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-primary-foreground)] group-hover:block group-focus-within:block group-active:translate-x-[2px] group-active:translate-y-[2px] group-active:shadow-[1px_1px_0_0_var(--color-primary-foreground)]"
+        className="absolute bottom-[13px] right-[14px] z-[5] hidden border-[2.5px] border-[color:var(--color-fg)] bg-[color:var(--color-accent)] px-[13px] py-[7px] font-mono text-[11px] font-extrabold tracking-[0.04em] text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-primary-foreground)] group-hover:block group-focus-within:block touch:block group-active:translate-x-[2px] group-active:translate-y-[2px] group-active:shadow-[1px_1px_0_0_var(--color-primary-foreground)]"
       >
         Снять так же
       </Link>
@@ -256,7 +257,7 @@ export function VitrinaMosaic({ packs }: { packs: PresetRow[] }) {
               role="tablist"
               aria-label="Полки витрины"
               data-testid="vitrina-shelf-rail"
-              className="inline-flex min-w-0 max-w-full flex-nowrap overflow-x-auto border-2 border-[color:var(--color-fg)] [&::-webkit-scrollbar]:hidden"
+              className="inline-flex min-w-0 max-w-full flex-nowrap overflow-x-auto border-[2.5px] border-[color:var(--color-fg)] [&::-webkit-scrollbar]:hidden"
               style={{ scrollbarWidth: 'none' }}
             >
               <button
@@ -266,7 +267,7 @@ export function VitrinaMosaic({ packs }: { packs: PresetRow[] }) {
                 data-testid="vitrina-shelf-tab"
                 data-shelf="all"
                 onClick={() => setShelf(null)}
-                className={`appearance-none border-0 border-r-2 border-r-[color:var(--color-fg)] last:border-r-0 px-[18px] py-[10px] whitespace-nowrap cursor-pointer font-display text-[11px] font-black uppercase tracking-[0.02em] transition-colors ${
+                className={`appearance-none border-0 border-r-[2.5px] border-r-[color:var(--color-fg)] last:border-r-0 px-[18px] py-[10px] whitespace-nowrap cursor-pointer font-mono text-[11px] font-black uppercase tracking-[0.02em] transition-colors ${
                   // The active bg must live in the SAME conditional arm as the
                   // base class: two bg-* utilities in one class list resolve by
                   // stylesheet order, not string order, and the rail's dark
@@ -294,7 +295,7 @@ export function VitrinaMosaic({ packs }: { packs: PresetRow[] }) {
                         shelf: item.key,
                       } satisfies VitrinaShelfPayload);
                     }}
-                    className={`appearance-none border-0 border-r-2 border-r-[color:var(--color-fg)] last:border-r-0 px-[18px] py-[10px] whitespace-nowrap cursor-pointer font-display text-[11px] font-black uppercase tracking-[0.02em] transition-colors ${
+                    className={`appearance-none border-0 border-r-[2.5px] border-r-[color:var(--color-fg)] last:border-r-0 px-[18px] py-[10px] whitespace-nowrap cursor-pointer font-mono text-[11px] font-black uppercase tracking-[0.02em] transition-colors ${
                       // Same class-order trap as the Все tab above.
                       active
                         ? 'bg-[color:var(--color-fg)] text-[color:var(--color-bg)]'
@@ -302,7 +303,9 @@ export function VitrinaMosaic({ packs }: { packs: PresetRow[] }) {
                     }`}
                   >
                     {item.trend && (
-                      <span className="mr-[7px] inline-block h-[7px] w-[7px] rounded-full bg-[color:var(--color-accent2)] align-[1px]" />
+                      // Accent trend tick — lime appears once per page (the
+                      // «новое» badge above).
+                      <span className="mr-[7px] inline-block h-[7px] w-[7px] rounded-full bg-[color:var(--color-accent)] align-[1px]" />
                     )}
                     {item.label}
                     <sup className="ml-1 align-super font-mono text-[11px] font-bold opacity-55">

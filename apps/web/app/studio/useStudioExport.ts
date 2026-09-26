@@ -161,9 +161,9 @@ export function useStudioExport({
             ...(c.blendMode && c.blendMode !== 'normal' ? { blendMode: c.blendMode } : {}),
           })),
           // Phase II/III.3: upper tracks render first-class via the alpha path.
-          // Each upper-track clip carries its full RENDERABLE instrument set +
-          // absolute startSec. Mask/blend/keyframes are gated out — the worker
-          // can't honour them on a layer yet (preview==export discipline).
+          // Each upper-track clip carries the static, alpha-safe instrument set
+          // plus absolute startSec. Mask/blend/keyframes/animation are gated out
+          // because the worker cannot honour them on a transparent layer yet.
           ...(() => {
             const upper = tracks
               .slice(1)

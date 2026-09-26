@@ -252,7 +252,8 @@ describe('Phase 2 relay and route selection', () => {
     // was a placeholder reserve leg copying the primary's own rate, and the five rows it
     // sat on have no failover at all. Removing the phantom moved no price and no margin,
     // which is exactly why it survived three revisions.
-    expect([...relays].sort()).toEqual(['AtlasCloud', 'Kie', 'LaoZhang', 'OpenRouter']);
+    // Rev. 23 adds Pixazo, the single leg of Seedance 2.0 Mini.
+    expect([...relays].sort()).toEqual(['AtlasCloud', 'Kie', 'LaoZhang', 'OpenRouter', 'Pixazo']);
     // The mapping still refuses `—` explicitly. A relay label that reaches the router
     // without a vendor must dial nothing, whether or not one is in the file today.
     expect(RELAY_TO_ADAPTER_GATEWAY['—' as keyof typeof RELAY_TO_ADAPTER_GATEWAY]).toBeUndefined();
@@ -429,12 +430,12 @@ describe('Phase 2 relay and route selection', () => {
   });
 
   it('pins an EMPTY capability-unknown set against an independent leg enumeration', () => {
-    // Rev. 22 is the signed 140-row export: Wan i2v 720p/1080p and the Gemini/GPT image
-    // fallback configurations carry explicit reserve rows. The
+    // Rev. 23 is the signed 144-row export: rev. 22's 140 (Wan i2v 720p/1080p and the
+    // Gemini/GPT image fallback rows) plus Seedance 2.0 Mini's four Pixazo legs. The
     // enumeration is over the whole file on purpose:
     // a leg that stops being counted here is a leg that stopped being checked for a
     // capability gap.
-    expect(catalogue.reduce((count, entry) => count + entry.legs.length, 0)).toBe(140);
+    expect(catalogue.reduce((count, entry) => count + entry.legs.length, 0)).toBe(144);
     const unknown = activeEntries.flatMap((entry) =>
       entry.legs.flatMap((leg) => {
         const kind = independentUnknownKind(entry, leg);

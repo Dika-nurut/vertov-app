@@ -29,7 +29,11 @@ export function ScenarioSourcePicker({
   workspaceProjectId: string | null;
   onClose: () => void;
   beforeApply: () => Promise<boolean>;
-  onApplied: (state: BoardDocument, summary: string) => void;
+  onApplied: (
+    state: BoardDocument,
+    summary: string,
+    source: { scriptId: string; ordinals: number[] },
+  ) => void;
 }) {
   const [scripts, setScripts] = useState<ScriptListItem[] | null>(null);
   const [scriptId, setScriptId] = useState('');
@@ -111,6 +115,7 @@ export function ScenarioSourcePicker({
       onApplied(
         body.state,
         `Сцены добавлены: ${body.added ?? 0} · обновлены: ${body.updated ?? 0} · удалены в сценарии: ${body.removed ?? 0}`,
+        { scriptId, ordinals: [...selected].sort((a, b) => a - b) },
       );
       onClose();
     } catch (cause) {
@@ -126,18 +131,21 @@ export function ScenarioSourcePicker({
     }
   }, [apiUrl, beforeApply, boardId, busy, onApplied, onClose, scenes?.length, scriptId, selected]);
 
+  // WS5 tokens-first-half: this was a centered full-canvas modal
+  // (fixed inset-0 z-[100] + scrim) hiding the board it edits. It is now a
+  // right-side overlay panel like the shot-list / history / cast panels: the
+  // canvas stays visible and interactive behind it, dismissal is the X button
+  // (the scrim-click path goes away with the scrim — same as those panels).
+  // Non-modal, so `aside` + aria-label like BoardHistoryPanel, not
+  // role=dialog/aria-modal. Two-column grid stacks to one: a 420px rail has
+  // no room for 220px + 1fr side by side.
   return (
-    <div
-      className="fixed inset-0 z-[100] grid place-items-center p-4"
+    <aside
+      aria-label="Сцены из сценария"
+      className="glass-menu seed-scroll pointer-events-auto absolute bottom-3 right-3 top-3 z-40 flex w-[min(420px,calc(100vw-1.5rem))] flex-col overflow-y-auto rounded-[var(--radius-md)] p-4"
       data-testid="board-scenario-picker"
     >
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="scenario-picker-title"
-        className="glass-menu relative flex max-h-[88dvh] w-full max-w-[700px] flex-col p-5"
-      >
+      <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-start gap-3">
           <FileText size={19} className="mt-1 text-[color:var(--color-accent)]" />
           <div className="min-w-0 flex-1">
@@ -157,12 +165,12 @@ export function ScenarioSourcePicker({
           </button>
         </div>
 
-        <div className="mt-4 grid min-h-0 gap-4 sm:grid-cols-[220px_1fr]">
+        <div className="mt-4 grid min-h-0 flex-1 gap-4">
           <section className="min-h-0">
             <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-wider text-[color:var(--color-faint)]">
               Сценарий
             </p>
-            <div className="seed-scroll max-h-[52dvh] space-y-1 overflow-y-auto">
+            <div className="seed-scroll max-h-[22dvh] space-y-1 overflow-y-auto">
               {scripts === null ? (
                 <Loader2 className="m-4 seed-spin" />
               ) : scripts.length === 0 ? (
@@ -273,12 +281,12 @@ export function ScenarioSourcePicker({
             data-testid="scenario-add-to-board"
             disabled={busy || selected.size === 0}
             onClick={() => void apply()}
-            className="press inline-flex items-center gap-2 rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-4 py-2 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] disabled:opacity-40"
+            className="press inline-flex items-center gap-2 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-4 py-2 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] disabled:opacity-40"
           >
             {busy && <Loader2 size={14} className="seed-spin" />}Добавить на борд
           </button>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

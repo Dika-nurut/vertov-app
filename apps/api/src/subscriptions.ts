@@ -858,6 +858,26 @@ export function setupSubscriptionRoutes(
     // actually charges (W3), a declined card lands the subscription in
     // `past_due` with an elapsed period. That customer's subscription is still
     // alive, and telling them to cancel and re-subscribe would be a lie.
+    // WS2: carry the latest failed/pending subscription order so billing can
+    // offer «Продолжить оплату» same-tab without a second lookup. History
+    // rows already carry their order id; only this block was missing it.
+    let failedOrderId: string | null = null;
+    if (!live && sub.status === 'past_due') {
+      const [failedOrder] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(
+          and(
+            eq(orders.userId, session.user.id),
+            eq(orders.kind, 'subscription'),
+            inArray(orders.ourStatus, ['pending', 'failed']),
+            sql`${orders.metadata}->>'subscriptionId' = ${sub.id}`,
+          ),
+        )
+        .orderBy(desc(orders.createdAt))
+        .limit(1);
+      failedOrderId = failedOrder?.id ?? null;
+    }
     const planAccessBlock = live
       ? null
       : {
@@ -866,6 +886,7 @@ export function setupSubscriptionRoutes(
           subscriptionId: sub.id,
           tier: sub.tier,
           currentPeriodEnd: sub.currentPeriodEnd,
+          ...(failedOrderId ? { orderId: failedOrderId } : {}),
         };
 
     return {

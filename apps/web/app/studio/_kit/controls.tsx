@@ -49,7 +49,7 @@ export function Section({
   return (
     <section
       data-testid={testid}
-      className="rounded-[var(--radius-md)] bg-[color:var(--color-surface2)]/35 p-3 ring-1 ring-inset ring-[color:var(--color-line)]/10"
+      className="rounded-[var(--radius-md)] bg-[color:var(--color-surface2)]/35 p-3 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/10"
     >
       <div className={'flex items-center justify-between ' + (shown ? 'mb-3' : '')}>
         <Header
@@ -224,7 +224,7 @@ export function TripleInput({
               const n = Number(e.target.value);
               if (Number.isFinite(n)) onChange(clamp(n));
             }}
-            className="tnum w-14 rounded-[var(--radius-xs)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-1.5 py-1 text-right text-[11px] text-[color:var(--color-fg)] outline-none ring-1 ring-inset ring-[color:var(--color-line)]/15 [appearance:textfield] focus:border-[color:var(--color-accent)] focus:shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="tnum w-14 rounded-[var(--radius-xs)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-1.5 py-1 text-right text-[11px] text-[color:var(--color-fg)] outline-none ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 [appearance:textfield] focus:border-[color:var(--color-accent)] focus:shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           {unit && <span className="text-[11px] text-[color:var(--color-faint)]">{unit}</span>}
         </span>
@@ -244,7 +244,7 @@ export function Toggle({
   onToggle: () => void;
 }) {
   return (
-    <label className="flex w-full cursor-pointer items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-3 py-2 text-[13px] ring-1 ring-inset ring-[color:var(--color-line)]/15 transition-colors hover:bg-[color:var(--color-surface)]">
+    <label className="flex w-full cursor-pointer items-center justify-between rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-3 py-2 text-[13px] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 transition-colors hover:bg-[color:var(--color-surface)]">
       <span className="text-[color:var(--color-muted-foreground)]">{label}</span>
       <Switch
         checked={on}

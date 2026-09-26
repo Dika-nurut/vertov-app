@@ -15,6 +15,7 @@ import {
   buildLaozhangImageBody,
   buildOpenRouterImageBody,
   buildOpenRouterVideoBody,
+  buildPixazoSeedanceMini,
   CircuitBreakerAdapter,
   KieAdapter,
   LaozhangAdapter,
@@ -861,6 +862,8 @@ describe('active catalogue price matrix', () => {
         return model.kind === 'video'
           ? buildOpenRouterVideoBody(spec)
           : buildOpenRouterImageBody(spec);
+      case 'pixazo':
+        return buildPixazoSeedanceMini(spec).body as unknown as Record<string, unknown>;
       default:
         throw new Error(`${model.id}: primary route has no local body builder`);
     }

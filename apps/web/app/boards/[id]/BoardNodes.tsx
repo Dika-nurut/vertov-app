@@ -229,6 +229,14 @@ export interface GraphActions {
   /** AI-промпт: draft a generation prompt from the node's brief via the
    * chosen text model (Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3 Flash). */
   draftPrompt: (id: string) => void;
+  /** Improve a normal Prompt card through the same paid prompt-studio route. */
+  improvePrompt: (id: string, model: 'claude' | 'gpt' | 'gemini') => Promise<boolean>;
+  /** Resolve one planner-reported asset through an ordinary connected node. */
+  resolveUnresolvedAsset: (
+    targetId: string,
+    asset: string,
+    action: 'project' | 'media' | 'visual',
+  ) => void;
   extractSceneObjects: (id: string) => Promise<{
     objects: { kind: 'person' | 'place' | 'thing'; name: string }[];
     sourceTruncated: boolean;
@@ -251,6 +259,8 @@ export interface GraphActions {
   generateCastReference: (id: string) => void;
   /** Append the selected result of an owned image shot to its cast card. */
   appendCastReference: (id: string) => void;
+  /** Add a second ordinary Generate card wired to the same prompt and refs. */
+  createVariant: (id: string) => void;
   assetLifecycleFor: (assetId: string | undefined) => ResolvedAsset | undefined;
   /** The URL a run would send for a gallery-identified media node, or undefined
    *  while its asset has not resolved (the runner drops it too). */
@@ -409,18 +419,23 @@ function RegistryOutPort({
   );
 }
 
-// Brutalist node shell — hard bone border-[1.5px] + sharp corners + a RESTRAINED hard
+// Brutalist node shell — hard bone border + sharp corners + a RESTRAINED hard
 // offset shadow. A clear interaction ladder reads as PHYSICAL depth (each step
-// lifts the card off its shadow): idle 3px → hover 4px + 1px lift → selected
-// periwinkle border-[1.5px] + 5px → dragging (see .seed-node CSS) accent + 6px + 2px
-// lift. `seed-node` is the CSS hook for the drag state (RF toggles `.dragging`
+// lifts the card off its shadow), using ONLY ladder rungs (2/3/5/7 —
+// design-bible §Shadows; the old hover 4px was off-ladder): idle 3px → hover
+// 5px (--offset) + 1px lift → selected periwinkle + 5px (selection reads via
+// the accent border, not a bigger shadow, so hover and selected share the rung)
+// → dragging (see .seed-node CSS in globals.css) accent + 6px + 2px lift.
+// WS5 decision: the drag 6px is also off-ladder but lives in globals.css,
+// outside this pass's boards scope — left as-is, do not copy it elsewhere.
+// `seed-node` is the CSS hook for the drag state (RF toggles `.dragging`
 // on the wrapper). Hover utilities live on shellIdle so a selected card holds
 // its grammar instead of also lifting.
 const shell =
   'seed-node group/node rounded-[var(--radius-md)] border-[2.5px] bg-[color:var(--color-surface)] transition-[transform,border-color,box-shadow] duration-150 ease-out';
 const shellSel = 'border-[color:var(--color-accent)] shadow-[5px_5px_0_0_var(--color-shadow)]';
 const shellIdle =
-  'border-[color:var(--color-line)] shadow-[3px_3px_0_0_var(--color-shadow)] hover:-translate-x-px hover:-translate-y-px hover:shadow-[4px_4px_0_0_var(--color-shadow)]';
+  'border-[color:var(--color-line)] shadow-[3px_3px_0_0_var(--color-shadow)] hover:-translate-x-px hover:-translate-y-px hover:shadow-[5px_5px_0_0_var(--color-shadow)]';
 
 // drag affordance for node headers. React Flow itself lets the whole widget move;
 // interactive controls opt out with `nodrag`.
@@ -676,11 +691,23 @@ function MentionTextarea({
             className="nodrag flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-left hover:bg-[color:var(--color-surface2)]"
           >
             <span
-              className={`tnum shrink-0 rounded-[var(--radius-xs)] px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wide ${
+              // WS5 tokens-first-half: mention-kind chips use the port sub-palette
+              // (the only colour-code allowed outside paper on boards), not ad-hoc
+              // tailwind violet/sky. Same fill/border recipe as the InPort labels.
+              className="tnum shrink-0 rounded-[var(--radius-xs)] border-[1.5px] px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wide"
+              style={
                 m.kind === 'video'
-                  ? 'bg-violet-400/15 text-violet-200'
-                  : 'bg-sky-400/15 text-sky-200'
-              }`}
+                  ? {
+                      color: 'var(--color-port-video)',
+                      background: 'rgba(var(--color-port-video-rgb), 0.13)',
+                      borderColor: 'rgba(var(--color-port-video-rgb), 0.4)',
+                    }
+                  : {
+                      color: 'var(--color-port-image)',
+                      background: 'rgba(var(--color-port-image-rgb), 0.13)',
+                      borderColor: 'rgba(var(--color-port-image-rgb), 0.4)',
+                    }
+              }
             >
               {m.token}
             </span>
@@ -699,6 +726,8 @@ function PromptNodeDetail({ id, data, selected }: NodeProps) {
   const d = data as unknown as PromptData;
   const { patch, mentionsForPrompt } = useGraph();
   const mentions = mentionsForPrompt(id);
+  const hasResult = Boolean(d.result?.trim());
+  const showResult = d.view === 'result' && hasResult;
   return (
     <div
       className={`${shell} ${selected ? shellSel : shellIdle} seed-drag relative flex h-full w-full min-w-[240px] cursor-grab flex-col active:cursor-grabbing`}
@@ -706,17 +735,56 @@ function PromptNodeDetail({ id, data, selected }: NodeProps) {
       <Resizer visible={selected} minWidth={200} minHeight={110} />
       <NodeTitle id={id} label="Промпт" testid="node-prompt-header" />
       <DragHitFrame />
+      {d.title && (
+        <div
+          data-testid="prompt-shot-title"
+          className="nodrag truncate px-3 pt-2 text-[13px] font-semibold text-[color:var(--color-fg)]"
+          title={d.title}
+        >
+          {d.title}
+        </div>
+      )}
       {/* cursor-text: the card shell is a drag handle (cursor-grab) and the
-          textarea INHERITS that grab/grabbing hand, so placing the caret or
-          selecting text showed a fist, not an I-beam (audit 2026-07-29). */}
-      <MentionTextarea
-        value={d.text}
-        onChange={(text) => patch(id, { text })}
-        mentions={mentions}
-        className="nodrag m-2 min-h-[48px] w-[calc(100%-16px)] flex-1 cursor-text resize-none rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line-soft)] bg-[color:var(--color-surface2)] p-2.5 text-[13px] leading-relaxed text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
-        placeholder="Текст промпта…"
-        testid="node-prompt-text"
-      />
+           textarea INHERITS that grab/grabbing hand, so placing the caret or
+           selecting text showed a fist, not an I-beam (audit 2026-07-29). */}
+      {showResult ? (
+        <div
+          data-testid="node-prompt-result"
+          className="nodrag seed-scroll m-2 min-h-[48px] flex-1 overflow-y-auto rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line-soft)] bg-[color:var(--color-surface2)] p-2.5 text-[13px] leading-relaxed text-[color:var(--color-fg)]"
+        >
+          {d.result}
+        </div>
+      ) : (
+        <MentionTextarea
+          value={d.text}
+          onChange={(text) => patch(id, { text })}
+          mentions={mentions}
+          className="nodrag m-2 min-h-[48px] w-[calc(100%-16px)] flex-1 cursor-text resize-none rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line-soft)] bg-[color:var(--color-surface2)] p-2.5 text-[13px] leading-relaxed text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
+          placeholder="Текст промпта…"
+          testid="node-prompt-text"
+        />
+      )}
+      {hasResult && (
+        <div
+          data-testid="prompt-view-switch"
+          className="nodrag flex items-center gap-1 px-2 pb-2"
+          role="group"
+          aria-label="Версия промпта"
+        >
+          {(['draft', 'result'] as const).map((view) => (
+            <button
+              key={view}
+              type="button"
+              data-testid={`prompt-view-${view}`}
+              disabled={view === 'result' && !hasResult}
+              onClick={() => patch(id, { view })}
+              className={`rounded-[var(--radius-xs)] border-[1.5px] px-2 py-0.5 text-[11px] font-semibold ${(d.view ?? 'draft') === view ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)] text-[color:var(--color-primary-foreground)]' : 'border-[color:var(--color-line-soft)] text-[color:var(--color-muted-foreground)]'}`}
+            >
+              {view === 'draft' ? 'Черновик' : 'Результат'}
+            </button>
+          ))}
+        </div>
+      )}
       <RegistryOutPort
         type="prompt"
         data={d as unknown as Record<string, unknown>}
@@ -751,6 +819,9 @@ function AiPromptNodeDetail({ id, data, selected }: NodeProps) {
   const hasResult = Boolean(d.text && d.text.trim());
   const showResult = d.view !== 'brief' && (busy || hasResult);
   const model = AI_TEXT_MODELS.find((m) => m.id === (d.model ?? 'claude')) ?? AI_TEXT_MODELS[0]!;
+  // WS5: the draft price comes from the shared workbook table (see the ai-draft
+  // button below) — kept beside the model so the footer has one quote source.
+  const aiCost: number | null = PROMPT_STUDIO_CREDITS[d.model ?? 'claude'] ?? null;
   const wiredScene = useStore((state) => {
     const edge = state.edges.find(
       (candidate) => candidate.target === id && candidate.targetHandle === 'scene',
@@ -942,6 +1013,12 @@ function AiPromptNodeDetail({ id, data, selected }: NodeProps) {
             again: adding the «· N кр.» price grew the CTA from ~90px to 138px on a
             240px node, which left 80px of grip entirely left of centre. */}
         <span data-testid="ai-footer-grip" className="min-w-[72px] flex-1 self-stretch" />
+        {/* WS5: price rides in its own cost span (mirrors the generate node's
+            node-cost badge) and renders «—» when unknown instead of a locally
+            computed number. There is deliberately no /v1/jobs/estimate hook
+            here: prompt-studio drafts are not jobs — PROMPT_STUDIO_CREDITS is
+            the shared workbook table the /v1/prompt-studio/draft endpoint
+            charges with, so it IS the server quote source, not a local guess. */}
         <button
           data-testid="ai-draft"
           disabled={busy || !(d.brief ?? '').trim()}
@@ -949,7 +1026,11 @@ function AiPromptNodeDetail({ id, data, selected }: NodeProps) {
           className="press nodrag flex h-7 shrink-0 items-center gap-1.5 rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-2.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-40"
         >
           {busy ? <Loader2 size={13} className="seed-spin" /> : <Sparkles size={13} />}
-          {hasResult ? 'Заново' : 'Создать'} · {PROMPT_STUDIO_CREDITS[d.model ?? 'claude']} кр.
+          {hasResult ? 'Заново' : 'Создать'}
+          <span data-testid="ai-cost" className="tnum">
+            {' · '}
+            {aiCost === null ? '—' : `${aiCost} кр.`}
+          </span>
         </button>
       </div>
 
@@ -1054,15 +1135,16 @@ function TextNodeDetail({ id, data, selected }: NodeProps) {
   );
 }
 
-const FRAME_TINT_CLASS: Record<string, string> = {
-  violet: 'bg-violet-400/10',
-  blue: 'bg-sky-400/10',
-  green: 'bg-emerald-400/10',
-  amber: 'bg-amber-400/10',
-  pink: 'bg-pink-400/10',
-  gray: 'bg-slate-400/10',
-};
-
+/* WS5 tokens-first-half decision: the old FRAME_TINT_CLASS (six tailwind
+ * translucent washes — violet, blue, green, amber, pink, gray at 10%) is
+ * REMOVED, not renamed.
+ * The bible allows exactly two sub-palettes outside the core tokens — Scenario
+ * paper and the board port-type colours — and a per-frame rainbow is neither:
+ * grouping on the canvas already reads via position + the frame title (CJM
+ * rationale §Spatial decisions: "Whitespace does the grouping … never by a
+ * container"). The persisted `d.tint` field is intentionally left in the
+ * contract/data untouched (fixtures still seed it; a future scoped tint, if any,
+ * must come from the paper/port palettes). Frames render on the plain shell. */
 function FrameNodeDetail({ id, data, selected }: NodeProps) {
   const d = data as unknown as FrameData;
   const { patch } = useGraph();
@@ -1071,7 +1153,7 @@ function FrameNodeDetail({ id, data, selected }: NodeProps) {
   return (
     <div
       data-testid="frame-node"
-      className={`${shell} ${selected ? shellSel : shellIdle} ${FRAME_TINT_CLASS[d.tint ?? 'violet'] ?? FRAME_TINT_CLASS.violet} relative flex h-full w-full min-w-[240px] flex-col`}
+      className={`${shell} ${selected ? shellSel : shellIdle} relative flex h-full w-full min-w-[240px] flex-col`}
       style={{ zIndex: -1 }}
     >
       <Resizer visible={selected} minWidth={240} minHeight={160} />
@@ -1256,7 +1338,7 @@ function SceneNodeDetail({ id, data, selected }: NodeProps) {
             {d.title || 'Без заголовка'}
           </strong>
           {status !== 'current' && (
-            <span className="rounded-full border border-[color:var(--color-line-soft)] px-2 py-0.5 font-mono text-[11px] font-bold uppercase text-[color:var(--color-destructive)]">
+            <span className="rounded-[var(--radius-sm)] border border-[color:var(--color-line-soft)] px-2 py-0.5 font-mono text-[11px] font-bold uppercase text-[color:var(--color-destructive)]">
               {status === 'removed' ? 'удалена' : 'изменена'}
             </span>
           )}
@@ -1493,7 +1575,7 @@ function MediaNodeDetail({ id, data, selected }: NodeProps) {
         }}
       />
       {unavailable ? (
-        <div className="mx-2 mb-2 mt-1.5 grid h-[120px] min-h-[80px] flex-1 place-items-center rounded-[var(--radius-sm)] border-2 border-red-400/30 bg-black/70 p-3 text-center">
+        <div className="mx-2 mb-2 mt-1.5 grid h-[120px] min-h-[80px] flex-1 place-items-center rounded-[var(--radius-sm)] border-2 border-[rgba(var(--destructive-rgb),0.5)] bg-black/70 p-3 text-center">
           <AssetLifecycleNotice unavailable />
         </div>
       ) : mediaUrl ? (
@@ -2267,7 +2349,9 @@ function NodeSettingsPanel({
           data-testid="node-settings-cost"
           className="tnum text-[11px] font-semibold text-[color:var(--color-accent)]"
         >
-          {displayCost ?? '—'}
+          {/* CJM act 4 verbatim for the no-model state; «—» stays for
+              loading/refused quotes with a model (same rule as the badge). */}
+          {displayCost ?? (nodeModel ? '—' : 'Цена появится после выбора модели')}
         </span>
       </div>
     </div>
@@ -2321,6 +2405,7 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
     resolveQuoteAssetUrl,
     publishNodeQuote,
     quoteRefreshFor,
+    createVariant,
   } = useGraph();
   const isVideo = d.mode === 'video';
   const busy = running(id) || d.status === 'running';
@@ -2487,7 +2572,12 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
     hasResult && !isVideo && hasOriginCast && originCastExists,
   );
   const rerunWarning = !busy && ((d.takes?.length ?? 0) > 0 || Boolean(d.resultUrl));
-  const modelName = current ? modelDisplayName(current) : 'Выбрать модель';
+  // CJM act 4 verbatim: a card without a model names that state in the bar
+  // and quotes no price number at all (design-rationale.md §Planning is
+  // model-neutral). The «—» badge stays for loading/refused quotes WITH a
+  // model; only the no-model state gets the CJM sentence.
+  const modelName = current ? modelDisplayName(current) : 'Модель не выбрана';
+  const noModel = !current;
   const count = d.count ?? 1;
   const setCount = (n: number) =>
     patch(id, { count: Math.max(1, Math.min(4, n)) } as Partial<GenerateData>);
@@ -2670,6 +2760,16 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
               </div>
             </NodeMenu>
           </div>
+
+          {d.title && (
+            <div
+              data-testid="generate-shot-title"
+              className="nodrag truncate px-3 pt-1 text-[13px] font-semibold text-[color:var(--color-fg)]"
+              title={d.title}
+            >
+              {d.title}
+            </div>
+          )}
 
           {/* THE SCREEN — the preview fills the card and is part of the drag
               handle (the whole card moves; only the controls are nodrag). */}
@@ -2859,6 +2959,16 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
 
             <span className="flex-1" />
 
+            <button
+              type="button"
+              data-testid="generate-variant"
+              disabled={busy}
+              onClick={() => createVariant(id)}
+              className="press-inset nodrag flex h-7 shrink-0 items-center rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line-soft)] bg-[color:var(--color-surface2)] px-2 text-[11px] font-semibold text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)] disabled:opacity-40"
+            >
+              + Вариант
+            </button>
+
             {/* gear → in-widget settings */}
             <button
               data-testid="node-settings-open"
@@ -2921,6 +3031,18 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
               </button>
             )}
           </div>
+          {/* CJM act 4 verbatim: the no-model card carries this chip instead of
+              any price number. Stacked (not inline in the control row — a
+              240px card has no room beside tries · gear · run) with the same
+              quiet box grammar as the rerun warning below. */}
+          {noModel && (
+            <div
+              data-testid="node-no-model-price"
+              className="nodrag mx-1.5 mb-1.5 rounded-[var(--radius-xs)] border border-[color:var(--color-line-soft)] px-2 py-1 text-[11px] leading-snug text-[color:var(--color-muted-foreground)]"
+            >
+              Цена появится после выбора модели
+            </div>
+          )}
           {invalidReason && (
             <div
               data-testid="node-invalid-reason"
@@ -3063,9 +3185,11 @@ function OverviewNode({ id, type, data, selected }: NodeProps & { type: BoardNod
                     ? 'Рамка'
                     : 'Заметка';
   const status = generate?.status;
+  // WS5: done = mint positive (status token), never lime — accent2 is a rare
+  // decorative spark, banned as status/body colour by the bible.
   const accent =
     status === 'done'
-      ? 'var(--color-accent2)'
+      ? 'var(--color-positive)'
       : status === 'running'
         ? 'var(--color-accent)'
         : status === 'failed'

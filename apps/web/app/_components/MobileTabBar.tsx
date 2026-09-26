@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Clapperboard, Images, Wand2 } from '@/components/ui/icons';
+import { Images, Wand2 } from '@/components/ui/icons';
+import { withLocale, type Locale } from '@/lib/locale';
 
 /**
  * Bottom tab bar — the mobile primary navigation (the desktop nav links are
@@ -18,22 +19,17 @@ import { Clapperboard, Images, Wand2 } from '@/components/ui/icons';
  * Boards/Монтаж are desktop-only (canvas + editor backlogged for touch); the
  * account/profile lives in the header avatar → /settings.
  *
- * Anonymous sessions get Сценарий instead (mobile-ready — see
- * ScenarioMobileDock — and genuinely anon-browsable), dropping to 2 tabs.
+ * The two slots stay fixed for anonymous and authenticated sessions. A locked
+ * route is handled by the existing mobile gate after the tap rather than
+ * shifting the user's muscle memory when auth state changes.
  */
 const TABS = [
   { href: '/generate', label: 'Генерация', icon: Wand2 },
   { href: '/gallery', label: 'Архив', icon: Images },
 ] as const;
 
-const ANON_TABS = [
-  { href: '/generate', label: 'Генерация', icon: Wand2 },
-  { href: '/scenario', label: 'Сценарий', icon: Clapperboard },
-] as const;
-
-export function MobileTabBar({ isAnonymous = false }: { isAnonymous?: boolean }) {
+export function MobileTabBar({ locale = 'ru' }: { isAnonymous?: boolean; locale?: Locale }) {
   const pathname = usePathname();
-  const tabs = isAnonymous ? ANON_TABS : TABS;
 
   return (
     // Outer = fixed positioning layer (pointer-events off so the gap below the
@@ -49,13 +45,13 @@ export function MobileTabBar({ isAnonymous = false }: { isAnonymous?: boolean })
           'grid-cols-2'
         }
       >
-        {tabs.map((t) => {
+        {TABS.map((t) => {
           const active = pathname === t.href || pathname.startsWith(`${t.href}/`);
           const Icon = t.icon;
           return (
             <Link
               key={t.href}
-              href={t.href}
+              href={withLocale(t.href, locale)}
               aria-current={active ? 'page' : undefined}
               className={
                 'press-inset relative flex flex-col items-center justify-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wide transition-colors ' +

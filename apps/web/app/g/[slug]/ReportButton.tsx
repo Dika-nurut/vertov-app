@@ -57,7 +57,7 @@ export function ReportButton({ slug, apiUrl }: { slug: string; apiUrl: string })
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="w-full text-center font-mono text-[10px] uppercase tracking-[0.08em] text-[color:var(--color-faint)] hover:text-[color:var(--color-muted-foreground)]"
+          className="w-full text-center font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--color-faint)] hover:text-[color:var(--color-muted-foreground)]"
           data-testid="report-open"
         >
           Пожаловаться
@@ -68,7 +68,7 @@ export function ReportButton({ slug, apiUrl }: { slug: string; apiUrl: string })
             type="button"
             disabled={busy}
             onClick={() => void submit()}
-            className="w-full border border-destructive/40 bg-destructive/5 py-1.5 text-center font-mono text-[10px] uppercase tracking-[0.08em] text-destructive hover:bg-destructive/10 disabled:opacity-50"
+            className="w-full border-[1.5px] border-[color:var(--color-destructive)] bg-[color:var(--color-surface2)] py-1.5 text-center font-mono text-[11px] uppercase tracking-[0.08em] text-[color:var(--color-destructive)] hover:bg-[color:var(--color-surface)] disabled:opacity-50"
             data-testid="report-submit"
           >
             {busy ? 'Отправляем…' : 'Подтвердить жалобу'}
@@ -76,12 +76,19 @@ export function ReportButton({ slug, apiUrl }: { slug: string; apiUrl: string })
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="w-full text-center font-mono text-[9px] text-[color:var(--color-faint)] hover:text-[color:var(--color-muted-foreground)]"
+            className="w-full text-center font-mono text-[11px] text-[color:var(--color-faint)] hover:text-[color:var(--color-muted-foreground)]"
             data-testid="report-cancel"
           >
             Отмена
           </button>
-          {error && <p className="text-center text-[10px] text-destructive">{error}</p>}
+          {error && (
+            <p
+              role="alert"
+              className="text-center text-[11px] text-[color:var(--color-destructive)]"
+            >
+              {error}
+            </p>
+          )}
         </div>
       )}
     </div>

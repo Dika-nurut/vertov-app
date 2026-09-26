@@ -59,7 +59,7 @@ export function AudioLaneClip({
   return (
     <div
       className={
-        'absolute bottom-0.5 top-0.5 overflow-hidden rounded-[var(--radius-xs)] ring-1 ring-inset ' +
+        'absolute bottom-0.5 top-0.5 overflow-hidden rounded-[var(--radius-xs)] ring-[1.5px] ring-inset ' +
         (accent
           ? 'bg-[rgba(var(--accent-rgb),0.12)] text-[rgba(var(--accent-rgb),0.7)] ring-[rgba(var(--accent-rgb),0.3)]'
           : 'bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] ring-[color:var(--color-line)]/20')

@@ -193,4 +193,41 @@ function finish(ctx) {
   }
 }
 
-console.log('deploy safety checks: 5/5 passed (zero I/O)');
+// 6) INF-13 Variant B: on a Lockbox host, a failed secret refresh aborts before
+//    migrations and before Compose; a successful one runs first and via sudo -n.
+for (const refreshFails of [true, false]) {
+  const ctx = setup();
+  try {
+    installFakes(ctx);
+    const refresh = resolve(ctx.root, 'seed-secrets-refresh');
+    executable(
+      refresh,
+      `#!/usr/bin/env bash\nprintf 'refresh\\n' >>"${ctx.log}"\nexit ${refreshFails ? 1 : 0}\n`,
+    );
+    executable(
+      resolve(ctx.bin, 'sudo'),
+      `#!/usr/bin/env bash\n[ "$1" = "-n" ] || exit 99\nshift\nexec "$@"\n`,
+    );
+    const result = run(ctx, {
+      SEED_SITE_ADDRESS: 'staging.invalid',
+      SEED_IMAGE_TAG: 'new-sha',
+      SEED_LAST_DEPLOYED_TAG_FILE: '.last-deployed-tag',
+      SEED_SECRETS_REFRESH: refresh,
+      DEPLOY_READY_ATTEMPTS: '1',
+      DEPLOY_READY_INTERVAL_SECONDS: '0',
+    });
+    const calls = readFileSync(ctx.log, 'utf8');
+    if (refreshFails) {
+      assert.notEqual(result.status, 0);
+      assert.match(`${result.stdout}\n${result.stderr}`, /Lockbox secret refresh failed/);
+      assert.doesNotMatch(calls, /^pnpm /m);
+      assert.doesNotMatch(calls, /args=.* up /);
+    } else {
+      assert.ok(calls.indexOf('refresh') >= 0 && calls.indexOf('refresh') < calls.indexOf('pnpm'));
+    }
+  } finally {
+    finish(ctx);
+  }
+}
+
+console.log('deploy safety checks: 6/6 passed (zero I/O)');

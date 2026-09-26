@@ -819,6 +819,7 @@ export function setupStudioRoutes(
       }
       const projection = {
         id: galleryItems.id,
+        assetId: galleryItems.id,
         assetUrl: galleryItems.assetUrl,
         createdAt: galleryItems.createdAt,
       };

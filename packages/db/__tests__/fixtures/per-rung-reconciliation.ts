@@ -363,6 +363,32 @@ export const PER_RUNG_RECONCILIATION: readonly PerRungReconciliationEntry[] = [
     verdict:
       'The old per-tier figure charges $0.08 for the high tier; the signed LaoZhang leg bills a FLAT $0.03 at every tier, so v2 reads 72.4%. No price is changed — the ladder is a signed owner override, not a cost-derived one.',
   },
+  {
+    rowKey: 'seedance-2-0-mini|480p|mode=any|audio=false|videoInput=false|refs=0-any',
+    kind: 'NO_LEGACY_ENTRY',
+    oldGateway: 'pixazo',
+    v2Leg: 'seedance-2-0-mini|480p|t2v|нет|-|any|нога1',
+    oldMargin: null,
+    newMargin: 0.4090432046979867,
+    deltaPp: null,
+    landedCostDeltaRub: null,
+    oldMoreFlattering: null,
+    verdict:
+      'Rev. 23 model (Pixazo, 2026-09-25): no legacy ladder row exists, so there is nothing to flatter; v2 prices the exact signed leg at the 5 s base and the paid smoke confirmed $0.014/s.',
+  },
+  {
+    rowKey: 'seedance-2-0-mini|720p|mode=any|audio=false|videoInput=false|refs=0-any',
+    kind: 'NO_LEGACY_ENTRY',
+    oldGateway: 'pixazo',
+    v2Leg: 'seedance-2-0-mini|720p|t2v|нет|-|any|нога1',
+    oldMargin: null,
+    newMargin: 0.4039997886341846,
+    deltaPp: null,
+    landedCostDeltaRub: null,
+    oldMoreFlattering: null,
+    verdict:
+      'Rev. 23 model (Pixazo, 2026-09-25): no legacy ladder row exists, so there is nothing to flatter; v2 prices the exact signed leg at the 5 s base and the paid smoke confirmed $0.014/s.',
+  },
 ];
 
 /** The inactive row singled out in the brief remains a dangerous activation watch item. */

@@ -306,9 +306,10 @@ export async function runStudioRender(input: RunStudioRenderInput): Promise<Stud
     }
 
     // Phase II: upper-track clips — normalize each to a frame-sized ProRes-4444
-    // alpha intermediate carrying its full instrument set (color/transform/trim/
-    // speed/anim/opacity), then alpha-composite it in the assembly pass. Capped
-    // to bound the extra normalize passes (drop the tail loudly, never silently).
+    // alpha intermediate carrying the static alpha-safe instrument set
+    // (color/transform/trim/speed/opacity), then alpha-composite it in the
+    // assembly pass. Capped to bound the extra normalize passes (drop the tail
+    // loudly, never silently).
     const TRACK_LAYER_CAP = 12;
     const trackClips = (spec.tracks ?? []).flat();
     if (trackClips.length > TRACK_LAYER_CAP) {

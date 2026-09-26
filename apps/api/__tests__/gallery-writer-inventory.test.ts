@@ -22,15 +22,16 @@ describe('gallery writer inventory', () => {
     const writers = sourceFiles(resolve(repositoryRoot, 'apps'))
       .filter(
         (path) =>
-          path.includes('/src/') &&
+          path.replaceAll('\\', '/').includes('/src/') &&
           !path.endsWith('.test.ts') &&
           !path.endsWith('.integration.test.ts') &&
           !path.includes('/test-support/'),
       )
       .flatMap((path) => {
         const source = readFileSync(path, 'utf8');
+        const normalizedPath = path.replaceAll('\\', '/');
         return [...source.matchAll(/insert\(galleryItems\)/g)].map(() =>
-          path.slice(repositoryRoot.length + 1),
+          normalizedPath.slice(repositoryRoot.replaceAll('\\', '/').length + 1),
         );
       });
 

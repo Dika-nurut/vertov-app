@@ -2,12 +2,12 @@
   --color-ink: var(--color-accent2-foreground);
   position: relative;
   z-index: 2;
-  min-width: 1024px;
+  min-width: 0;
   min-height: 100vh;
   overflow: hidden;
   background: var(--color-bg);
   color: var(--color-fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 
 .centerState {
@@ -17,7 +17,7 @@
   gap: 16px;
   background: var(--color-bg);
   color: var(--color-fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   letter-spacing: 0.12em;
   text-align: center;
 }
@@ -285,7 +285,7 @@
   border: 0;
   background: transparent;
   color: var(--color-fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   text-align: center;
   transition:
     left 120ms ease-out,
@@ -1288,4 +1288,27 @@
   z-index: 2;
   color: rgb(236 238 243 / 25%);
   font-size: 7px;
+}
+
+@media (max-width: 1023px) {
+  .menubar {
+    height: auto;
+    min-height: 46px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .projectName {
+    max-width: min(360px, 45vw);
+  }
+
+  .menuRight {
+    gap: 8px;
+  }
+
+  .plane {
+    inset: 0;
+    padding: 24px 20px 96px;
+  }
 }

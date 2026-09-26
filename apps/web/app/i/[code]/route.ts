@@ -22,9 +22,18 @@ export async function GET(
 ): Promise<NextResponse> {
   const { code } = await params;
 
-  // Sanitise the code — only uppercase alphanumeric + dash allowed.
-  const safeCode = code.replace(/[^A-Za-z0-9-]/g, '').toUpperCase();
+  // Sanitise the code — only uppercase alphanumeric + dash allowed, capped so
+  // a crafted path segment cannot mint an oversized cookie value.
+  const safeCode = code
+    .replace(/[^A-Za-z0-9-]/g, '')
+    .toUpperCase()
+    .slice(0, 64);
 
+  // WS6-recorded httpOnly exception (deliberate, not an oversight): flipping
+  // this to true breaks the redeem loop — BetaRedeemClient reads
+  // `seed_beta_code` via document.cookie and POSTs it to /v1/beta/redeem
+  // (covered by e2e/beta-invite.spec.ts). A server-side redeem would be the
+  // way to go httpOnly, but that is a behaviour change beyond this sweep.
   if (safeCode.length > 0) {
     const jar = await cookies();
     jar.set('seed_beta_code', safeCode, {

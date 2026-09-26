@@ -54,7 +54,9 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_CLASS: Record<string, string> = {
   idle: 'text-[color:var(--color-faint)]',
   running: 'text-[color:var(--color-accent)]',
-  done: 'text-[color:var(--color-accent2)]',
+  // WS5: done = mint positive (status token), never lime — accent2 is a rare
+  // decorative spark, banned as status/body colour by the bible.
+  done: 'text-[color:var(--color-positive)]',
   failed: 'text-[color:var(--color-destructive)]',
 };
 

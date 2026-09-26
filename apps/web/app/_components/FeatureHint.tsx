@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { X } from '@/components/ui/icons';
 import { getOnboardingCopy, type FeatureHintSurface } from '@/lib/onboarding-copy';
 import { readClientLocale, type Locale } from '@/lib/locale';
@@ -8,7 +8,12 @@ import { useAnchoredPosition } from '@/lib/use-anchored-position';
 
 const TRANSITION_MS = 180;
 
-/** A once-per-browser hint, anchored when a surface exposes a useful target. */
+/**
+ * A once-per-browser hint, anchored when a surface exposes a useful target.
+ * A non-modal region (never `status` — it is persistent UI, not a live
+ * announcement), so it never steals focus or traps Tab; Escape still
+ * dismisses it like every other onboarding surface.
+ */
 export function FeatureHint({
   surface,
   target = null,
@@ -46,7 +51,7 @@ export function FeatureHint({
     [],
   );
 
-  function dismiss() {
+  const dismiss = useCallback(() => {
     if (closing) return;
     try {
       localStorage.setItem(storageKey, '1');
@@ -55,7 +60,19 @@ export function FeatureHint({
     }
     setClosing(true);
     timerRef.current = window.setTimeout(() => setVisible(false), TRANSITION_MS);
-  }
+  }, [closing, storageKey]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        dismiss();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [visible, dismiss]);
 
   if (!visible) return null;
 
@@ -64,8 +81,8 @@ export function FeatureHint({
   return (
     <div
       ref={panelRef}
-      role="status"
-      aria-live="polite"
+      role="region"
+      aria-label={activeLocale === 'en' ? 'Hint' : 'Подсказка'}
       className={
         'fixed z-40 w-[min(92vw,440px)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[5px_5px_0_0_var(--color-shadow)] onboarding-surface ' +
         (closing ? 'onboarding-surface-exit' : 'onboarding-surface-enter')
@@ -82,7 +99,7 @@ export function FeatureHint({
           type="button"
           onClick={dismiss}
           aria-label={copy.featureHintDismiss}
-          className="press shrink-0 border-[2px] border-[color:var(--color-line-soft)] p-1 text-[color:var(--color-muted-foreground)]"
+          className="press shrink-0 border-[2px] border-[color:var(--color-line-soft)] p-2 text-[color:var(--color-muted-foreground)]"
         >
           <X size={12} aria-hidden />
         </button>

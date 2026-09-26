@@ -28,7 +28,7 @@ export function RatioPicker({
         aria-haspopup="menu"
         aria-expanded={ratioOpen}
         onClick={() => setRatioOpen((v) => !v)}
-        className="glass-menu flex items-center gap-1.5 rounded-[var(--radius-sm)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--color-fg)] ring-1 ring-inset ring-[color:var(--color-line)]/30"
+        className="glass-menu flex items-center gap-1.5 rounded-[var(--radius-sm)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--color-fg)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/30"
       >
         <Proportions size={13} /> {format.label}
       </button>
@@ -56,8 +56,8 @@ export function RatioPicker({
                 className={
                   'flex w-full items-center gap-2.5 rounded-[var(--radius-sm)] px-2 py-1.5 text-left ' +
                   (on
-                    ? 'bg-[color:var(--color-surface2)] text-[color:var(--color-fg)] ring-1 ring-inset ring-[color:var(--color-accent)]'
-                    : 'text-[color:var(--color-muted-foreground)] ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]')
+                    ? 'bg-[color:var(--color-surface2)] text-[color:var(--color-fg)] ring-[1.5px] ring-inset ring-[color:var(--color-accent)]'
+                    : 'text-[color:var(--color-muted-foreground)] ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]')
                 }
               >
                 <span className="grid h-5 w-5 shrink-0 place-items-center">

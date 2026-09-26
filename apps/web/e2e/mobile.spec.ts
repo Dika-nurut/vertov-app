@@ -251,3 +251,33 @@ test('mobile /studio: the editor is viewable on a phone', async ({ signedInPage 
   await page.goto('/studio');
   await expect(page.getByTestId('export-btn')).toBeVisible({ timeout: 30_000 });
 });
+
+/**
+ * WS0: money + docs routes stay usable at 390px — no desktop notice, no
+ * horizontal overflow, and the route's primary CTA is reachable.
+ */
+const WS0_MOBILE_ROUTES = [
+  { route: '/pricing', ctaTestId: 'plate-cta' },
+  { route: '/settings', ctaTestId: 'settings-billing-link' },
+  { route: '/settings/billing', ctaTestId: 'history-card' },
+  { route: '/faq', ctaTestId: null },
+  { route: '/support', ctaTestId: null },
+] as const;
+
+for (const { route, ctaTestId } of WS0_MOBILE_ROUTES) {
+  test(`mobile ${route}: usable at 390px with no desktop notice`, async ({ signedInPage }) => {
+    test.setTimeout(60_000);
+    const page = signedInPage;
+    await page.goto(route);
+    await expect(page.getByTestId('mobile-desktop-notice')).toHaveCount(0);
+    // No horizontal overflow at 390px.
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(overflow).toBeLessThanOrEqual(390);
+    // The route's primary CTA is visible above the fold of a scroll, if any.
+    if (ctaTestId) {
+      await expect(page.getByTestId(ctaTestId).first()).toBeVisible({ timeout: 30_000 });
+    } else {
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 30_000 });
+    }
+  });
+}

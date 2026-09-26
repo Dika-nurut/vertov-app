@@ -5,8 +5,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, CheckCircle2, Clock3, XCircle } from '@/components/ui/icons';
 import { modelDisplayNameFromId } from '../../lib/models';
 import { assetSrc } from '@/lib/asset-src';
+import { jobFailureGuidance, type JobFailureAction } from '@/lib/job-failure';
+import { withLocale, type Locale } from '@/lib/locale';
 import { BALANCE_INVALIDATE_EVENT } from './BalanceWidget';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AssetLifecycleNotice } from './AssetLifecycleNotice';
 
 /**
  * Header jobs tray: live view of the user's recent generations so firing a
@@ -28,7 +31,10 @@ interface TrayJob {
   modelId: string;
   modelDisplayName: string | null;
   resultAssets: string[];
+  resultExpiresAt: string | null;
+  resultUnavailableReason: 'deleted' | 'expired' | null;
   errorCode: string | null;
+  errorMessage: string | null;
   createdAt: string;
 }
 
@@ -177,82 +183,140 @@ export function useJobsTray(apiUrl: string): { jobs: TrayJob[]; activeCount: num
 export function JobsTrayPanel({
   jobs,
   onNavigate = () => {},
+  locale = 'ru',
 }: {
   jobs: TrayJob[];
   onNavigate?: () => void;
+  locale?: Locale;
 }) {
   if (jobs.length === 0) {
     return (
-      <div className="px-4 py-3 text-sm text-[color:var(--color-muted-foreground)]">
-        Пока ничего не генерировали
-      </div>
+      <>
+        <div className="px-4 py-3 text-sm text-[color:var(--color-muted-foreground)]">
+          Пока ничего не генерировали
+        </div>
+        <ArchiveLink locale={locale} onNavigate={onNavigate} />
+      </>
     );
   }
   return (
-    <ul className="max-h-[320px] overflow-y-auto seed-scroll">
-      {jobs.map((job) => {
-        const active = ACTIVE.has(job.status);
-        const thumb = job.resultAssets[0];
-        const row = (
-          <div className="flex items-center gap-3 px-4 py-2 transition-colors hover:bg-[color:var(--color-surface2)]">
-            <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)]">
-              {job.status === 'succeeded' && thumb ? (
-                isVideoUrl(thumb) ? (
-                  <video
-                    src={thumb}
-                    muted
-                    preload="metadata"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={assetSrc(thumb)} alt="" className="h-full w-full object-cover" />
-                )
-              ) : active ? (
-                <Clock3
-                  size={16}
-                  className="text-[color:var(--color-muted-foreground)]"
-                  aria-hidden
-                />
-              ) : job.status === 'failed' ? (
-                <XCircle size={16} className="text-destructive/80" aria-hidden />
-              ) : (
-                <CheckCircle2
-                  size={16}
-                  className="text-[color:var(--color-muted-foreground)]"
-                  aria-hidden
-                />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm text-[color:var(--color-fg)]">
-                {job.modelDisplayName ?? modelDisplayNameFromId(job.modelId)}
-              </div>
-              <div className="flex items-center gap-1.5 text-[12px] text-[color:var(--color-muted-foreground)]">
-                {active && (
-                  <span
+    <>
+      <ul className="max-h-[320px] overflow-y-auto seed-scroll">
+        {jobs.map((job) => {
+          const active = ACTIVE.has(job.status);
+          const failed = job.status === 'failed' || job.status === 'refunded';
+          const guidance = failed ? jobFailureGuidance(job.errorCode, job.errorMessage) : null;
+          const thumb = job.resultAssets[0];
+          const lifecycle =
+            job.status === 'succeeded' && (job.resultExpiresAt || job.resultUnavailableReason) ? (
+              <AssetLifecycleNotice
+                compact
+                expiresAt={job.resultExpiresAt}
+                expired={job.resultUnavailableReason === 'expired'}
+                unavailable={job.resultUnavailableReason === 'deleted'}
+                {...(thumb ? { assetUrl: thumb } : {})}
+              />
+            ) : null;
+          const row = (
+            <div className="flex items-start gap-3 px-4 py-2 transition-colors hover:bg-[color:var(--color-surface2)]">
+              <div className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center overflow-hidden border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)]">
+                {job.status === 'succeeded' && thumb ? (
+                  isVideoUrl(thumb) ? (
+                    <video
+                      src={thumb}
+                      muted
+                      preload="metadata"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={assetSrc(thumb)} alt="" className="h-full w-full object-cover" />
+                  )
+                ) : active ? (
+                  <Clock3
+                    size={16}
+                    className="text-[color:var(--color-muted-foreground)]"
                     aria-hidden
-                    className="seed-pulse-dot h-1.5 w-1.5 bg-[color:var(--color-accent)]"
+                  />
+                ) : job.status === 'failed' ? (
+                  <XCircle size={16} className="text-destructive/80" aria-hidden />
+                ) : (
+                  <CheckCircle2
+                    size={16}
+                    className="text-[color:var(--color-muted-foreground)]"
+                    aria-hidden
                   />
                 )}
-                {STATUS_LABEL[job.status] ?? job.status}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm text-[color:var(--color-fg)]">
+                  {job.modelDisplayName ?? modelDisplayNameFromId(job.modelId)}
+                </div>
+                <div className="flex items-center gap-1.5 text-[12px] text-[color:var(--color-muted-foreground)]">
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="seed-pulse-dot h-1.5 w-1.5 bg-[color:var(--color-accent)]"
+                    />
+                  )}
+                  {STATUS_LABEL[job.status] ?? job.status}
+                </div>
+                {guidance && (
+                  <div className="mt-1.5 space-y-1.5">
+                    <p className="text-[11px] leading-[1.35] text-[color:var(--color-muted-foreground)]">
+                      {guidance.message}
+                    </p>
+                    <Link
+                      href={withLocale(`/generate?from=${encodeURIComponent(job.id)}`, locale)}
+                      onClick={onNavigate}
+                      className="inline-flex min-h-8 items-center border-2 border-[color:var(--color-accent)] px-2 font-mono text-[9px] font-bold uppercase tracking-wide text-[color:var(--color-accent)]"
+                    >
+                      {failureActionLabel(guidance.action)}
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        );
-        return (
-          <li key={job.id}>
-            {job.status === 'succeeded' ? (
-              <Link href={`/gallery/${job.id}`} onClick={onNavigate}>
-                {row}
-              </Link>
-            ) : (
-              row
-            )}
-          </li>
-        );
-      })}
-    </ul>
+          );
+          return (
+            <li key={job.id}>
+              {job.status === 'succeeded' ? (
+                <>
+                  <Link href={withLocale(`/gallery/${job.id}`, locale)} onClick={onNavigate}>
+                    {row}
+                  </Link>
+                  {lifecycle && <div className="px-4 pb-2">{lifecycle}</div>}
+                </>
+              ) : (
+                row
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <ArchiveLink locale={locale} onNavigate={onNavigate} />
+    </>
+  );
+}
+
+function failureActionLabel(action: JobFailureAction): string {
+  if (action === 'replace_reference') return 'Заменить референс';
+  if (action === 'settings') return 'Изменить настройки';
+  return 'Повторить';
+}
+
+function ArchiveLink({ locale, onNavigate }: { locale: Locale; onNavigate: () => void }) {
+  return (
+    <div className="border-t-[1.5px] border-[color:var(--color-line)]/16 px-4 py-2.5">
+      <Link
+        href={withLocale('/gallery', locale)}
+        onClick={onNavigate}
+        className="font-mono text-[10px] font-bold uppercase tracking-wide text-[color:var(--color-accent)] hover:underline"
+        data-testid="jobs-archive-link"
+      >
+        Показать весь архив
+      </Link>
+    </div>
   );
 }
 
@@ -261,7 +325,7 @@ export function JobsTrayPanel({
  * into AppShell's header (2026-07-07: the jobs list moved into ProfileMenu),
  * kept as a standalone unit in case another surface wants a dedicated tray.
  */
-export function JobsTray({ apiUrl }: { apiUrl: string }) {
+export function JobsTray({ apiUrl, locale = 'ru' }: { apiUrl: string; locale?: Locale }) {
   const { jobs, activeCount } = useJobsTray(apiUrl);
   const [open, setOpen] = useState(false);
 
@@ -297,7 +361,7 @@ export function JobsTray({ apiUrl }: { apiUrl: string }) {
         <div className="px-2.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--color-faint)]">
           Генерации
         </div>
-        <JobsTrayPanel jobs={jobs} onNavigate={() => setOpen(false)} />
+        <JobsTrayPanel jobs={jobs} onNavigate={() => setOpen(false)} locale={locale} />
       </PopoverContent>
     </Popover>
   );

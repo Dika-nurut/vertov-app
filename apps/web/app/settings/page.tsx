@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { AppShell } from '../_components/AppShell';
 import { apiBaseUrl, apiGet } from '../../lib/server-api';
 import type { Tier } from '../../lib/tier-label';
+import { GIFT_TOKENS_PHONE } from '../../lib/gift-tokens';
 import { SettingsClient } from './SettingsClient';
 
 export const dynamic = 'force-dynamic';
@@ -9,10 +10,13 @@ export const dynamic = 'force-dynamic';
 interface MeResponse {
   user: {
     id: string;
-    email: string;
+    email: string | null;
     phone?: string | null;
     phoneVerified?: boolean;
     isAnonymous?: boolean;
+  };
+  welcome?: {
+    phone?: { granted?: boolean; amount?: number; reason?: string } | null;
   };
   flags?: { phoneBindingEnabled?: boolean };
 }
@@ -41,6 +45,13 @@ export default async function SettingsPage() {
     redirect('/login?next=' + encodeURIComponent('/settings'));
 
   const availableBalance = balance.data?.available ?? 0;
+  const phoneGrant = me.data.welcome?.phone;
+  const phoneBonus =
+    phoneGrant?.granted && typeof phoneGrant.amount === 'number'
+      ? phoneGrant.amount
+      : phoneGrant?.reason === 'already_granted'
+        ? GIFT_TOKENS_PHONE
+        : null;
   // A successful null response means free. A non-2xx response is unknown, so
   // Settings must not assert a free tier from the stale profile column.
   const liveTier =
@@ -49,7 +60,12 @@ export default async function SettingsPage() {
       : null;
 
   return (
-    <AppShell email={me.data.user.email} balance={availableBalance} apiUrl={apiBaseUrl()}>
+    <AppShell
+      email={me.data.user.email ?? me.data.user.phone ?? 'Телефонный аккаунт'}
+      balance={availableBalance}
+      apiUrl={apiBaseUrl()}
+      lang={profile.data?.locale ?? 'ru'}
+    >
       <SettingsClient
         apiUrl={apiBaseUrl()}
         initial={{
@@ -62,6 +78,7 @@ export default async function SettingsPage() {
           phoneBindingEnabled: me.data.flags?.phoneBindingEnabled ?? false,
           phone: me.data.user.phone ?? null,
           phoneVerified: me.data.user.phoneVerified ?? false,
+          phoneBonus,
         }}
       />
     </AppShell>

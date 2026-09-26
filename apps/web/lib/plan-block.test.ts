@@ -22,7 +22,11 @@ describe('planBlockNotice', () => {
     expect(notice?.title).toBe('Подписка закончилась');
     expect(notice?.body).toContain('01.07.2026');
     expect(notice?.body).not.toContain('Отменить');
-    expect(notice?.recoveryHint).toContain('Отменить');
+    // WS1: no more «Отменить чтобы купить заново» — the dead row closes with
+    // «Закрыть», resubscribe is a plain link to /pricing.
+    expect(notice?.recoveryHint).toContain('Закрыть');
+    expect(notice?.recoveryHint).toContain('тариф');
+    expect(notice?.recoveryHint).not.toContain('«Отменить»');
     expect(notice?.offersResubscribe).toBe(true);
   });
 
@@ -36,6 +40,18 @@ describe('planBlockNotice', () => {
       expect(words, `declined-card copy must not say «${forbidden}»`).not.toContain(forbidden);
     }
     expect(notice.body).toContain('поддержк');
+  });
+
+  it('wires a real recovery hint + resume order through when the API supplies one (WS2)', () => {
+    const withOrder = planBlockNotice({ ...paymentFailed, orderId: 'ord_123' })!;
+    expect(withOrder.tone).toBe('declined');
+    expect(withOrder.recoveryOrderId).toBe('ord_123');
+    expect(withOrder.recoveryHint).toContain('Продолжите оплату');
+    expect(withOrder.recoveryHint).toContain('повторное списание исключено');
+    expect(withOrder.offersResubscribe).toBe(false);
+    // Empty orderId falls back to the null-hint (support-only body) path.
+    expect(planBlockNotice({ ...paymentFailed, orderId: '' })?.recoveryHint).toBeNull();
+    expect(planBlockNotice({ ...paymentFailed, orderId: '' })?.recoveryOrderId).toBeNull();
   });
 });
 

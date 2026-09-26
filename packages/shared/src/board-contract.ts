@@ -152,6 +152,10 @@ export const boardShotGrammarSchema = z
 export const boardPromptDataSchema = z
   .object({
     text: boundedString(BOARD_LIMITS.text).default(''),
+    /** Optional planner label and paid improvement result for the fixed Inspector. */
+    title: boundedString(240).optional(),
+    result: boundedString(BOARD_LIMITS.text).optional(),
+    view: z.enum(['draft', 'result']).optional(),
     sourceSceneNodeId: boundedString(BOARD_LIMITS.nodeId).optional(),
   })
   .strict();
@@ -258,6 +262,8 @@ export const boardCastDataSchema = z
     imageUrls: z.array(urlSlotSchema).max(BOARD_LIMITS.castImages).default([]),
     videoUrl: urlSlotSchema.optional(),
     characterId: boundedString(BOARD_LIMITS.nodeId).optional(),
+    /** Scenario handoff identity; absent on user-created and legacy Cast nodes. */
+    scenarioLockId: boundedString(BOARD_LIMITS.nodeId).optional(),
   })
   .strict();
 
@@ -265,6 +271,12 @@ export const boardGenerateDataSchema = z
   .object({
     mode: z.enum(['image', 'video']).default('video'),
     prompt: boundedString(BOARD_LIMITS.text).default(''),
+    /** Model-neutral planner metadata; it never changes generation billing. */
+    title: boundedString(240).optional(),
+    plannerShotId: boundedString(BOARD_LIMITS.nodeId).optional(),
+    variantOf: boundedString(BOARD_LIMITS.nodeId).optional(),
+    requiredLocks: z.array(boundedString(BOARD_LIMITS.nodeId)).max(16).optional(),
+    unresolvedAssets: z.array(boundedString(240)).max(16).optional(),
     shot: boardShotGrammarSchema.optional(),
     modelId: boundedString(BOARD_LIMITS.modelId).optional(),
     durationSeconds: z.number().finite().int().min(1).max(120).optional(),

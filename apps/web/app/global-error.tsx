@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import * as Sentry from '@sentry/nextjs';
 import { SupportLink } from './_components/SupportLink';
 
@@ -38,6 +39,18 @@ export default function GlobalError({
         }}
       >
         <div style={{ maxWidth: 480, padding: 24, textAlign: 'center' }}>
+          <p
+            style={{
+              color: 'var(--color-destructive)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Ошибка 500 · Что-то сломалось
+          </p>
           <h1 style={{ fontSize: 24, marginBottom: 12 }}>Что-то пошло не так</h1>
           <p style={{ fontSize: 14, opacity: 0.7, marginBottom: 16 }}>
             Попробуйте обновить страницу. Если ошибка повторится — напишите в{' '}
@@ -46,26 +59,44 @@ export default function GlobalError({
             </SupportLink>
             . Ответим в течение 5 рабочих дней.
           </p>
+          <p style={{ fontSize: 14, opacity: 0.7, marginBottom: 16 }}>
+            Токены за неудачную генерацию возвращаются автоматически.
+          </p>
           {error.digest && (
             <p style={{ fontSize: 12, opacity: 0.6, marginBottom: 16 }}>
               ID ошибки: <code>{error.digest}</code>
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => reset()}
-            style={{
-              border: 'var(--border-w) solid var(--color-line)',
-              background: 'var(--color-surface)',
-              color: 'var(--color-fg)',
-              padding: '8px 16px',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              fontSize: 14,
-            }}
-          >
-            Обновить
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+            <button
+              type="button"
+              onClick={() => reset()}
+              style={{
+                border: 'var(--border-w) solid var(--color-line)',
+                background: 'var(--color-surface)',
+                color: 'var(--color-fg)',
+                padding: '8px 16px',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                fontSize: 14,
+              }}
+            >
+              Обновить
+            </button>
+            <Link
+              href="/"
+              style={{
+                border: 'var(--border-w) solid var(--color-line)',
+                color: 'var(--color-fg)',
+                padding: '8px 16px',
+                borderRadius: 'var(--radius-md)',
+                fontSize: 14,
+                textDecoration: 'none',
+              }}
+            >
+              На главную
+            </Link>
+          </div>
         </div>
       </body>
     </html>

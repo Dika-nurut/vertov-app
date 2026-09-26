@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { BOARD_LIMITS } from '@seed/shared/board-contract';
+import { SCENARIO_SHOT_PLAN_VERSION } from '@seed/shared/scenario-shot-plan';
 import {
   boardLinksToScript,
   extractScenarioHandoffSources,
   extractScenarioHandoffScenes,
   mergeScenarioScenesIntoBoard,
+  scenarioHandoffLocks,
   ScenarioBoardMaterializationLimitError,
 } from '../src/scenario-board-handoff';
 
@@ -26,6 +28,28 @@ function ids(...values: string[]) {
 }
 
 describe('Board scene-source sync model', () => {
+  it('builds one bounded lock catalog for characters and locations', () => {
+    expect(
+      scenarioHandoffLocks({
+        characters: [{ name: ' Алиса ', description: ' В красном пальто. ' }],
+        locations: [{ name: ' Кухня ', description: ' Тесная и тёплая. ' }],
+      }),
+    ).toEqual([
+      {
+        id: 'canon:character:1',
+        kind: 'character',
+        name: 'Алиса',
+        description: 'В красном пальто.',
+      },
+      {
+        id: 'canon:location:1',
+        kind: 'location',
+        name: 'Кухня',
+        description: 'Тесная и тёплая.',
+      },
+    ]);
+  });
+
   it('extracts ordered full scene sources and a compact synopsis', () => {
     expect(extractScenarioHandoffScenes(FOUNTAIN)).toMatchObject([
       {
@@ -66,6 +90,88 @@ describe('Board scene-source sync model', () => {
       },
     });
     expect(boardLinksToScript(merged.document, 'script-1')).toBe(true);
+  });
+
+  it('materializes named planned shots and approved locks as ordinary nodes', () => {
+    const [scene] = extractScenarioHandoffScenes(FOUNTAIN);
+    const merged = mergeScenarioScenesIntoBoard({
+      document: {},
+      scriptId: 'script-planned',
+      scriptRevision: 4,
+      scenes: [
+        {
+          ...scene!,
+          shotPlan: {
+            version: SCENARIO_SHOT_PLAN_VERSION,
+            sceneId: 'scene:1',
+            targetDurationSeconds: 8,
+            shots: [
+              {
+                order: 1,
+                title: 'Письмо на столе',
+                durationSec: 8,
+                dramaticBeat: 'Находка меняет ход сцены.',
+                promptDraft: 'Письмо на деревянном столе, утренний свет.',
+                requiredLocks: ['canon:character:1', 'canon:location:1'],
+                unresolvedAssets: [],
+              },
+            ],
+          },
+          locks: [
+            {
+              id: 'canon:character:1',
+              kind: 'character',
+              name: 'Алиса',
+              description: 'В красном пальто.',
+            },
+            {
+              id: 'canon:location:1',
+              kind: 'location',
+              name: 'Кухня',
+              description: 'Тесная кухня с утренним светом.',
+            },
+          ],
+        },
+      ],
+      fullSync: true,
+      makeId: ids('scene-source', 'scene-node'),
+    });
+
+    const prompt = merged.document.nodes.find((node) => node.type === 'prompt');
+    const generate = merged.document.nodes.find((node) => node.type === 'generate');
+    const cast = merged.document.nodes.find(
+      (node) => node.type === 'cast' && (node.data as { name?: string }).name === 'Алиса',
+    );
+    expect(prompt?.data).toMatchObject({ title: 'Письмо на столе' });
+    expect(generate?.data).toMatchObject({
+      title: 'Письмо на столе',
+      durationSeconds: 8,
+      requiredLocks: ['canon:character:1', 'canon:location:1'],
+    });
+    expect(cast?.data).toMatchObject({
+      castKind: 'character',
+      name: 'Алиса',
+      scenarioLockId: 'canon:character:1',
+    });
+    expect(
+      merged.document.nodes.some(
+        (node) =>
+          node.type === 'cast' && node.data.name === 'Кухня' && node.data.castKind === 'location',
+      ),
+    ).toBe(true);
+    expect(
+      merged.document.edges.some(
+        (edge) =>
+          edge.source === cast?.id &&
+          edge.target === generate?.id &&
+          edge.targetHandle === 'images[0]',
+      ),
+    ).toBe(true);
+    expect(
+      merged.document.edges.some(
+        (edge) => edge.target === generate?.id && edge.targetHandle === 'images[1]',
+      ),
+    ).toBe(true);
   });
 
   it('projects non-Film beats into stable Board scene sources', () => {

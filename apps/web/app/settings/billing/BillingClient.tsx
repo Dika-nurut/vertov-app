@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TokenStar } from '@/components/ui/token-star';
-import { planBlockNotice, type PlanAccessBlock } from '@/lib/plan-block';
+import { formatUtcDate, planBlockNotice, type PlanAccessBlock } from '@/lib/plan-block';
 import { tierLabel, type Tier } from '@/lib/tier-label';
+import { ErrorState } from '../../_components/states/ErrorState';
 
 export interface Subscription {
   id: string;
@@ -43,13 +44,56 @@ export interface Breakdown {
   refund: number;
 }
 
+/** UTC DD.MM.YYYY — SSR and hydration cannot cross a day boundary. */
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleDateString('ru-RU');
-  } catch {
-    return iso;
-  }
+  return formatUtcDate(iso, true);
+}
+
+/** Order statuses in Russian, same voice as JobsTray. */
+const HISTORY_STATUS_LABEL: Record<string, string> = {
+  paid: 'Оплачен',
+  pending: 'Ожидает',
+  failed: 'Отклонён',
+  refunded: 'Возврат',
+  partially_refunded: 'Частичный возврат',
+};
+
+/** Friendly pack names for the breakdown (credit_packs seed titles) — a raw
+ *  packId (pack-s, …) must never render as user-facing copy. */
+const PACK_TITLES: Record<string, string> = {
+  'pack-s': 'S',
+  'pack-m': 'M',
+  'pack-l': 'L',
+  'pack-xl': 'XL',
+  'pack-xxl': 'XXL',
+  'pack-200': 'Стартовый',
+  'pack-1000': 'Стандарт',
+  'pack-5000': 'Студия',
+};
+
+function packTitle(packId: string): string {
+  const known = PACK_TITLES[packId];
+  return known ? `Пакет «${known}»` : 'Пакет';
+}
+
+/** Failed payment → support with the order id already in the subject. */
+function supportHref(orderId: string): string {
+  return `mailto:support@vertov.space?subject=${encodeURIComponent(`Платёж ${orderId}`)}`;
+}
+
+/**
+ * Full-card outage fallback: at least one billing fetch failed, so rendering
+ * zeros would lie. Client-side so the retry can refresh the server render.
+ */
+export function BillingLoadError() {
+  const router = useRouter();
+  return (
+    <ErrorState
+      message="Не удалось загрузить данные биллинга. Попробуйте обновить страницу."
+      onRetry={() => router.refresh()}
+    />
+  );
 }
 
 export function BillingClient({
@@ -73,7 +117,11 @@ export function BillingClient({
   // opposite advice.
   const notice = planBlockNotice(planAccessBlock);
   const [busy, setBusy] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
+  // Elapsed period: the only honest primary is a resubscribe link — the
+  // destructive close is demoted to «Закрыть» behind a confirm modal.
+  const elapsed = notice?.offersResubscribe === true;
 
   async function cancel() {
     setBusy(true);
@@ -93,6 +141,9 @@ export function BillingClient({
     } catch {
       setBillingError('Сетевая ошибка при отмене подписки. Попробуйте ещё раз.');
     } finally {
+      // Always drop the modal so the result (refreshed card or error banner)
+      // is visible instead of hiding behind the overlay.
+      setConfirmCancel(false);
       setBusy(false);
     }
   }
@@ -148,6 +199,14 @@ export function BillingClient({
             <p className="font-display text-sm font-black uppercase tracking-tight">
               {notice.title}
             </p>
+            {notice.tone === 'ended' && planAccessBlock && (
+              <p
+                data-testid="plan-ended-badge"
+                className="mt-2 inline-block border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.08em]"
+              >
+                Закончилась {formatDate(planAccessBlock.currentPeriodEnd)}
+              </p>
+            )}
             <p className="mt-1.5 text-sm text-[color:var(--color-muted-foreground)]">
               {notice.body}
             </p>
@@ -155,6 +214,15 @@ export function BillingClient({
               <p className="mt-1.5 text-sm text-[color:var(--color-muted-foreground)]">
                 {notice.recoveryHint}
               </p>
+            )}
+            {notice.recoveryOrderId && (
+              <a
+                data-testid="resume-payment-link"
+                href={`/billing/return?orderId=${encodeURIComponent(notice.recoveryOrderId)}`}
+                className="mt-2 inline-block font-bold text-[color:var(--color-accent)] underline underline-offset-2"
+              >
+                Продолжить оплату
+              </a>
             )}
           </div>
         )}
@@ -189,24 +257,42 @@ export function BillingClient({
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                data-testid="cancel-button"
-                disabled={busy}
-                onClick={() => void cancel()}
-                // Emphasised ONLY when closing this subscription is genuinely the
-                // way back (an ended period). For a declined card the control
-                // stays available but neutral — nothing may steer a customer
-                // whose subscription is still alive into cancelling it.
-                className={`press border-[2.5px] border-[color:var(--color-line)] px-3 py-1.5 text-sm font-bold shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-60 ${
-                  notice?.offersResubscribe
-                    ? 'bg-[color:var(--color-accent)] text-[color:var(--color-primary-foreground)]'
-                    : 'bg-[color:var(--color-surface)]'
-                }`}
-              >
-                Отменить
-              </button>
+            {/* Cancel is always confirm-guarded (modal below states the
+                effective date + token fate). Elapsed: primary is the
+                resubscribe link, destructive close demoted to «Закрыть». */}
+            <div className="flex flex-wrap items-center gap-2">
+              {elapsed ? (
+                <>
+                  <a
+                    href="/pricing"
+                    data-testid="resubscribe-button"
+                    className="press border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3 py-1.5 text-sm font-bold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)]"
+                  >
+                    Оформить заново
+                  </a>
+                  <button
+                    type="button"
+                    data-testid="cancel-button"
+                    disabled={busy}
+                    onClick={() => setConfirmCancel(true)}
+                    className="press border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-3 py-1.5 text-sm font-bold shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-60"
+                  >
+                    Закрыть
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="cancel-button"
+                  disabled={busy}
+                  onClick={() => setConfirmCancel(true)}
+                  // Neutral even for a declined card — nothing may steer a
+                  // customer whose subscription is still alive into cancelling.
+                  className="press border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-3 py-1.5 text-sm font-bold shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-60"
+                >
+                  Отменить
+                </button>
+              )}
               <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -217,6 +303,65 @@ export function BillingClient({
                 />
                 Продлевать автоматически
               </label>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel confirm — states the effective date + token fate, mirroring
+            the downgrade modal in PricingClient (scheduled, never instant). */}
+        {confirmCancel && subscription && (
+          <div
+            data-testid="cancel-confirm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'color-mix(in srgb, var(--color-bg) 72%, transparent)' }}
+            onClick={() => setConfirmCancel(false)}
+          >
+            <div
+              className="w-full max-w-[440px] border-[2.5px] border-[color:var(--color-line)] p-6 shadow-[7px_7px_0_0_var(--color-accent)]"
+              style={{ background: 'var(--color-card)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="font-display text-[20px] font-black uppercase leading-[1.1]">
+                {elapsed ? 'Закрыть подписку?' : 'Отменить подписку?'}
+              </h3>
+              <p className="mt-3 text-[13px] leading-[1.5] text-[color:var(--color-muted-foreground)]">
+                {elapsed ? (
+                  <>
+                    Оплаченный период закончился {formatDate(subscription.currentPeriodEnd)}. Токены
+                    подписки уже недоступны, пакеты без срока действия сохраняются. Закрытие уберёт
+                    подписку из списка.
+                  </>
+                ) : (
+                  <>
+                    Подписка закончится {formatDate(subscription.currentPeriodEnd)} — до этой даты
+                    токены и уровень сохраняются. Возврат за текущий период не производится.
+                  </>
+                )}
+              </p>
+              <div className="mt-5 flex gap-2.5">
+                <button
+                  type="button"
+                  data-testid="cancel-confirm-dismiss"
+                  onClick={() => setConfirmCancel(false)}
+                  className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em]"
+                  style={{ background: 'var(--color-surface2)', color: 'var(--color-fg)' }}
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  data-testid="cancel-confirm-submit"
+                  disabled={busy}
+                  onClick={() => void cancel()}
+                  className="press flex-1 border-[2.5px] border-[color:var(--color-line)] py-3 font-mono text-[13px] font-bold uppercase tracking-[0.1em] shadow-[3px_3px_0_0_var(--color-shadow)] disabled:opacity-60"
+                  style={{
+                    background: 'var(--color-destructive)',
+                    color: 'var(--color-destructive-foreground)',
+                  }}
+                >
+                  {busy ? 'Ждите…' : 'Подтвердить'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -273,16 +418,47 @@ export function BillingClient({
                     <td className="tnum py-2 text-right">
                       {row.amountRub.toLocaleString('ru-RU')} ₽
                     </td>
-                    <td className="py-2 text-right text-xs">{row.status}</td>
+                    <td className="py-2 text-right text-xs">
+                      {HISTORY_STATUS_LABEL[row.status] ?? row.status}
+                    </td>
                     <td className="py-2 text-right">
                       {row.status === 'paid' ? (
                         <a
                           data-testid="invoice-link"
                           href={`${apiUrl}/v1/billing/invoice/${row.id}.pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="font-bold text-[color:var(--color-accent)] underline underline-offset-2"
                         >
                           PDF
                         </a>
+                      ) : row.status === 'pending' ? (
+                        <a
+                          data-testid="resume-payment-link"
+                          href={`/billing/return?orderId=${encodeURIComponent(row.id)}`}
+                          className="font-bold text-[color:var(--color-accent)] underline underline-offset-2"
+                        >
+                          Продолжить оплату
+                        </a>
+                      ) : row.status === 'failed' ? (
+                        <span className="inline-flex flex-col items-end gap-1">
+                          <a
+                            data-testid="resume-payment-link"
+                            href={`/billing/return?orderId=${encodeURIComponent(row.id)}`}
+                            className="font-bold text-[color:var(--color-accent)] underline underline-offset-2"
+                          >
+                            Продолжить оплату
+                          </a>
+                          <a
+                            data-testid="support-link"
+                            href={supportHref(row.id)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-bold text-[color:var(--color-muted-foreground)] underline underline-offset-2"
+                          >
+                            Поддержка
+                          </a>
+                        </span>
                       ) : (
                         '—'
                       )}
@@ -313,11 +489,17 @@ export function BillingClient({
           {breakdown.packGrant.map((p, i) => (
             <li key={`${p.packId}-${i}`} className="flex justify-between">
               <span>
-                {p.packId} от {formatDate(p.grantedAt)}
+                {packTitle(p.packId)} от {formatDate(p.grantedAt)}
               </span>
               <span>{p.amount.toLocaleString('ru-RU')} (бессрочно)</span>
             </li>
           ))}
+          {breakdown.pending > 0 && (
+            <li className="flex justify-between">
+              <span>В обработке</span>
+              <span>{breakdown.pending.toLocaleString('ru-RU')}</span>
+            </li>
+          )}
           <li className="flex justify-between border-t-2 border-[color:var(--color-line)] pt-2">
             <span>Возвраты</span>
             <span>{breakdown.refund.toLocaleString('ru-RU')}</span>

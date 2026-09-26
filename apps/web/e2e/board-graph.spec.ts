@@ -3123,6 +3123,9 @@ test.describe('AI-промпт node', () => {
     await node.getByTestId('ai-model-trigger').click();
     await node.getByTestId('ai-model-gemini').click();
     await expect(node.getByTestId('ai-model-trigger')).toContainText('Gemini 3 Flash');
+    // WS5 tokens-first-half: the draft price rides in its own cost badge
+    // (shared workbook quote, «—» when unknown) instead of hardcoded text.
+    await expect(node.getByTestId('ai-cost')).toContainText(/\d+ кр\./);
 
     // write a brief and draft → flips to the result
     await node.getByTestId('ai-brief').fill('кот в шапке зимой');

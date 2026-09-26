@@ -2,9 +2,14 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { AppShell } from '../../_components/AppShell';
 import { apiBaseUrl, apiGet } from '../../../lib/server-api';
-import { BillingClient, type HistoryRow, type Subscription, type Breakdown } from './BillingClient';
+import {
+  BillingClient,
+  BillingLoadError,
+  type Breakdown,
+  type HistoryRow,
+  type Subscription,
+} from './BillingClient';
 import type { PlanAccessBlock } from '../../../lib/plan-block';
-import { ErrorState } from '../../_components/states/ErrorState';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +36,15 @@ export default async function SettingsBillingPage() {
   if (!me.data || me.data.user.isAnonymous)
     redirect('/login?next=' + encodeURIComponent('/settings/billing'));
 
-  const historyFailed = history.status >= 500 || history.data === null;
+  const historyFailed = history.status !== 200 || !Array.isArray(history.data);
+  // Any outage must gate the whole card: rendering zeros (0 токенов, empty
+  // history, «no subscription») as truth is the billing-honesty bug. A 200 +
+  // null subscription is the legitimate «no subscription» state — only a
+  // non-200 means the fetch itself failed.
+  const breakdownFailed = breakdown.status !== 200 || breakdown.data == null;
+  const subscriptionFailed = sub.status !== 200;
+  const balanceFailed = balance.status !== 200 || typeof balance.data?.available !== 'number';
+  const billingFailed = balanceFailed || historyFailed || breakdownFailed || subscriptionFailed;
 
   return (
     <AppShell
@@ -39,7 +52,7 @@ export default async function SettingsBillingPage() {
       balance={balance.data?.available ?? 0}
       apiUrl={apiBaseUrl()}
     >
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-4xl px-4 md:px-6">
         <nav className="mb-4 text-sm text-[color:var(--color-muted-foreground)]">
           <Link href="/settings" className="hover:underline">
             Настройки
@@ -50,8 +63,8 @@ export default async function SettingsBillingPage() {
         <p className="mt-2 text-sm text-[color:var(--color-muted-foreground)]">
           Управление подпиской, история платежей и баланс токенов по сроку.
         </p>
-        {historyFailed ? (
-          <ErrorState message="Не удалось загрузить данные биллинга. Попробуйте обновить страницу." />
+        {billingFailed ? (
+          <BillingLoadError />
         ) : (
           <BillingClient
             subscription={sub.data ?? null}

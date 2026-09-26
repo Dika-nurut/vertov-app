@@ -81,6 +81,8 @@ test.describe('Phase 2 first-use experience', () => {
 
     await page.mouse.click(4, 4);
     await expect(tour).toBeHidden({ timeout: 10_000 });
+    // WS4: dismissing the tour strips ?onboarding=1 so reload/Back never replays it.
+    await expect(page).not.toHaveURL(/[?&]onboarding=1/);
     await expect
       .poll(
         async () => {
@@ -116,15 +118,20 @@ test.describe('Phase 2 first-use experience', () => {
     const tour = page.getByTestId('onboarding-tour');
     await expect(tour).toBeVisible({ timeout: 30_000 });
     await expect(tour).toHaveAttribute('data-mobile', 'true');
-    await expect(tour).toHaveText(/1\/3/);
+    await expect(tour).toHaveText(/1\/4/);
     await expectTourAdjacent(page, 'model');
 
     await tour.getByTestId('onboarding-tour-next').click();
     await expect(tour).toHaveAttribute('data-tour-step', 'prompt');
     await page.getByTestId('prompt-block').getByRole('textbox').fill('мокрый асфальт ночью');
     await expect(tour).toHaveAttribute('data-tour-step', 'submit');
-    await expect(tour).toHaveText(/3\/3/);
+    await expect(tour).toHaveText(/3\/4/);
     await expectTourAdjacent(page, 'submit');
+
+    // WS4: the done step stays on mobile — it is the tour's finish state.
+    await tour.getByTestId('onboarding-tour-next').click();
+    await expect(tour).toHaveAttribute('data-tour-step', 'done');
+    await expect(tour).toHaveText(/4\/4/);
 
     const safeAreaCheck = await tour.evaluate((node) => {
       const rect = node.getBoundingClientRect();
@@ -136,22 +143,33 @@ test.describe('Phase 2 first-use experience', () => {
     expect(safeAreaCheck).toBe(true);
   });
 
-  test('mobile routes outside Generate show the compact desktop notice', async ({
+  test('mobile money + docs routes stay usable, gated routes show the notice', async ({
     signedInPage: page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+
+    // WS0: money + docs are allowed on phones — no notice, tab bar unmounted
+    // only when the gate fires (regression: notice visible ⇒ tab bar count 0).
+    for (const route of ['/pricing', '/settings', '/settings/billing', '/support', '/faq']) {
+      await page.goto(route);
+      await expect(page.getByTestId('mobile-desktop-notice')).toHaveCount(0);
+    }
+
+    // Gated control: /boards still shows the deep-linked notice.
     await page.goto('/boards');
-    await expect(page.getByTestId('mobile-desktop-notice')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId('mobile-desktop-notice')).toContainText(
-      'Полная версия — на десктопе',
-    );
-    await expect(page.getByTestId('mobile-desktop-link')).toHaveAttribute('href', '/generate');
+    const notice = page.getByTestId('mobile-desktop-notice');
+    await expect(notice).toBeVisible({ timeout: 30_000 });
+    await expect(notice).toContainText('Полная версия — на десктопе');
+    await expect(notice.getByTestId('mobile-desktop-destination')).toContainText('Борды');
+    const cta = page.getByTestId('mobile-desktop-link');
+    await expect(cta).toHaveAttribute('href', /\/generate\?from=%2Fboards/);
+    await expect(page.getByTestId('mobile-desktop-back')).toBeVisible();
+    // Edit-3 regression: the tab bar lives inside the gate children, so it
+    // must be gone whenever the notice is up.
+    await expect(page.getByTestId('mobile-tab-bar')).toHaveCount(0);
 
     await page.goto('/generate');
     await expect(page.getByTestId('mobile-desktop-notice')).toHaveCount(0);
-
-    await page.goto('/faq');
-    await expect(page.getByTestId('mobile-desktop-notice')).toBeVisible({ timeout: 30_000 });
   });
 
   test('feature hints render once per surface and dismiss once', async ({

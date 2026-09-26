@@ -2,6 +2,20 @@
 // v14 price-row SSOT (`docs/business/pricing-v14-price-rows-2026-07-28.md`).
 // The accompanying test binds every claim to an active seeded row, so a change
 // to the charge catalogue cannot silently leave publication on an old ladder.
+//
+// Gift figures are NOT claimed here — they come from the gift SSOT
+// (`@/lib/gift-tokens`, mirroring the `WELCOME_GRANT_AMOUNTS` ladder in
+// `packages/credits/src/welcome.ts`), so the FAQ answer below is built from
+// those constants and cannot drift from the landing/pricing/onboarding copy.
+import {
+  GIFT_TOKENS_DAILY,
+  GIFT_TOKENS_DAILY_DAYS,
+  GIFT_TOKENS_EXPIRY_HOURS,
+  GIFT_TOKENS_FIRST_ORDER,
+  GIFT_TOKENS_PHONE,
+  GIFT_TOKENS_RETURN,
+  GIFT_TOKENS_UPFRONT,
+} from '@/lib/gift-tokens';
 
 export interface PlanFit {
   /** 'v' = video (port-video dot), 'i' = image (port-image dot). */
@@ -15,7 +29,7 @@ export interface PlanFit {
 export interface PlanContent {
   fits: PlanFit[];
   checks: string[];
-  /** «Популярно» sticker + accent treatment. */
+  /** «Популярно» sticker (the plate's one lime marker) + bone borders. */
   popular?: boolean;
 }
 
@@ -29,7 +43,8 @@ const CHECKS_BASE = [
 /** The Студия⟷Макс bezel pairs these two tiers into one plate. */
 export const BEZEL_PAIR = ['studio', 'max'] as const;
 
-/** «Лучшая цена» lime tag rides the dearest grid plate. */
+/** «Лучшая цена» accent tag rides the dearest grid plate (WS6: the page's one
+ *  lime marker lives on the popular plate's «Популярно» badge). */
 export const BEST_VALUE_TIER = 'max';
 
 export interface CostRow {
@@ -96,6 +111,12 @@ const costs = (rows: readonly CostRowSource[]): CostRow[] =>
 // «Сколько стоит генерация» — generated from explicit v14 SSOT claims. For
 // video, every per-clip amount names the row's base duration.
 export const COST_VIDEO = costs([
+  {
+    // Free-tier economy video (rev. 23, Pixazo; paid smoke 2026-09-25).
+    model: 'Seedance 2.0 Mini',
+    cfg: '480p / 720p · звук · 5 с',
+    claims: [price('seedance-2-0-mini', '480p', 36, 5), price('seedance-2-0-mini', '720p', 77, 5)],
+  },
   {
     model: 'Grok Imagine',
     cfg: '720p · 6 с',
@@ -249,6 +270,8 @@ const seedreamLite = price('seedream-5-0-lite', '2K', 12);
 // Keyed by backend tier. Counts are floor(plan credits ÷ the active base clip /
 // image price), never scaled from an old mock.
 export const PLAN_FIT_CLAIMS: Record<keyof typeof PLAN_CREDITS, readonly PlanFitSource[]> = {
+  // Старт cannot run Seedream 5.0 (tierMin `creator` = Плюс and above), so its
+  // card names only models the plan unlocks — pinned by plan-content.test.ts.
   start: [
     { kind: 'v', label: 'видео Veo Lite', creditsPerCycle: PLAN_CREDITS.start, claim: veoLite },
     {
@@ -259,9 +282,9 @@ export const PLAN_FIT_CLAIMS: Record<keyof typeof PLAN_CREDITS, readonly PlanFit
     },
     {
       kind: 'i',
-      label: 'фото Seedream 5.0 Lite',
+      label: 'фото Nano Banana 2',
       creditsPerCycle: PLAN_CREDITS.start,
-      claim: seedreamLite,
+      claim: nanoBanana2,
     },
   ],
   plus: [
@@ -411,7 +434,7 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: 'Что за бесплатные токены?',
-    a: 'До 400 токенов в подарок, по шагам: 130 сразу за регистрацию любым способом (почта, VK, Яндекс, телефон), +70 когда вернётесь на следующий день и сделаете первую генерацию, +100 за подтверждение номера и ещё +100 за первую покупку. Стартовые 130 сгорают через 72 часа, если их не потратить. Бесплатные токены действуют на Seedance Mini 480p с вотермарком.',
+    a: `${GIFT_TOKENS_UPFRONT} токенов сразу после регистрации любым способом (почта, VK, Яндекс, телефон), без карты. Следующие ${GIFT_TOKENS_DAILY_DAYS} дня — ещё по +${GIFT_TOKENS_DAILY} за первый заход в день. Сверху: +${GIFT_TOKENS_RETURN} при первом возвращении (через 18 часов, в новый день и после первой завершённой генерации), +${GIFT_TOKENS_PHONE} за подтверждение номера и +${GIFT_TOKENS_FIRST_ORDER} после первой покупки. Стартовые и ежедневные токены сгорают через ${GIFT_TOKENS_EXPIRY_HOURS} часа после начисления, если их не потратить. Без подписки ими можно снимать видео на Seedance 2.0 Mini (480p или 720p, до 15 секунд) и фото на Nano Banana 2 Lite с водяным знаком vertov.space, а ещё пользоваться AI в Сценарии и на доске. Остальные видеомодели открываются с тарифа «Старт».`,
   },
   {
     q: 'Нужна ли подписка, чтобы смотреть?',

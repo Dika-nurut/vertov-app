@@ -214,3 +214,28 @@
   height: 20px;
   font-size: 9px;
 }
+
+/* WS0: collapse the project bar below the mobile breakpoint (matches
+   MOBILE_QUERY in MobileRouteGate). Phones keep brand + context + account;
+   the 342px product strip and the upgrade affordance have no room at 390px
+   (pricing plates + settings balance card carry that weight instead). */
+@media (max-width: 767px) {
+  .bar {
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .context {
+    gap: 8px;
+  }
+  .products,
+  .skeletonProducts {
+    display: none;
+  }
+  .account {
+    gap: 10px;
+    padding-left: 10px;
+  }
+  .upgrade {
+    display: none;
+  }
+}

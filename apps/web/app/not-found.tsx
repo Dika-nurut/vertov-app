@@ -21,7 +21,8 @@ export default function NotFound() {
       </p>
       <h1 className="text-h1 text-[color:var(--color-fg)]">Такой страницы нет</h1>
       <p className="max-w-md text-sm leading-relaxed text-[color:var(--color-muted-foreground)]">
-        Ссылка устарела или страницу перенесли. Вернись на главную или загляни в архив своих работ.
+        Ссылка устарела или страницу перенесли. Вернитесь на главную или загляните в архив своих
+        работ.
       </p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
         <Link href="/" className="btn btn-primary">

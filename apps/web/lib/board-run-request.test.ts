@@ -212,7 +212,7 @@ describe('prepareBoardNodeRun', () => {
     expect(result).toMatchObject({
       ok: false,
       reasonCode: 'tier_required',
-      reason: expect.stringContaining('Креатор'),
+      reason: expect.stringContaining('Плюс'),
     });
   });
 });

@@ -39,7 +39,7 @@ export function TextLibraryPanel({
               })
             }
             disabled={timeline.length === 0}
-            className="press-inset group relative grid aspect-video place-items-center overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-2 ring-1 ring-inset ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-accent)] disabled:opacity-40"
+            className="press-inset group relative grid aspect-video place-items-center overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-2 ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-accent)] disabled:opacity-40"
           >
             <span
               className={

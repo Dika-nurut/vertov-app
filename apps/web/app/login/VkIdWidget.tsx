@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const VK_APP_ID = Number(process.env.NEXT_PUBLIC_VK_APP_ID ?? 0);
@@ -34,22 +34,30 @@ function loadSdk(): Promise<any> {
 
 /**
  * VK ID OneTap — the OFFICIAL VK widget (VK's rules require it). VK only —
- * Odnoklassniki / Mail.ru are intentionally not offered. Styled to match the
- * Yandex button: borderRadius 12, full container width. On success the SDK
+ * Odnoklassniki / Mail.ru are intentionally not offered. Styled to the canon:
+ * borderRadius 4 (radius-md max), dark scheme. On success the SDK
  * exchanges the code; the browser POSTs the VK token to our bridge
  * (`/api/auth/vkid/bridge`), which verifies it server-side and mints the session.
+ *
+ * When the SDK script is blocked the widget leaves nothing keyboard-reachable
+ * behind, so `onFallback` (the plain OAuth redirect in the login page)
+ * renders as a real button instead. The container is a labelled region,
+ * not a bare clickable div.
  */
 export function VkIdWidget({
   onSuccess,
   onError,
   onStart,
+  onFallback,
 }: {
   onSuccess: () => void;
   onError: (msg: string) => void;
   onStart?: () => void;
+  onFallback: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const rendered = useRef(false);
+  const [sdkFailed, setSdkFailed] = useState(false);
 
   useEffect(() => {
     if (!VK_APP_ID || rendered.current) return;
@@ -71,10 +79,10 @@ export function VkIdWidget({
         oneTap
           .render({
             container: ref.current,
-            scheme: 'light',
+            scheme: 'dark',
             // VK only — Odnoklassniki / Mail.ru intentionally NOT offered.
             // height matched to the Yandex 'm' button (~44px) so the two line up.
-            styles: { borderRadius: 12, width, height: 44 },
+            styles: { borderRadius: 4, width, height: 44 },
           })
           .on(VKID.WidgetEvents.ERROR, () => onError('Ошибка VK ID'))
           .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, async (payload: any) => {
@@ -95,7 +103,10 @@ export function VkIdWidget({
             }
           });
       })
-      .catch(() => onError('Не удалось загрузить VK ID'));
+      .catch(() => {
+        if (!cancelled) setSdkFailed(true);
+        onError('Не удалось загрузить VK ID');
+      });
 
     return () => {
       cancelled = true;
@@ -104,7 +115,7 @@ export function VkIdWidget({
 
   if (!VK_APP_ID) return null;
   return (
-    <>
+    <section aria-label="Вход через VK" className="w-full">
       {/*
         The VK SDK sizes its button from a JS-measured integer (clientWidth),
         while the Yandex iframe fills via CSS width:100%. On a fractional-width
@@ -123,6 +134,19 @@ export function VkIdWidget({
         }
       `}</style>
       <div ref={ref} data-testid="vkid-widget" className="w-full" onClick={onStart} />
-    </>
+      {sdkFailed && (
+        <button
+          type="button"
+          onClick={() => {
+            onStart?.();
+            onFallback();
+          }}
+          data-testid="vk-oauth-fallback"
+          className="press mt-2 flex h-11 w-full items-center justify-center rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-card px-4 text-[13px] font-medium shadow-[3px_3px_0_0_var(--color-shadow)] transition-transform hover:-translate-y-px"
+        >
+          Войти через VK
+        </button>
+      )}
+    </section>
   );
 }

@@ -2,10 +2,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const repoRoot = resolve(import.meta.dirname, '..');
 const guard = resolve(repoRoot, 'scripts/test-env-guard.mjs');
-const importGuard = `import(${JSON.stringify(guard)})`;
+const importGuard = `import(${JSON.stringify(pathToFileURL(guard).href)})`;
 
 function run(args, env) {
   return spawnSync(process.execPath, args, {

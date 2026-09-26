@@ -86,7 +86,7 @@ function TextPresets({
               aria-pressed={on}
               onClick={() => apply(t)}
               className={
-                'press-inset overflow-hidden rounded-[var(--radius-sm)] ring-1 ring-inset transition-shadow ' +
+                'press-inset overflow-hidden rounded-[var(--radius-sm)] ring-[1.5px] ring-inset transition-shadow ' +
                 (on
                   ? 'ring-2 ring-[color:var(--color-accent)]'
                   : 'ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40')
@@ -129,7 +129,7 @@ function TextBasic({
           value={text.text}
           data-testid="text-input"
           onChange={(e) => patchText(text.uid, { text: e.target.value })}
-          className="h-10 w-full rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 text-[13px] text-[color:var(--color-fg)] outline-none ring-1 ring-inset ring-[color:var(--color-line)]/15 focus:border-[color:var(--color-accent)] focus:shadow-[3px_3px_0_0_var(--color-shadow)]"
+          className="h-10 w-full rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] px-3 text-[13px] text-[color:var(--color-fg)] outline-none ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 focus:border-[color:var(--color-accent)] focus:shadow-[3px_3px_0_0_var(--color-shadow)]"
         />
       </Row>
       <Row label={`Показ с ${text.fromSec.toFixed(1)}с`}>
@@ -232,7 +232,7 @@ function TextBasic({
                   'h-8 rounded-[var(--radius-sm)] ring-inset transition-shadow ' +
                   (on
                     ? 'ring-2 ring-[color:var(--color-accent)]'
-                    : 'ring-1 ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40')
+                    : 'ring-[1.5px] ring-[color:var(--color-line)]/15 hover:ring-[color:var(--color-line)]/40')
                 }
                 style={{ backgroundColor: c }}
               />

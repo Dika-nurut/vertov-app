@@ -28,6 +28,9 @@ export function ReturnClient({
   const router = useRouter();
   const [status, setStatus] = useState<Status>('polling');
   const [credits, setCredits] = useState<number>(0);
+  // WS2: paid fallback keeps its kind so the inline card stays contextual
+  // (pack buyers go back to packs, subscriptions to generation).
+  const [paidKind, setPaidKind] = useState<'pack' | 'subscription' | null>(null);
   const [attempt, setAttempt] = useState(0);
   // Same-payment resume link from the return API (bounced Tochka form stays
   // pending with a live confirmation page). Shown only while pending.
@@ -40,7 +43,10 @@ export function ReturnClient({
     }
     let cancelled = false;
     const params = new URLSearchParams({ orderId: orderId! });
-    if (forceSuccess) params.set('forceSuccess', '1');
+    // WS2: the stub-only success shortcut must never reach prod — page.tsx
+    // already strips it server-side; this keeps stray client props harmless
+    // while e2e (non-prod) keeps working.
+    if (forceSuccess && process.env.NODE_ENV !== 'production') params.set('forceSuccess', '1');
     async function poll() {
       for (let i = 0; i < 30; i++) {
         try {
@@ -88,6 +94,7 @@ export function ReturnClient({
             } catch {
               // Storage can be disabled; the inline fallback below still
               // gives the user a useful result instead of failing the return.
+              setPaidKind(body.kind);
               setStatus('paid');
               setCredits(body.creditsGranted);
               return;
@@ -128,6 +135,9 @@ export function ReturnClient({
   }, [orderId, forceSuccess, apiUrl, router, attempt]);
 
   if (status === 'paid') {
+    // WS2 contextual fallback (storage disabled): pack buyers return to the
+    // packs chooser, subscriptions go straight to generation.
+    const packFallback = paidKind === 'pack';
     return (
       <div className="mt-6 space-y-4">
         <p data-testid="return-message" className="text-lg">
@@ -135,10 +145,10 @@ export function ReturnClient({
           <b className="font-display text-[color:var(--color-positive)]">+{credits}</b>
         </p>
         <Link
-          href="/generate"
+          href={packFallback ? '/pricing?packs=1' : '/generate'}
           className="press inline-flex items-center border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-4 py-2 text-sm font-bold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)]"
         >
-          Начать генерировать
+          {packFallback ? 'К пакетам' : 'Начать генерировать'}
         </Link>
       </div>
     );
@@ -167,14 +177,12 @@ export function ReturnClient({
             <a
               data-testid="resume-payment-button"
               href={resumeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
               className="press inline-flex items-center border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-4 py-2 text-sm font-bold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)]"
             >
               Продолжить оплату
             </a>
             <p className="mt-2 text-sm text-[color:var(--color-muted-foreground)]">
-              Откроется та же страница оплаты — повторное списание исключено.
+              Продолжите оплату — повторное списание исключено.
             </p>
           </div>
         )}
@@ -189,6 +197,9 @@ export function ReturnClient({
           >
             Проверить снова
           </button>
+          <Link href="/pricing" className="text-sm font-semibold underline">
+            К тарифам
+          </Link>
           <Link href="/settings/billing" className="text-sm font-semibold underline">
             История платежей
           </Link>
@@ -196,6 +207,11 @@ export function ReturnClient({
       </div>
     );
   }
+  // WS2: every terminal state offers a way forward. `error` (fetch failed
+  // or missing order) retries only when an orderId exists to re-check,
+  // plus tariff + history links. Failed/refunded rows explain the outcome
+  // and route to tariffs + history instead of dead-ending.
+  const canRetry = hasOrderId(orderId);
   return (
     <div className="mt-6 space-y-3">
       <p className="text-sm text-destructive" data-testid="return-message">
@@ -207,9 +223,26 @@ export function ReturnClient({
               ? 'Возврат проведён.'
               : 'Не удалось проверить статус.'}
       </p>
-      <Link href="/settings/billing" className="inline-block text-sm font-semibold underline">
-        История платежей
-      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        {status === 'error' && canRetry && (
+          <button
+            type="button"
+            onClick={() => {
+              setStatus('polling');
+              setAttempt((n) => n + 1);
+            }}
+            className="press inline-flex items-center border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-2 text-sm font-bold shadow-[3px_3px_0_0_var(--color-shadow)]"
+          >
+            Проверить снова
+          </button>
+        )}
+        <Link href="/pricing" className="text-sm font-semibold underline">
+          К тарифам
+        </Link>
+        <Link href="/settings/billing" className="text-sm font-semibold underline">
+          История платежей
+        </Link>
+      </div>
     </div>
   );
 }

@@ -176,6 +176,7 @@ describe('listJobsForUser', () => {
 
     const detail = await getJobForUser(jobId, userId);
     expect(detail?.galleryItem).toBeNull();
+    expect(detail?.resultUnavailableReason).toBe('deleted');
   });
 
   it('keeps the job receipt but strips expired result URLs', async () => {
@@ -208,6 +209,7 @@ describe('listJobsForUser', () => {
     expect(listed.rows.find((row) => row.id === jobId)?.resultAssets).toEqual([liveUrl]);
     const detail = await getJobForUser(jobId, userId);
     expect(detail?.resultAssets).toEqual([liveUrl]);
+    expect(detail?.resultUnavailableReason).toBeNull();
     expect(detail?.galleryItem).toMatchObject({ id: liveAssetId });
 
     await db
@@ -216,6 +218,7 @@ describe('listJobsForUser', () => {
       .where(eq(galleryItems.id, liveAssetId));
     const expiredDetail = await getJobForUser(jobId, userId);
     expect(expiredDetail?.resultAssets).toEqual([]);
+    expect(expiredDetail?.resultUnavailableReason).toBe('expired');
     expect(expiredDetail?.galleryItem).toBeNull();
   });
 

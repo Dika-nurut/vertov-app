@@ -450,17 +450,19 @@ describe('project desk items', () => {
     expect(Object.keys((member.json() as { asset: object }).asset).sort()).toEqual(
       [
         'assetUrl',
+        'createdAt',
         'id',
         'kind',
         'mimeType',
         'originalName',
+        'expiresAt',
         'sourceLine',
         'thumbnailUrl',
         'title',
       ].sort(),
     );
-    expect(unrelated.statusCode).toBe(404);
-    expect(unrelated.json()).toEqual({ error: 'not_found' });
+    expect(unrelated.statusCode).toBe(403);
+    expect(unrelated.json()).toEqual({ error: 'asset_not_in_project' });
   });
 
   it('returns lean desk media and explicit cap+1 truncation for all four sources', async () => {

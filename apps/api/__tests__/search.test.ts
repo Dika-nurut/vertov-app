@@ -17,6 +17,7 @@ import {
 } from '@seed/db';
 import {
   MEDIA_DETAIL_SQL,
+  MEDIA_LIFECYCLE_SQL,
   SEARCH_MAX_PAGE,
   SEARCH_MAX_PAGE_SIZE,
   SEARCH_MAX_QUERY_LENGTH,
@@ -346,16 +347,18 @@ describe('GET /v1/search', () => {
   });
 
   it.each([
-    ['expired', () => expiredAssetId],
-    ['deleted', () => deletedAssetId],
-    ['foreign', () => foreignAssetId],
-  ])('does not expose an exact %s asset', async (_label, id) => {
+    ['expired', () => expiredAssetId, 410, 'expired'],
+    ['deleted', () => deletedAssetId, 410, 'deleted'],
+    ['foreign', () => foreignAssetId, 404, undefined],
+  ])('returns a deliberate state for an exact %s asset', async (_label, id, status, reason) => {
     const response = await app.inject({
       method: 'GET',
       url: `/v1/search/media/${id()}`,
     });
-    expect(response.statusCode).toBe(404);
-    expect(response.json()).toEqual({ error: 'not_found' });
+    expect(response.statusCode).toBe(status);
+    expect(response.json()).toEqual(
+      reason ? { error: 'asset_unavailable', reason } : { error: 'not_found' },
+    );
   });
 
   it('uses deterministic exact-first ranking and bounded pagination', async () => {

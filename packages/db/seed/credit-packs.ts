@@ -43,10 +43,11 @@ const legacyCreditPacks: CreditPackSeed[] = [
 
 /**
  * Docs/finance workbook «Тарифы!B23:E29» — «ДОКУПКА КРЕДИТОВ — БЕЗ СРОКА
- * СГОРАНИЯ, ПОЭТОМУ ДОРОЖЕ ULTRA». Video/photo counts use the same conventions
- * as the subscription plates (`plan-content.ts`): 4s-minimum billing for Veo
- * Fast (213 ткн / 8s clip → 106.5 ткн / 4s clip, floored) and Seedream 5.0 Pro
- * at 15 ткн/photo.
+ * СГОРАНИЯ, ПОЭТОМУ ДОРОЖЕ ULTRA». Packs are sold only on top of a live plan
+ * (K-3), so the counts name models the cheapest plan (Старт) unlocks: Veo 3.1
+ * Lite 720p at 66 ткн per 8 s clip and Nano Banana 2 1K at 17 ткн. Counts are
+ * floor(credits ÷ price), pinned against the price-point seed by
+ * `apps/web/app/pricing/plan-content.test.ts`; migration 0112 carries them to prod.
  */
 export const seedCreditPacks: CreditPackSeed[] = [
   {
@@ -54,7 +55,7 @@ export const seedCreditPacks: CreditPackSeed[] = [
     credits: 500,
     priceRub: 299,
     title: 'S',
-    description: '≈4 видео Veo Fast или 33 фото Seedream 5.0.',
+    description: '≈7 видео Veo Lite или 29 фото Nano Banana 2.',
     isActive: true,
     sortOrder: 10,
   },
@@ -63,7 +64,7 @@ export const seedCreditPacks: CreditPackSeed[] = [
     credits: 1500,
     priceRub: 799,
     title: 'M',
-    description: '≈14 видео Veo Fast или 100 фото Seedream 5.0.',
+    description: '≈22 видео Veo Lite или 88 фото Nano Banana 2.',
     isActive: true,
     sortOrder: 20,
   },
@@ -72,7 +73,7 @@ export const seedCreditPacks: CreditPackSeed[] = [
     credits: 4000,
     priceRub: 1899,
     title: 'L',
-    description: '≈37 видео Veo Fast или 266 фото Seedream 5.0.',
+    description: '≈60 видео Veo Lite или 235 фото Nano Banana 2.',
     isActive: true,
     sortOrder: 30,
   },
@@ -81,7 +82,7 @@ export const seedCreditPacks: CreditPackSeed[] = [
     credits: 10000,
     priceRub: 4499,
     title: 'XL',
-    description: '≈93 видео Veo Fast или 666 фото Seedream 5.0.',
+    description: '≈151 видео Veo Lite или 588 фото Nano Banana 2.',
     isActive: true,
     sortOrder: 40,
   },
@@ -90,7 +91,7 @@ export const seedCreditPacks: CreditPackSeed[] = [
     credits: 25000,
     priceRub: 10999,
     title: 'XXL',
-    description: '≈234 видео Veo Fast или 1 666 фото Seedream 5.0.',
+    description: '≈378 видео Veo Lite или 1 470 фото Nano Banana 2.',
     isActive: true,
     sortOrder: 50,
   },

@@ -41,7 +41,7 @@ export function SmartPanel({
             transform: { ...DEFAULT_TRANSFORM, ...clip.transform, scale: 1.1, posX: 0, posY: 0 },
           })
         }
-        className="press-inset group flex w-full items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-1 ring-inset ring-[color:var(--color-line)]/15 transition-colors hover:bg-[color:var(--color-surface)]"
+        className="press-inset group flex w-full items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 transition-colors hover:bg-[color:var(--color-surface)]"
       >
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--radius-xs)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] text-[color:var(--color-primary-foreground)]">
           <Maximize2 size={16} />
@@ -72,7 +72,7 @@ export function SmartPanel({
               key={r.id}
               href={boardsHref}
               data-testid={`smart-${r.id}`}
-              className="press-inset group flex w-full items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-1 ring-inset ring-[color:var(--color-line)]/15 transition-colors hover:bg-[color:var(--color-surface)]"
+              className="press-inset group flex w-full items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3 text-left ring-[1.5px] ring-inset ring-[color:var(--color-line)]/15 transition-colors hover:bg-[color:var(--color-surface)]"
             >
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--radius-xs)] bg-[rgba(var(--accent-rgb),0.15)] text-[color:var(--color-accent)]">
                 <Icon size={16} />

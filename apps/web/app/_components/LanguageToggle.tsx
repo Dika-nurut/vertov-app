@@ -1,41 +1,44 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
+import { normalizeLocale, readClientLocale, type Locale } from '@/lib/locale';
 
 /**
  * LanguageToggle — #11 audit fix.
  *
- * Unified locale source of truth: clicking RU/EN does three things atomically:
- * 1. Updates the URL ?lang= param and lang cookie (immediate UI response).
- * 2. POSTs /v1/me/locale to persist the choice to users_app.locale (DB).
- *    This is fire-and-forget — a failure is non-fatal (user still sees the
- *    switched language; next /v1/me/profile response will re-sync from DB).
- * 3. The AppShell server component reads `users_app.locale` on each page
- *    load via /v1/me/profile and passes it as the `lang` prop, so DB is the
- *    canonical source.
+ * Settings is the only surface that persists locale. Public documents update
+ * only their URL by default, so switching a legal page cannot silently mutate
+ * an account or a browser cookie. `readOnly` is available for surfaces that
+ * should link to the preference screen instead of offering URL switching.
  *
  * apiUrl defaults to NEXT_PUBLIC_API_URL — must be present at runtime.
  */
 export function LanguageToggle({
   apiUrl,
+  persist = false,
+  readOnly = false,
 }: {
   apiUrl?: string;
+  persist?: boolean;
+  readOnly?: boolean;
 } = {}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const currentLang = searchParams.get('lang') ?? 'ru';
+  const currentLang: Locale = normalizeLocale(searchParams.get('lang') ?? readClientLocale());
   const _apiUrl = apiUrl ?? process.env.NEXT_PUBLIC_API_URL ?? '';
 
-  function switchLang(lang: 'ru' | 'en') {
+  function switchLang(lang: Locale) {
     const params = new URLSearchParams(searchParams.toString());
     params.set('lang', lang);
-    // 1. Persist in cookie for server components that read it.
-    document.cookie = `lang=${lang}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-    // 2. Persist to DB (fire-and-forget — non-fatal if the user is not signed in).
-    if (_apiUrl) {
+    if (persist) {
+      // Settings owns persistence; public documents only ever update their URL.
+      document.cookie = `lang=${lang}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    }
+    if (persist && _apiUrl) {
       void fetch(`${_apiUrl}/v1/me/locale`, {
         method: 'POST',
         credentials: 'include',
@@ -43,8 +46,19 @@ export function LanguageToggle({
         body: JSON.stringify({ locale: lang }),
       }).catch(() => undefined);
     }
-    // 3. Update URL so server components re-render with the new locale.
     router.push(`${pathname}?${params.toString()}`);
+  }
+
+  if (readOnly) {
+    return (
+      <Link
+        href="/settings"
+        data-testid="lang-settings-link"
+        className="border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wide text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]"
+      >
+        Язык: {currentLang.toUpperCase()} · настройки
+      </Link>
+    );
   }
 
   return (
