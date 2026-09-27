@@ -145,6 +145,24 @@ describe('deriveShotList', () => {
     expect(row!.locations).toEqual(['Крыша']);
   });
 
+  it('names the scene a planned shot came from', () => {
+    const scene = {
+      id: 'scene-1',
+      type: 'scene',
+      position: { x: 0, y: 0 },
+      data: { title: 'ДВЕРЬ В КЛАСС' },
+    };
+    const rows = deriveShotList(
+      [
+        scene,
+        gen('planned', 400, 0, { sourceSceneNodeId: 'scene-1' }),
+        gen('loose', 400, 400, { sourceSceneNodeId: 'gone' }),
+      ],
+      [],
+    );
+    expect(rows.map((row) => row.sceneTitle)).toEqual(['ДВЕРЬ В КЛАСС', undefined]);
+  });
+
   it('places a wired product name in cast, not locations', () => {
     const nodes = [gen('g1', 0, 0), cast('product', 'product', 'Бутылка')];
     const [row] = deriveShotList(nodes, [{ source: 'product', target: 'g1' }]);

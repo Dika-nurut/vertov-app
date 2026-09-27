@@ -16,6 +16,16 @@ import type { ModelRow, PresetRow } from './GenerateClient';
  * a card with its (static PNG) example. Selecting an effect only highlights it;
  * its prompt is folded in at submit time (the visible prompt stays clean).
  */
+/** «от ✦8/с · ~2 мин»: the catalogue's lowest rate and the median wait. */
+function modelRateLabel(model: ModelRow): string {
+  const rate = `от ✦${model.minUnitCredits}${model.unitKind === 'second' ? '/с' : ''}`;
+  const ms = model.expectedLatencyMsP50;
+  if (!ms) return rate;
+  const wait =
+    ms >= 60_000 ? `~${Math.round(ms / 60_000)} мин` : `~${Math.max(1, Math.round(ms / 1000))} с`;
+  return `${rate} · ${wait}`;
+}
+
 export function ModelEffectPicker({
   cards,
   currentModelId,
@@ -204,6 +214,19 @@ export function ModelEffectPicker({
                           className="shrink-0 text-[color:var(--color-faint)]"
                         />
                       )}
+                    </span>
+                    {/* Rate and usual wait, so the choice is made with the price in
+                      view. The exact charge is still the quote on «Создать». */}
+                    <span
+                      data-testid="model-card-rate"
+                      className={
+                        'tnum font-mono text-[11px] ' +
+                        (on
+                          ? 'text-[color:var(--color-primary-foreground)]/80'
+                          : 'text-[color:var(--color-muted-foreground)]')
+                      }
+                    >
+                      {modelRateLabel(c.model)}
                     </span>
                     {/* Input note — only on rows that share a base/twin pair, where
                       the name alone can't say which tool this is. */}

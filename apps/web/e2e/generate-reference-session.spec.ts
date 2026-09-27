@@ -54,6 +54,7 @@ test('an accepted one-shot edit consumes only its result frame, not a second use
   await page.goto('/generate');
   await page.getByTestId('prompt').fill('source result');
   await page.getByTestId('submit').click();
+  await page.getByTestId('result-more').click();
   await expect(page.getByTestId('action-edit')).toBeVisible({ timeout: 10_000 });
 
   await page.getByTestId('action-edit').click();

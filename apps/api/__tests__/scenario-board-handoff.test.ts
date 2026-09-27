@@ -303,6 +303,52 @@ describe('Board scene-source sync model', () => {
     ).toBe(true);
   });
 
+  it('asks board video nodes only for durations a board model can render', () => {
+    const [scene] = extractScenarioHandoffScenes(FOUNTAIN);
+    const merged = mergeScenarioScenesIntoBoard({
+      document: {},
+      scriptId: 'script-short-cuts',
+      scriptRevision: 1,
+      scenes: [
+        {
+          ...scene!,
+          shotPlan: {
+            version: SCENARIO_SHOT_PLAN_VERSION,
+            sceneId: 'scene:1',
+            targetDurationSeconds: 22,
+            shots: [
+              {
+                order: 1,
+                title: 'Быстрая склейка',
+                durationSec: 2,
+                dramaticBeat: 'Резкий вход.',
+                promptDraft: 'Крупно: рука хватает конверт.',
+                requiredLocks: [],
+                unresolvedAssets: [],
+              },
+              {
+                order: 2,
+                title: 'Долгий план',
+                durationSec: 20,
+                dramaticBeat: 'Пауза.',
+                promptDraft: 'Общий план кухни, Алиса читает письмо.',
+                requiredLocks: [],
+                unresolvedAssets: [],
+              },
+            ],
+          },
+        },
+      ],
+      fullSync: true,
+      makeId: ids('scene-source', 'scene-node'),
+    });
+
+    const durations = merged.document.nodes
+      .filter((node) => node.type === 'generate')
+      .map((node) => (node.data as { durationSeconds?: number }).durationSeconds);
+    expect(durations).toEqual([4, 15]);
+  });
+
   it('sends the sheet, not the beats, once a short-form script has scene headings', () => {
     const sources = extractScenarioHandoffSources({
       format: 'ad',

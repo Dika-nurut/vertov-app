@@ -1,47 +1,60 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-test('Generate action stays reachable above the mobile navigation on narrow viewports', async ({
+async function inViewport(page: Page, testId: string) {
+  const box = await page.getByTestId(testId).boundingBox();
+  const height = await page.evaluate(() => innerHeight);
+  return Boolean(box && box.y >= 0 && box.y + box.height <= height + 1);
+}
+
+test('phone: «Управление» / «Результат» switch keeps the composer and the result each on a full screen', async ({
   page,
 }) => {
   test.setTimeout(60_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/generate', { waitUntil: 'domcontentloaded' });
 
-  for (const width of [390, 768]) {
-    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-    await page.goto('/generate', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByTestId('prompt')).toBeVisible({ timeout: 30_000 });
-    await page.getByTestId('prompt').fill('длинный мобильный промпт '.repeat(40));
+  const dock = page.getByTestId('action-dock');
+  const stage = page.getByTestId('result-area');
+  await expect(page.getByTestId('pane-controls')).toHaveAttribute('aria-pressed', 'true', {
+    timeout: 30_000,
+  });
+  await expect(page.getByTestId('prompt')).toBeVisible();
+  await expect(stage).toBeHidden();
 
-    const actionDock = page.getByTestId('action-dock');
-    const cta = page.locator('[data-testid="submit"], [data-testid="upsell-cta"]').first();
-    await expect(actionDock).toHaveCSS('position', 'fixed');
-    await expect
-      .poll(async () => {
-        const box = await cta.boundingBox();
-        return Boolean(
-          box && box.y >= 0 && box.y + box.height <= (await page.evaluate(() => innerHeight)),
-        );
-      })
-      .toBe(true);
+  await page.getByTestId('prompt').fill('длинный мобильный промпт '.repeat(40));
+  await page.getByTestId('submit').scrollIntoViewIfNeeded();
+  await expect.poll(() => inViewport(page, 'submit')).toBe(true);
+  const submitBottom = await page
+    .getByTestId('submit')
+    .evaluate((el) => el.getBoundingClientRect().bottom);
+  const navTop = await page
+    .getByTestId('mobile-tab-bar')
+    .locator('> div')
+    .evaluate((el) => el.getBoundingClientRect().top);
+  expect(submitBottom).toBeLessThanOrEqual(navTop + 1);
 
-    const geometry = await page.evaluate(() => {
-      const dock = document.querySelector('[data-testid="action-dock"]')?.getBoundingClientRect();
-      const cta = document
-        .querySelector('[data-testid="submit"], [data-testid="upsell-cta"]')
-        ?.getBoundingClientRect();
-      const nav = document.querySelector('[data-testid="mobile-tab-bar"]')?.getBoundingClientRect();
-      return {
-        dockBottom: dock?.bottom ?? null,
-        ctaBottom: cta?.bottom ?? null,
-        navTop: nav?.top ?? null,
-        viewport: innerHeight,
-      };
-    });
+  await page.getByTestId('pane-preview').click();
+  await expect(stage).toBeVisible();
+  await expect(dock).toBeHidden();
 
-    expect(geometry.ctaBottom).not.toBeNull();
-    expect(geometry.ctaBottom!).toBeLessThanOrEqual(geometry.viewport + 1);
-    if (width < 768) {
-      expect(geometry.navTop).not.toBeNull();
-      expect(geometry.dockBottom!).toBeLessThanOrEqual(geometry.navTop! + 1);
-    }
-  }
+  // The model picker lives on the stage: it takes over «Результат» and hands
+  // the user back to «Управление» after a pick.
+  await page.getByTestId('pane-controls').click();
+  await page.getByTestId('model-trigger').click();
+  await expect(page.getByTestId('picker-panel')).toBeVisible();
+  await expect(dock).toBeHidden();
+  await page.getByTestId('model-card-rate').first().click();
+  await expect(page.getByTestId('pane-controls')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('prompt')).toBeVisible();
+});
+
+test('tablet: the input bar is pinned with its Create button on screen', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width: 768, height: 900 });
+  await page.goto('/generate', { waitUntil: 'domcontentloaded' });
+
+  await expect(page.getByTestId('prompt')).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId('prompt').fill('длинный планшетный промпт '.repeat(40));
+  await expect(page.getByTestId('action-dock')).toHaveCSS('position', 'fixed');
+  await expect.poll(() => inViewport(page, 'submit')).toBe(true);
 });

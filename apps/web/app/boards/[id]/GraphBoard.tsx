@@ -316,6 +316,31 @@ import { StudioDestinationDialog } from './StudioDestinationDialog';
 
 const BOARD_JOB_NETWORK_TIMEOUT_MS = 30_000;
 const SCENE_OBJECTS_NETWORK_TIMEOUT_MS = 120_000;
+
+/** A first look you read, not squint at: never frame a board below this zoom. */
+const BOARD_FIRST_LOOK_MIN_ZOOM = 0.5;
+
+/** Nodes in the board's top band, so a tall imported column opens at its start. */
+function topBandNodeIds(
+  nodes: readonly { id: string; position: { y: number } }[],
+  band = 1000,
+): { id: string }[] {
+  if (nodes.length === 0) return [];
+  const top = Math.min(...nodes.map((node) => node.position.y));
+  return nodes.filter((node) => node.position.y < top + band).map((node) => ({ id: node.id }));
+}
+
+/**
+ * One quality choice for every video shot in «Снять всё»: a cheap draft to see
+ * the film, a publishable final, the best model. Each rung keeps its own price;
+ * the sheet re-quotes after the switch, so the total shown is what is charged.
+ */
+const BOARD_RUN_TIERS = [
+  { id: 'draft', label: 'Черновик', modelId: 'seedance-2-0-mini', resolution: '480p' },
+  { id: 'final', label: 'Финал', modelId: 'seedance-2-0-fast', resolution: '720p' },
+  { id: 'max', label: 'Максимум', modelId: 'seedance-2-0', resolution: '1080p' },
+] as const;
+type BoardRunTier = (typeof BOARD_RUN_TIERS)[number];
 type UnresolvedAssetAction = 'project' | 'media' | 'visual';
 
 function sceneObjectsErrorMessage(status: number, error: unknown): string {
@@ -1412,7 +1437,13 @@ function Inner({
       // visible instead of making the user hunt for off-screen blocks.
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          void rf.fitView({ padding: 0.2, duration: 250, includeHiddenNodes: true });
+          void rf.fitView({
+            padding: 0.15,
+            duration: 250,
+            includeHiddenNodes: true,
+            minZoom: BOARD_FIRST_LOOK_MIN_ZOOM,
+            nodes: topBandNodeIds(nextNodes),
+          });
         });
       });
       clearBoardRecovery(window.localStorage, boardId, recoveryClientId);
@@ -3509,6 +3540,79 @@ function Inner({
     setRunAllPlan(plan);
   }, [graphDiagnostic.nodes, modelForNode, modelLocked, resolveQuoteAssetUrl, showToast]);
 
+  const runTierModels = useMemo(
+    () =>
+      BOARD_RUN_TIERS.flatMap((tier) => {
+        const model = models.find((candidate) => candidate.id === tier.modelId);
+        return model ? [{ tier, model }] : [];
+      }),
+    [models],
+  );
+  const [runTierNote, setRunTierNote] = useState<string | null>(null);
+  const runTierTargets = useMemo(
+    () => new Set(runAllPlan?.items.filter((item) => item.mode === 'video').map((item) => item.id)),
+    [runAllPlan],
+  );
+  const activeRunTier = useMemo(() => {
+    if (runTierTargets.size === 0) return null;
+    const targets = nodes.filter((node) => runTierTargets.has(node.id));
+    return (
+      BOARD_RUN_TIERS.find((tier) =>
+        targets.every((node) => {
+          const data = node.data as unknown as GenerateData;
+          return data.modelId === tier.modelId && data.videoResolution === tier.resolution;
+        }),
+      )?.id ?? null
+    );
+  }, [nodes, runTierTargets]);
+  // Switch every video shot in the sheet to one rung, as one undoable edit. A
+  // shot whose wiring the rung's model cannot take (a reference it has no port
+  // for) keeps its own model; the sheet says how many.
+  const applyRunTier = useCallback(
+    (tier: BoardRunTier, model: ModelRow) => {
+      if (runTierTargets.size === 0 || modelLocked(model)) return;
+      const patches = new Map<string, Partial<GenerateData>>();
+      let kept = 0;
+      for (const node of nodesRef.current) {
+        if (!runTierTargets.has(node.id) || node.type !== 'generate') continue;
+        const data = node.data as unknown as GenerateData;
+        const impact = analyzeBoardModelChange({
+          nodeId: node.id,
+          data: { ...data, videoResolution: tier.resolution },
+          nextModel: model,
+          connections: targetInputsFor(node.id),
+        });
+        if (impact.edgeIssues.length > 0) {
+          kept += 1;
+          continue;
+        }
+        patches.set(node.id, {
+          modelId: model.id,
+          videoResolution: tier.resolution,
+          ...impact.settingsPatch,
+        });
+      }
+      if (patches.size > 0) {
+        takeSnapshot(`run-tier:${tier.id}`);
+        setNodes((current) =>
+          current.map((node) =>
+            patches.has(node.id)
+              ? { ...node, data: { ...node.data, ...patches.get(node.id) } }
+              : node,
+          ),
+        );
+      }
+      setRunTierNote(
+        kept > 0
+          ? `${kept} ${plural(kept, ['кадр остаётся', 'кадра остаются', 'кадров остаются'])} на своей модели: ${tier.label.toLowerCase()} не принимает их входы.`
+          : null,
+      );
+      // Re-price from the patched nodes once React has committed them.
+      requestAnimationFrame(() => requestAnimationFrame(() => openRunAll()));
+    },
+    [modelLocked, openRunAll, runTierTargets, setNodes, takeSnapshot, targetInputsFor],
+  );
+
   // The pure scheduler unlocks only dependency-ready shots, runs independent
   // branches with a bounded default of three, and never launches a descendant
   // after its upstream failed. Fresh outputs are held synchronously so a newly
@@ -4723,7 +4827,15 @@ function Inner({
           defaultEdgeOptions={{ type: 'typed', animated: true }}
           defaultViewport={st.viewport ?? { x: 80, y: 60, zoom: 1 }}
           {...(!st.viewport && (st.nodes?.length ?? 0) > 0
-            ? { fitView: true, fitViewOptions: { padding: 0.25, maxZoom: 1 } }
+            ? {
+                fitView: true,
+                fitViewOptions: {
+                  padding: 0.15,
+                  maxZoom: 1,
+                  minZoom: BOARD_FIRST_LOOK_MIN_ZOOM,
+                  nodes: topBandNodeIds(st.nodes ?? []),
+                },
+              }
             : {})}
           minZoom={0.25}
           maxZoom={2}
@@ -5363,47 +5475,89 @@ function Inner({
                 Добавь кадры на борд — они появятся здесь списком.
               </p>
             ) : (
-              <ol className="space-y-2">
-                {shotList.map((s) => (
-                  <li
-                    key={s.id}
-                    data-testid="shot-row"
-                    className="rounded-[var(--radius-sm)] border-[1.5px] border-[color:var(--color-line)] p-2.5"
-                  >
-                    <button
-                      type="button"
-                      className="w-full text-left"
-                      onClick={() => focusBoardNode(s.id)}
-                      aria-label={`Открыть кадр ${s.shotNumber}: ${s.title}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[13px] font-semibold text-[color:var(--color-fg)]">
-                          #{s.shotNumber}
+              <ol className="space-y-1.5">
+                {shotList.map((s, index) => {
+                  const still =
+                    s.resultKind === 'video'
+                      ? s.lastFrameUrl
+                      : s.resultKind === 'image'
+                        ? s.resultUrl
+                        : undefined;
+                  const sceneStarts =
+                    s.sceneTitle !== undefined && s.sceneTitle !== shotList[index - 1]?.sceneTitle;
+                  return (
+                    <li key={s.id}>
+                      {sceneStarts && (
+                        <p className="mb-1.5 mt-3 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--color-fg)] first:mt-0">
+                          {s.sceneTitle}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        data-testid="shot-row"
+                        className="press-inset flex w-full items-center gap-2.5 rounded-[var(--radius-sm)] border-[1.5px] border-[color:var(--color-line)] p-2 text-left hover:bg-white/[0.04]"
+                        onClick={() => focusBoardNode(s.id)}
+                        aria-label={`Открыть кадр ${s.shotNumber}: ${s.title}`}
+                      >
+                        <span className="relative h-11 w-[70px] shrink-0 overflow-hidden rounded-[var(--radius-xs)] border-[1.5px] border-[color:var(--color-line-soft)] bg-black">
+                          {still ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={assetSrc(still)}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : s.resultUrl && s.resultKind === 'video' ? (
+                            <video
+                              src={`${assetSrc(s.resultUrl)}#t=0.1`}
+                              muted
+                              playsInline
+                              preload="metadata"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span
+                              aria-hidden
+                              className="block h-full w-full bg-[color:var(--color-surface2)]"
+                            />
+                          )}
                         </span>
-                        <span className="text-[11px] text-[color:var(--color-muted-foreground)]">
-                          {s.status === 'done'
-                            ? 'Готово'
-                            : s.status === 'running'
-                              ? 'Генерация…'
-                              : s.status === 'failed'
-                                ? 'Ошибка'
-                                : '—'}
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[13px] font-semibold text-[color:var(--color-fg)]">
+                            {s.title}
+                          </span>
+                          {s.prompt.trim() && s.prompt.trim() !== s.title && (
+                            <span className="block truncate text-[11px] text-[color:var(--color-muted-foreground)]">
+                              {s.prompt.trim()}
+                            </span>
+                          )}
+                          <span className="mt-0.5 flex flex-wrap gap-x-1.5 font-mono text-[11px] text-[color:var(--color-muted-foreground)]">
+                            <span>#{s.shotNumber}</span>
+                            <span>· {s.mode === 'video' ? 'Видео' : 'Кадр'}</span>
+                            {s.mode === 'video' && s.durationSeconds && (
+                              <span>· {s.durationSeconds} с</span>
+                            )}
+                            <span>
+                              ·{' '}
+                              {s.status === 'done'
+                                ? 'Готово'
+                                : s.status === 'running'
+                                  ? 'Генерация…'
+                                  : s.status === 'failed'
+                                    ? 'Ошибка'
+                                    : 'Не снят'}
+                            </span>
+                            {s.cast.length > 0 && <span>· {s.cast.join(', ')}</span>}
+                            {s.locations.length > 0 && <span>· {s.locations.join(', ')}</span>}
+                            {s.grammarLabel && (
+                              <span data-testid="shot-grammar-label">· {s.grammarLabel}</span>
+                            )}
+                          </span>
                         </span>
-                      </div>
-                      <p className="mt-0.5 truncate text-[13px] text-[color:var(--color-fg)]">
-                        {s.title}
-                      </p>
-                      <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-[color:var(--color-muted-foreground)]">
-                        <span>{s.mode === 'video' ? 'Видео' : 'Кадр'}</span>
-                        {s.cast.length > 0 && <span>· {s.cast.join(', ')}</span>}
-                        {s.locations.length > 0 && <span>· {s.locations.join(', ')}</span>}
-                        {s.grammarLabel && (
-                          <span data-testid="shot-grammar-label">· {s.grammarLabel}</span>
-                        )}
-                      </div>
-                    </button>
-                  </li>
-                ))}
+                      </button>
+                    </li>
+                  );
+                })}
               </ol>
             )}
           </div>
@@ -5689,6 +5843,56 @@ function Inner({
                     {runAllPlan.items.length === 1 ? 'новый кадр' : 'новых кадра/ов'} по
                     зависимостям. Проверьте смету перед запуском.
                   </p>
+                  {runTierTargets.size > 0 && runTierModels.length > 1 && (
+                    <div className="mb-3" data-testid="run-all-tiers">
+                      <p className="mb-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-faint)]">
+                        Качество видео
+                      </p>
+                      <div className="flex overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)]">
+                        {runTierModels.map(({ tier, model }, index) => {
+                          const locked = modelLocked(model);
+                          const on = activeRunTier === tier.id;
+                          return (
+                            <button
+                              key={tier.id}
+                              type="button"
+                              data-testid={`run-all-tier-${tier.id}`}
+                              aria-pressed={on}
+                              disabled={locked}
+                              title={
+                                locked
+                                  ? tierUpsellLabel(model)
+                                  : `${modelDisplayName(model)} · ${tier.resolution}`
+                              }
+                              onClick={() => applyRunTier(tier, model)}
+                              className={
+                                'flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ' +
+                                (index > 0
+                                  ? 'border-l-[2.5px] border-[color:var(--color-line)] '
+                                  : '') +
+                                (on
+                                  ? 'bg-[color:var(--color-fg)] text-[color:var(--color-bg)]'
+                                  : 'text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]')
+                              }
+                            >
+                              {tier.label}
+                              <span className="font-mono text-[11px] font-normal opacity-75">
+                                {locked ? 'тариф выше' : tier.resolution}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {runTierNote && (
+                        <p
+                          data-testid="run-all-tier-note"
+                          className="mt-1.5 text-[11px] leading-snug text-[color:var(--color-muted-foreground)]"
+                        >
+                          {runTierNote}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {runAllRerunCount > 0 && (
                     <p
                       data-testid="run-all-rerun-warning"

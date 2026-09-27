@@ -3224,3 +3224,80 @@ test.describe('AI-промпт node', () => {
     expect(submissions[1]?.['idempotencyKey']).toBe(submissions[0]?.['idempotencyKey']);
   });
 });
+
+test.describe('overview thumbnails', () => {
+  // Adversarial review 2026-09-27 (P2): at overview zoom a video shot without a
+  // saved still used to spin up one detached <video> per shot, all loading at
+  // once, and keep them alive. Now: at most three load at a time, each is
+  // released once its frame is copied, and leaving overview releases the rest.
+  test('video shots without a still load a few at a time and are released', async ({
+    signedInPage: page,
+    context,
+    cookieHeader,
+    apiUrl,
+  }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __overviewVideos: HTMLMediaElement[] };
+      w.__overviewVideos = [];
+      const src = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src')!;
+      Object.defineProperty(HTMLMediaElement.prototype, 'src', {
+        configurable: true,
+        get() {
+          return src.get!.call(this);
+        },
+        set(value: string) {
+          if (!this.isConnected) w.__overviewVideos.push(this);
+          src.set!.call(this, value);
+        },
+      });
+    });
+    const held: import('@playwright/test').Route[] = [];
+    let holding = true;
+    await page.route('**/*.mp4*', (route) => (holding ? held.push(route) : route.abort()));
+    const liveOverviewVideos = () =>
+      page.evaluate(
+        () =>
+          (window as unknown as { __overviewVideos: HTMLMediaElement[] }).__overviewVideos.filter(
+            (video) => video.getAttribute('src'),
+          ).length,
+      );
+
+    const shots = Array.from({ length: 12 }, (_, index) => ({
+      id: `v${index}`,
+      type: 'generate',
+      position: { x: (index % 4) * 300, y: Math.floor(index / 4) * 340 },
+      data: {
+        mode: 'video',
+        prompt: `кадр ${index}`,
+        status: 'done',
+        resultKind: 'video',
+        resultUrl: `https://assets.example.test/e2e/shot-${index}.mp4`,
+      },
+    }));
+    const id = await seedBoard(context.request, apiUrl, cookieHeader, { nodes: shots, edges: [] });
+    await page.goto(`/boards/${id}`);
+    await expect(page.locator('.react-flow__node-generate').first()).toBeVisible();
+
+    const overview = page.getByTestId('board-overview-canvas');
+    for (let i = 0; i < 8 && !(await overview.isVisible()); i += 1) {
+      await page.getByTestId('rail-zoom-out').click();
+    }
+    await expect(overview).toBeVisible();
+
+    await expect.poll(liveOverviewVideos).toBeGreaterThan(0);
+    await page.waitForTimeout(1_000);
+    expect(await liveOverviewVideos()).toBeLessThanOrEqual(3);
+
+    // Let the network fail every held and later request: each video settles,
+    // is released, and frees its slot for the next shot.
+    holding = false;
+    for (const route of held.splice(0)) await route.abort();
+    await expect.poll(liveOverviewVideos, { timeout: 20_000 }).toBe(0);
+
+    for (let i = 0; i < 8 && (await overview.isVisible()); i += 1) {
+      await page.getByTestId('rail-zoom-in').click();
+    }
+    await expect(overview).toBeHidden();
+    expect(await liveOverviewVideos()).toBe(0);
+  });
+});

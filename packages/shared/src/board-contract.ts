@@ -1379,8 +1379,8 @@ export function boardReferenceInputCapacity(model: BoardResolvedModelContract | 
   return Math.max(model.imageInput.max, model.referenceImageMax, model.videoReferenceMax);
 }
 
-const BOARD_DURATION_MIN = 4;
-const BOARD_DURATION_MAX = 15;
+export const BOARD_DURATION_MIN = 4;
+export const BOARD_DURATION_MAX = 15;
 
 export interface BoardResolvedVideoSettings {
   durationSeconds: number;

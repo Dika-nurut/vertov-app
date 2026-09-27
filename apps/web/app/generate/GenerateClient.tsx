@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 // call-site below passes weight="bold" explicitly (the SSR entry carries no
 // IconContext, so there is no global default to lean on).
 import {
-  ArrowRight,
   Check,
   ImageSquare as ImageIcon,
   CircleNotch as Loader2,
@@ -26,20 +25,21 @@ import {
   Clock,
   Rectangle as RectangleHorizontal,
   MonitorPlay,
-  SlidersHorizontal,
   Crop,
   Stack as Layers,
   SquaresFour,
+  SlidersHorizontal,
+  Eye,
   FilmSlate as Film,
   LockSimple as Lock,
   FilmReel as Clapperboard,
   PencilSimple as Pencil,
   At as AtSign,
   Lightning as Zap,
+  CaretRight as ChevronRight,
   X,
   Repeat,
   Scissors,
-  Eye,
 } from '@phosphor-icons/react/dist/ssr';
 import { invalidateBalance, BALANCE_INVALIDATE_EVENT } from '../_components/BalanceWidget';
 import { FREE_MEDIA_RETENTION_COPY } from '@seed/shared/media-retention';
@@ -61,6 +61,7 @@ import { jobFailureGuidance } from '@/lib/job-failure';
 import { GIFT_TOKENS_UPFRONT } from '@/lib/gift-tokens';
 import { isModelLocked, tierRank, TIER_LABEL } from '@/lib/model-tier';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { TokenStar } from '@/components/ui/token-star';
 import { PixelGlyph } from '@/components/ui/pixel-glyph';
 import { assetSrc } from '@/lib/asset-src';
@@ -75,7 +76,6 @@ import {
   videoAspectRatios,
   videoMediaCaps,
   snapDuration,
-  capabilitySigns,
   supportsAudioControl,
   supportsNegativePrompt,
   type ModelCaps,
@@ -101,7 +101,6 @@ import {
   recalculatingPriceToShow,
   useJobEstimate,
 } from '@/lib/useJobEstimate';
-import { cardVisual } from '../../lib/visual-hash';
 import { PillControl } from './PillControl';
 import { MediaPicker, type MediaPickerItem } from './MediaPicker';
 import { PromptEditor } from './PromptEditor';
@@ -111,7 +110,6 @@ import {
   referenceRequiredCopy,
   type ReferenceMediaItem,
 } from './ReferenceDropZone';
-import { GenerateSteps } from './GenerateSteps';
 import { GenerationsGrid, type GenerationTile, type GenFilter } from './GenerationsGrid';
 import { ModelEffectPicker } from './ModelEffectPicker';
 import { uploadMediaFile } from '../../lib/upload';
@@ -126,6 +124,23 @@ import {
   boardImageQualityLabel,
   pickSignedRung,
 } from '@seed/shared/board-contract';
+
+/** The «Черновик» rung for video: cheapest runnable model, on the free plan. */
+const INTENT_DRAFT_VIDEO_MODEL = 'seedance-2-0-mini';
+
+/** Starting points for an empty feed: one click fills the prompt, nothing runs. */
+const GENERATE_EXAMPLES = {
+  image: [
+    'Кот в космическом шлеме смотрит на Землю, кинематографично',
+    'Уютная кофейня на рассвете, пар над чашкой, плёночное зерно',
+    'Логотип «Зерно»: кофейное зерно из линий, чёрный на белом',
+  ],
+  video: [
+    'Неоновый дождь ночью, девушка под прозрачным зонтом, камера медленно наезжает',
+    'Дрон отлетает от крыши небоскрёба на закате, город внизу',
+    'Бариста наливает латте-арт, крупный план, мягкий свет',
+  ],
+} as const;
 
 export interface ModelRow {
   id: string;
@@ -973,10 +988,6 @@ export function GenerateClient({
   useEffect(() => {
     if (!models.some((m) => m.id === modelId)) selectModel(defaultModel?.id ?? '');
   }, [mode, models, modelId, defaultModel]);
-  // Draft is video-only; leaving video clears it.
-  useEffect(() => {
-    setDraft(false);
-  }, [mode]);
   const sizes = useMemo(() => sizesFor(model?.maxResolution ?? null), [model]);
   const [size, setSize] = useState<string>(sizes[0]?.id ?? '1:1');
   // null means the user has not chosen a tier yet, so retain the historical
@@ -1000,12 +1011,8 @@ export function GenerateClient({
   const [genAudio, setGenAudio] = useState<boolean>(true);
   const [watermark, setWatermark] = useState<boolean>(false);
   const [returnLastFrame, setReturnLastFrame] = useState<boolean>(false);
-  // Draft mode (video): one tap routes to the cheapest fast model + 480p so
-  // exploring a shot is a fraction of the full-quality credit cost.
-  const [draft, setDraft] = useState<boolean>(false);
   function selectModel(nextModelId: string) {
     const next = modelSelectionState(nextModelId);
-    setDraft(next.draft);
     setModelId(next.modelId);
   }
   // True while a result is being handed off to Studio (disables the button).
@@ -1110,6 +1117,7 @@ export function GenerateClient({
   }, [phase.kind]);
   // Batch results: null → grid view (when >1 asset), index → single view.
   const [selectedAsset, setSelectedAsset] = useState<number | null>(0);
+  const [moreOpen, setMoreOpen] = useState(false);
   // F-m8: keep a small filmstrip of this session's results so iterating with
   // «Создать ещё» doesn't lose prior outputs.
   const [sessionResults, setSessionResults] = useState<
@@ -1128,7 +1136,18 @@ export function GenerateClient({
   // picker IN the preview panel — `pickerView` drives which grid it shows.
   // Closed on mode flip.
   const [pickerOpen, setPickerOpen] = useState(false);
+  // Phone (< 768px) pane switch: «Управление» (composer) ⇄ «Результат» (feed/result).
+  const [pane, setPane] = useState<'controls' | 'preview'>('controls');
+  const returnToControlsRef = useRef(false);
   const [pickerView, setPickerView] = useState<'model' | 'effect'>('model');
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPickerOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [pickerOpen]);
   useEffect(() => {
     setPickerOpen(false);
   }, [mode]);
@@ -1268,8 +1287,6 @@ export function GenerateClient({
   // steps. Refreshed when a new render lands so the freshest tile shows.
   const [history, setHistory] = useState<GenerationTile[]>([]);
   const [historyFilter, setHistoryFilter] = useState<GenFilter>('all');
-  // Mobile (< lg) single-column pane switch: «Управление» (dock) ⇄ «Результат».
-  const [pane, setPane] = useState<'controls' | 'preview'>('controls');
   const loadHistory = useCallback(async () => {
     if (!projectContextReady) return;
     try {
@@ -1734,8 +1751,6 @@ export function GenerateClient({
     if (receiptModel) return modelDisplayName(receiptModel);
     return modelId ? modelDisplayNameFromId(modelId) : 'Модель недоступна';
   };
-  // Capability signs shown on the sidebar «Модель» card itself.
-  const sidebarModelSigns = model ? capabilitySigns(model) : [];
 
   // F-M5: do NOT wipe uploaded media on a model switch — that was silent data
   // loss (e.g. after uploading 9 refs). Media is only ever *sent* when the new
@@ -1815,34 +1830,9 @@ export function GenerateClient({
     setEditOn(false);
     setSeedValue(null);
     setReferenceMedia([]);
-    setDraft(false);
     if (sizes[0]) setSize(sizes[0].id);
   }
 
-  // «Черновик»: route to the cheapest fast model + 480p for cheap exploration;
-  // toggling off restores the mode's full-quality default. A manual model pick
-  // (model picker) clears draft so the chip never lies about the active model.
-  function toggleDraft() {
-    if (!isVideo || !draftVideoModel) return;
-    const next = !draft;
-    setDraft(next);
-    if (next) {
-      // The one model change that must NOT clear draft — it is the change draft mode is
-      // made of. Deliberately not `selectModel`, which exists to clear it everywhere else.
-      setModelId(draftVideoModel.id);
-      setResolution({ modelId: draftVideoModel.id, resolution: '480p' });
-    } else {
-      if (defaultModel) selectModel(defaultModel.id);
-      setResolution(null);
-    }
-  }
-
-  /** Apply a finished job's row to the UI: append its assets to the session
-   *  filmstrip (always, so a background result still lands) and, when it's the
-   *  job on stage, flip `phase` to done/failed. Returns true if terminal.
-   *  Shared by the poll loop AND the job-event bus so completion is picked up on
-   *  whichever channel survives. Reads only refs + stable setters, so a stale
-   *  closure (the bus effect captures it once) stays correct. */
   function applyJobResult(
     jobId: string,
     body: {
@@ -2545,8 +2535,23 @@ export function GenerateClient({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setPane('preview');
     await submitJob();
   }
+
+  // The model/effect picker lives on the stage: from «Управление» switch to
+  // «Результат» while it is open, and come back once a choice is made.
+  function openPickerFromControls() {
+    if (pane !== 'controls') return;
+    returnToControlsRef.current = true;
+    setPane('preview');
+  }
+  useEffect(() => {
+    if (!pickerOpen && returnToControlsRef.current) {
+      returnToControlsRef.current = false;
+      setPane('controls');
+    }
+  }, [pickerOpen]);
 
   /* ---- Per-result actions (the iteration loop) ---- */
 
@@ -2862,6 +2867,18 @@ export function GenerateClient({
         ? resultParams.aspect_ratio
         : null;
   const resultPrompt = typeof resultParams?.prompt === 'string' ? resultParams.prompt : null;
+  // A draft video's way up: the same prompt on the mode's full-quality default. It
+  // only sets the form; the quote on «Создать» is the price, and the user presses it.
+  const resultIsDraft =
+    phase.kind === 'done' &&
+    phase.modelId !== undefined &&
+    defaultModel?.id !== phase.modelId &&
+    (phase.modelId === INTENT_DRAFT_VIDEO_MODEL || phase.modelId === draftVideoModel?.id);
+  function makeFinal() {
+    if (!defaultModel) return;
+    if (resultPrompt) setPrompt(resultPrompt);
+    selectModel(defaultModel.id);
+  }
   const resultIsVideo =
     resultModel?.kind === 'video' ||
     (resultModel == null &&
@@ -3013,6 +3030,32 @@ export function GenerateClient({
       </div>
     ) : null;
 
+  // Intent before model: three rungs per mode, each a real catalogue model with its
+  // rate on the button. The exact charge stays on «Создать» (server quote); the
+  // rung only picks the model, and the full catalogue is one tap away.
+  const intentTiers = (() => {
+    const byId = (id: string) => models.find((m) => m.id === id) ?? null;
+    // Video's cheapest rung is Seedance 2.0 Mini (the free-plan video model); the
+    // «Черновик» chip's fast-480p route stays as it was, next to the audio toggle.
+    const draftModel = isVideo
+      ? (byId(INTENT_DRAFT_VIDEO_MODEL) ?? draftVideoModel)
+      : byId('gemini-3-1-flash-lite-image');
+    const maxModel = isVideo ? byId('seedance-2-0') : byId('gemini-3-pro-image');
+    const rungs = [
+      { id: 'draft' as const, label: 'Черновик', model: draftModel },
+      { id: 'balance' as const, label: 'Баланс', model: defaultModel },
+      { id: 'max' as const, label: 'Максимум', model: maxModel },
+    ];
+    return rungs.filter(
+      (rung): rung is (typeof rungs)[number] & { model: ModelRow } =>
+        rung.model !== null && (rung.id === 'balance' || rung.model.id !== defaultModel?.id),
+    );
+  })();
+  const activeIntent = intentTiers.find((rung) => rung.model.id === modelId)?.id ?? null;
+  function chooseIntent(rung: (typeof intentTiers)[number]) {
+    selectModel(rung.model.id);
+  }
+
   /* Guided onboarding walkthrough — anchored spotlight tour (OnboardingTour).
      Keep this in the returned tree; a bare JSX expression in the function body
      is evaluated and discarded rather than mounted by React. */
@@ -3026,397 +3069,1068 @@ export function GenerateClient({
     />
   ) : null;
   return (
-    <div className="mx-auto w-full max-w-[1640px] overflow-x-hidden px-4 py-4 sm:px-6 lg:flex lg:h-[calc(100dvh-68px)] lg:flex-col lg:overflow-hidden lg:px-6 lg:py-5">
+    <div className="mx-auto flex w-full max-w-[1640px] flex-col gap-4 overflow-x-hidden px-4 py-4 md:max-lg:pb-64 sm:px-6 lg:h-[calc(100dvh-68px)] lg:overflow-hidden lg:px-6 lg:py-4">
       {onboardingTour}
-      {/* Slim page header — the big "Плиты" carry the weight now, so the title
-          steps back; mode lives in the dock. */}
-      <div className="mb-4 flex items-center justify-between gap-3 lg:shrink-0">
-        <div className="min-w-0">
-          <p className="label-eyebrow mb-1.5">Генерация · Vertov</p>
-          <h1 className="font-display text-[clamp(22px,3vw,30px)] font-black uppercase leading-none tracking-[-0.01em] text-[color:var(--color-fg)]">
-            Создать {isVideo ? 'видео' : 'изображение'}
-          </h1>
-        </div>
-        <div className="flex shrink-0 items-center gap-2.5">
-          {/* Dev-only gateway switch — routes jobs to Evolink or AtlasCloud. */}
-          {devTools && (
-            <div
-              className="hidden items-center gap-1 rounded-[var(--radius-md)] p-1 sm:flex glass"
-              title="Dev: провайдер генерации"
-              data-testid="gateway-switch"
+      <h1 className="sr-only">Создать {isVideo ? 'видео' : 'изображение'}</h1>
+
+      {/* Stage — the generations feed and the result take the page; the input row
+          docks below it and the model picker opens over the feed, never in its place. */}
+      {/* Phone pane switch — «Управление» (composer) ⇄ «Результат» (feed/result). */}
+      <div className="flex rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] p-0.5 md:hidden">
+        {(
+          [
+            {
+              id: 'controls',
+              label: 'Управление',
+              icon: <SlidersHorizontal size={15} weight="bold" />,
+            },
+            { id: 'preview', label: 'Результат', icon: <Eye size={15} weight="bold" /> },
+          ] as const
+        ).map((p) => {
+          const on = pane === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              data-testid={`pane-${p.id}`}
+              aria-pressed={on}
+              onClick={() => setPane(p.id)}
+              className={
+                'press-inset flex flex-1 items-center justify-center gap-2 rounded-[var(--radius-xs)] py-2.5 text-[13px] font-bold uppercase tracking-[0.03em] transition-colors ' +
+                (on
+                  ? 'selected-neutral'
+                  : 'text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]')
+              }
             >
-              {(['openrouter', 'atlascloud'] as const).map((g) => {
-                const on = gateway === g;
-                return (
-                  <button
-                    key={g}
-                    type="button"
-                    data-testid={`gateway-${g}`}
-                    onClick={() => changeGateway(g)}
-                    className={
-                      'rounded-[var(--radius-sm)] px-3 py-1.5 font-mono text-[13px] font-bold uppercase tracking-[0.06em] transition-colors duration-200 ' +
-                      (on
-                        ? 'selected-neutral'
-                        : 'text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]')
-                    }
-                  >
-                    {g === 'openrouter' ? 'OpenRouter' : 'AtlasCloud'}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={resetAll}
-            title="Сбросить"
-            aria-label="Сбросить"
-            className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
+              {p.icon}
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+      <div
+        className={
+          'relative flex min-h-[360px] min-w-0 flex-1 flex-col overflow-hidden lg:min-h-0 ' +
+          (pane === 'controls' ? 'max-md:hidden' : '')
+        }
+        data-testid="result-area"
+      >
+        {pickerOpen && (
+          <div
+            data-testid="picker-panel"
+            className="absolute inset-0 z-40 flex flex-col overflow-hidden bg-[color:var(--color-surface)]"
           >
-            <RotateCcw size={15} weight="bold" />
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile (< lg) pane switch — «Управление» (dock) ⇄ «Результат». */}
-      <div className="mb-4 lg:hidden">
-        <div className="flex rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface2)] p-0.5">
-          {(
-            [
-              {
-                id: 'controls',
-                label: 'Управление',
-                icon: <SlidersHorizontal size={15} weight="bold" />,
-              },
-              { id: 'preview', label: 'Результат', icon: <Eye size={15} weight="bold" /> },
-            ] as const
-          ).map((p) => {
-            const on = pane === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPane(p.id)}
-                className={
-                  'press-inset flex flex-1 items-center justify-center gap-2 rounded-[var(--radius-xs)] py-2.5 text-[13px] font-bold uppercase tracking-[0.03em] transition-colors ' +
-                  (on
-                    ? 'selected-neutral'
-                    : 'text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]')
-                }
-              >
-                {p.icon}
-                {p.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Layout A — dock | preview (two-col ≥ lg, pane-switched < lg) */}
-      <div className="grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] lg:gap-8">
-        {/* ---------------- Control dock («Метро-док», SPEC 03-06) ---------------- */}
-        {/* The dock column: a STANDALONE mode plate at full width ABOVE the dock,
-            then the one calm dock panel below it (D16). */}
-        <div
-          className={
-            'min-w-0 flex-col gap-4 lg:flex lg:min-h-0 ' + (pane === 'controls' ? 'flex' : 'hidden')
-          }
-        >
-          {/* Mode plate — standalone, above the dock; two fused cells, active = periwinkle */}
-          <div className="flex shrink-0 overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)]">
-            {(['image', 'video'] as const).map((m, i) => {
-              const on = mode === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  data-testid={`mode-${m}`}
-                  aria-pressed={on}
-                  onClick={() => setMode(m)}
-                  className={
-                    'press-inset flex flex-1 items-center justify-center gap-2 py-3 text-[13px] font-bold uppercase tracking-[0.04em] transition-colors ' +
-                    (i === 1 ? 'border-l-[2.5px] border-[color:var(--color-line)] ' : '') +
-                    (on
-                      ? 'bg-[color:var(--color-accent)] text-[color:var(--color-primary-foreground)]'
-                      : 'bg-[color:var(--color-surface2)] text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]')
-                  }
-                >
-                  <PixelGlyph name={m === 'image' ? 'image' : 'video'} size={15} />
-                  {m === 'image' ? 'Изображение' : 'Видео'}
-                </button>
-              );
-            })}
+            <ModelEffectPicker
+              cards={isVideo ? videoCards : imageCards}
+              currentModelId={modelId}
+              canUseModel={canUseModel}
+              onSelect={(m) => {
+                selectModel(m.id);
+              }}
+              effects={isVideo ? motionPresets : []}
+              selectedSlug={isVideo ? (selectedEffect?.slug ?? null) : null}
+              onToggleEffect={toggleMotion}
+              assetSrc={assetSrc}
+              view={pickerView}
+              onClose={() => setPickerOpen(false)}
+            />
           </div>
-          <form
-            onSubmit={onSubmit}
-            className="flex min-w-0 flex-1 flex-col gap-4 rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-4 shadow-[6px_6px_0_0_var(--color-shadow)] max-sm:pb-40 lg:min-h-0 lg:overflow-hidden"
-          >
-            {/* Controls — compact so the whole dock fits one screen (no scroll).
-              The prompt well (flex-1) absorbs all remaining slack. */}
-            <div className="seed-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:pr-1">
-              {/* Two CO-EQUAL selector cards — Модель + Эффект (Higgsfield: the
-                effect is a first-class, visually promoted product, not a
-                chip). Tapping either opens its full grid in the preview
-                panel; both are the same size. */}
-              {/* МОДЕЛЬ / ЭФФЕКТ — engraved full-width rows (Метро-док): no own frame,
-                printed on the dock surface, a chevron opens the full grid. */}
-              <div className="flex shrink-0 flex-col gap-2">
-                <select
-                  data-testid="model-select"
-                  value={modelId}
-                  onChange={(e) => selectModel(e.target.value)}
-                  className="sr-only"
-                  aria-label="Модель"
-                >
-                  {models.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {cardName(m)}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  data-testid="model-trigger"
-                  data-tour-target="model"
-                  aria-haspopup="menu"
-                  aria-expanded={pickerOpen && pickerView === 'model'}
-                  onClick={() => {
-                    setPickerView('model');
-                    setPickerOpen(true);
-                    setPane('preview');
-                  }}
-                  className={
-                    'press-inset flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] px-3 py-2.5 text-left transition-colors ' +
-                    (pickerOpen && pickerView === 'model'
-                      ? 'bg-[rgba(var(--accent-rgb),0.12)]'
-                      : 'bg-[color:var(--color-surface2)] hover:bg-[color:var(--color-surface)]')
-                  }
-                >
-                  <span className="flex min-w-0 flex-col gap-1">
-                    <span className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-faint)]">
-                      Модель
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="truncate text-[13px] font-semibold text-[color:var(--color-fg)]">
-                        {currentCard?.name ?? (isVideo ? 'Видео-модель' : '—')}
-                      </span>
-                      {sidebarModelSigns.map((s) => (
-                        <span
-                          key={s}
-                          className={
-                            // 11px floor — capability signs never render smaller
-                            // (WS6); AUDIO is accent here, the CTA quote keeps
-                            // the one lime spark.
-                            'shrink-0 rounded-[var(--radius-xs)] border-[1.5px] px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase ' +
-                            (s === 'AUDIO'
-                              ? 'border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
-                              : s === 'REF'
-                                ? 'border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
-                                : 'border-[color:var(--color-line)]/40 text-[color:var(--color-muted-foreground)]')
-                          }
-                        >
-                          {s}
-                        </span>
-                      ))}
-                    </span>
-                  </span>
-                  <PixelGlyph
-                    name="catalog"
-                    size={13}
-                    className="shrink-0 text-[color:var(--color-faint)]"
-                  />
-                </button>
-
-                {/* Effect row — only video has a motion/camera/effect catalog. */}
-                {isVideo && (
+        )}
+        {phase.kind !== 'idle' && (
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b-[1.5px] border-[color:var(--color-line-soft)] pb-3">
+            <div className="flex items-center gap-3">
+              <span className="label-eyebrow max-md:hidden">Результат</span>
+              <StatusBadge kind={phase.kind} />
+            </div>
+            {/* The row is per-phase, NOT per-history: gating it on loaded
+                    history would strip download/share/fullscreen from a first
+                    result while the gallery fetch is still in flight. */}
+            <div className="flex min-w-0 items-center gap-1">
+              {
+                <div className="flex flex-wrap items-center gap-1">
+                  {/* Way out of a single result → back to the inline «Твои
+                        генерации» grid (phase=idle), the same view shown before
+                        a tile was opened. NOT a navigation to /gallery («Архив»)
+                        — staying in-place keeps the dock/state. mr-1 sets it
+                        slightly apart from the per-asset actions. */}
                   <button
                     type="button"
-                    data-testid="effect-trigger"
-                    aria-haspopup="menu"
-                    aria-expanded={pickerOpen && pickerView === 'effect'}
+                    data-testid="to-catalogue"
                     onClick={() => {
-                      setPickerView('effect');
-                      setPickerOpen(true);
-                      setPane('preview');
+                      displayedJobRef.current = null;
+                      setSelectedAsset(0);
+                      setPhase({ kind: 'idle' });
                     }}
-                    className={
-                      'press-inset flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] px-3 py-2.5 text-left transition-colors ' +
-                      (pickerOpen && pickerView === 'effect'
-                        ? 'bg-[rgba(var(--accent-rgb),0.12)]'
-                        : 'bg-[color:var(--color-surface2)] hover:bg-[color:var(--color-surface)]')
-                    }
+                    title="Твои генерации"
+                    aria-label="Твои генерации"
+                    className="press-inset mr-1 grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
                   >
-                    <span className="flex min-w-0 items-center gap-2.5">
-                      <span
-                        className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[var(--radius-xs)] bg-[color:var(--color-surface)] text-[color:var(--color-faint)]"
-                        style={
-                          selectedEffect
-                            ? { background: cardVisual(selectedEffect.slug).background }
-                            : undefined
-                        }
-                      >
-                        {selectedEffect ? (
-                          selectedEffect.samplePreviewUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={assetSrc(selectedEffect.samplePreviewUrl)}
-                              alt=""
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          )
-                        ) : (
-                          <PixelGlyph name="effect" size={13} />
-                        )}
-                      </span>
-                      <span className="flex min-w-0 flex-col gap-1">
-                        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--color-faint)]">
-                          Эффект
-                        </span>
-                        <span className="truncate text-[13px] font-semibold text-[color:var(--color-fg)]">
-                          {selectedEffect?.title ?? 'Без эффекта'}
-                        </span>
-                      </span>
-                    </span>
-                    <PixelGlyph
-                      name="catalog"
-                      size={13}
-                      className="shrink-0 text-[color:var(--color-faint)]"
-                    />
+                    <SquaresFour size={15} weight="bold" />
                   </button>
-                )}
+                  {phase.kind === 'done' && doneAssets.length > 1 && !inGridView && (
+                    <button
+                      type="button"
+                      data-testid="back-to-grid"
+                      onClick={() => setSelectedAsset(null)}
+                      className="press-inset mr-1 inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
+                    >
+                      <Layers size={13} weight="bold" /> Все ({doneAssets.length})
+                    </button>
+                  )}
+                  {phase.kind === 'done' && curAsset && !inGridView && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={enterFullscreen}
+                        title="На весь экран"
+                        aria-label="На весь экран"
+                        className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
+                      >
+                        <Maximize2 size={15} weight="bold" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void shareAsset(curAsset)}
+                        title="Поделиться"
+                        aria-label="Поделиться"
+                        className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
+                      >
+                        <Share2 size={15} weight="bold" />
+                      </button>
+                      <a
+                        href={assetSrc(curAsset)}
+                        download
+                        title="Скачать"
+                        aria-label="Скачать"
+                        className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
+                      >
+                        <Download size={15} weight="bold" />
+                      </a>
+                    </>
+                  )}
+                </div>
+              }
+            </div>
+          </div>
+        )}
+        {/* Preview + result details: side by side on desktop (details at the
+            top-right of the preview area), stacked on smaller screens. */}
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:gap-5">
+          {/* Fixed stage — never resizes; the frame letterboxes inside it */}
+          <div
+            ref={canvasRef}
+            onDragOver={(e) => {
+              if (!isVideo) return;
+              e.preventDefault();
+              setStageDrag(true);
+            }}
+            onDragLeave={() => setStageDrag(false)}
+            onDrop={(e) => void onStageDrop(e)}
+            className={
+              'relative flex min-h-[300px] flex-1 items-center justify-center overflow-hidden transition-colors [&>*:not(.stage-aurora)]:relative [&>*:not(.stage-aurora)]:z-10 ' +
+              (stageDrag
+                ? 'border-[color:var(--color-accent)]'
+                : 'border-[color:var(--color-line)]')
+            }
+          >
+            <div className="stage-aurora" aria-hidden />
+            {stageDrag && (
+              <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-[rgba(var(--accent-rgb),0.12)]">
+                <span className="rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-4 py-2 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[5px_5px_0_0_var(--color-shadow)]">
+                  Отпусти — оживим этот кадр
+                </span>
               </div>
-
-              {/* Video: references / source frames sit ABOVE the prompt — set the
-                shot first, then describe the motion (owner). */}
-              {isVideo && referenceInputs}
-
-              {/* Prompt — the hero input; flex-1 + fill mode so it absorbs ALL the
-                dock's slack and the column always fits one screen (no scroll). No
-                eyebrow: the placeholder already says what to do. */}
-              <div
-                data-testid="prompt-block"
-                data-tour-target="prompt"
-                className="flex min-h-0 flex-1 flex-col"
-              >
-                <div className="flex min-h-0 flex-1 flex-col rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)]">
-                  <PromptEditor
-                    value={prompt}
-                    onChange={(t) => {
-                      setPrompt(t);
-                      setAppliedEnhancement(null);
-                      setPresetApplied(false);
-                      if (!appliedPreset) {
-                        setAppliedPresetSlug(null);
-                        presetAppliedRef.current = false;
-                      }
-                    }}
-                    images={imageUrls}
-                    videos={videoUrls}
-                    audios={audioUrls}
-                    placeholder={
-                      isVideo
-                        ? 'Опиши сцену: объект, движение камеры, действие…'
-                        : 'Опиши, что нарисовать…'
+            )}
+            {/* Idle preview — the user's OWN past generations («Твои генерации»),
+                or the 01·02·03 steps when there's no history yet. (The inserted
+                reference is shown in the dock, not duplicated on the stage.) */}
+            {phase.kind === 'idle' &&
+              (history.length > 0 || inflight.length > 0 ? (
+                <GenerationsGrid
+                  items={
+                    historyFilter === 'all'
+                      ? history
+                      : history.filter((h) => h.kind === historyFilter)
+                  }
+                  total={history.length}
+                  inflight={inflight}
+                  filter={historyFilter}
+                  onFilterChange={setHistoryFilter}
+                  onSelectInflight={(generation) => {
+                    displayedJobRef.current = generation.jobId;
+                    jobStartedRef.current = generation.startedAt;
+                    jobDeadlineRef.current = renderDeadlineMs(
+                      generation.etaSec * 1000,
+                      generation.kind === 'video',
+                    );
+                    setElapsedSec(
+                      Math.max(0, Math.floor((Date.now() - generation.startedAt) / 1000)),
+                    );
+                    setPhase({
+                      kind: 'polling',
+                      jobId: generation.jobId,
+                      status: generation.status,
+                    });
+                  }}
+                  onSelect={(it) => {
+                    if (!it.assetUrl) return;
+                    if (it.jobId) void showJobResult(it.jobId, it.assetUrl);
+                    else {
+                      displayedJobRef.current = null;
+                      setPhase({
+                        kind: 'unavailable',
+                        message:
+                          'У этого файла нет исходной генерации, поэтому его модель, промпт и параметры неизвестны.',
+                      });
                     }
-                    fill
-                  />
-                  <div className="flex items-center justify-between gap-2 border-t-[1.5px] border-[color:var(--color-line)]/20 px-3 py-1.5">
-                    {/* status / hint share the slot — saves a row vs. an eyebrow */}
-                    <span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-[color:var(--color-faint)]">
-                      {appliedPreset ? (
-                        <span
-                          data-testid="applied-preset-chip"
-                          className="flex min-w-0 items-center gap-1"
-                        >
-                          <span className="truncate text-[color:var(--color-positive)]">
-                            {presetKindLabel(appliedPreset.category)}: {appliedPreset.title}
-                          </span>
-                          <button
-                            type="button"
-                            aria-label="Убрать пресет"
-                            onClick={clearAppliedPreset}
-                            className="press-inset shrink-0 text-[color:var(--color-faint)] transition-colors hover:text-[color:var(--color-fg)]"
-                          >
-                            <X size={11} weight="bold" />
-                          </button>
-                        </span>
-                      ) : presetApplied ? (
-                        <span className="text-[color:var(--color-positive)]">сцена применена</span>
-                      ) : (
-                        <>
-                          <kbd className="rounded-[var(--radius-xs)] border-[1.5px] border-[color:var(--color-line)]/40 px-1 font-mono">
-                            @
-                          </kbd>
-                          референс
-                        </>
-                      )}
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2.5">
-                      {prompt.length > 0 && (
+                  }}
+                />
+              ) : (
+                <div
+                  data-testid="generate-empty"
+                  className="flex w-full max-w-[640px] flex-col items-center gap-4 p-6 text-center"
+                >
+                  <p className="font-display text-[clamp(20px,2.4vw,28px)] font-black uppercase leading-tight tracking-[-0.01em] text-[color:var(--color-fg)]">
+                    Здесь появятся твои {isVideo ? 'видео' : 'картинки'}
+                  </p>
+                  <p className="text-[13px] text-[color:var(--color-muted-foreground)]">
+                    Опиши словами внизу или начни с примера:
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {(isVideo ? GENERATE_EXAMPLES.video : GENERATE_EXAMPLES.image).map(
+                      (example) => (
                         <button
+                          key={example}
                           type="button"
-                          data-testid="prompt-clear"
-                          aria-label="Очистить промпт"
-                          onClick={() => {
-                            setPrompt('');
-                            setAppliedEnhancement(null);
-                            setPresetApplied(false);
-                            if (!appliedPreset) {
-                              setAppliedPresetSlug(null);
-                              presetAppliedRef.current = false;
-                            }
-                          }}
-                          className="press-inset inline-flex items-center gap-1 text-[11px] text-[color:var(--color-faint)] transition-colors hover:text-[color:var(--color-fg)]"
+                          data-testid="generate-example"
+                          onClick={() => setPrompt(example)}
+                          className="press-inset rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 py-1.5 text-left text-[13px] text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
                         >
-                          <X size={12} weight="bold" /> очистить
+                          {example}
                         </button>
-                      )}
-                      <span className="tnum text-[11px] text-[color:var(--color-faint)]">
-                        {prompt.length} / 8000
-                      </span>
-                    </span>
+                      ),
+                    )}
                   </div>
                 </div>
+              ))}
+
+            {/* Generating — full-bleed recessed «screen» covering the whole body
+                (only the panel header stays); scanline + stepped progress scale up. */}
+            {isBusy && (
+              <div
+                data-testid="progress-placeholder"
+                role="status"
+                aria-live="polite"
+                className="brutal-scan absolute inset-0 z-10 flex flex-col items-center justify-center gap-8 overflow-hidden p-10 text-center"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="seed-pulse-dot h-4 w-4 rounded-full bg-[color:var(--color-accent)]" />
+                  <span className="font-display text-[clamp(28px,5vw,48px)] font-black uppercase leading-none tracking-[-0.01em] text-[color:var(--color-fg)]">
+                    {inflightStageLabel(
+                      loadingStageKey,
+                      displayedInflight?.kind ?? (isVideo ? 'video' : 'image'),
+                    )}
+                  </span>
+                </div>
+                {/* Full-width progress — transparent track (the preview area is the
+                    only background; no card), accent blocks fill to --pct. */}
+                <div
+                  className="seed-step-bar h-6 w-full max-w-[820px] border-[2.5px] border-[color:var(--color-line)]"
+                  style={
+                    {
+                      ['--pct']: `${progressPct > 0 ? Math.max(6, progressPct) : 0}%`,
+                    } as React.CSSProperties
+                  }
+                />
+                <span className="tnum font-mono text-[15px] text-[color:var(--color-faint)]">
+                  {fmtClock(elapsedSec)}
+                  {elapsedSec < stageEtaSec
+                    ? ` · обычно ${fmtEtaHint(stageEtaSec)}`
+                    : ' · почти готово'}
+                </span>
+                {/* Cancel = stop watching and return to editing; the job keeps
+                    running and lands in the tray/filmstrip when it finishes. */}
+                <button
+                  type="button"
+                  data-testid="cancel-generation"
+                  onClick={reset}
+                  title="Вернуться к редактированию — ролик до-генерируется в фоне"
+                  className="press-inset inline-flex h-11 items-center gap-2 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
+                >
+                  <X size={16} weight="bold" /> Отменить
+                </button>
               </div>
+            )}
 
-              {/* Slot apply-sheet — multi-slot slots-mode presets expose their
-                {key} fills here. Single-slot presets need none: the textarea
-                drops straight into that slot (mergePresetPrompt convenience). */}
-              {appliedPreset &&
-                (appliedPreset.mergeMode ?? 'replace') === 'slots' &&
-                (appliedPreset.slots?.length ?? 0) > 1 && (
-                  <div
-                    data-testid="preset-slot-sheet"
-                    className="flex shrink-0 flex-col gap-2 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3"
+            {phase.kind === 'done' && inGridView && (
+              // Batch grid — every result visible at once; click to inspect.
+              <div
+                data-testid="result-grid"
+                className="seed-develop seed-scroll grid h-full w-full grid-cols-2 content-center gap-2.5 self-stretch overflow-y-auto p-3"
+              >
+                {doneAssets.map((url, i) => (
+                  <button
+                    key={url}
+                    type="button"
+                    data-testid="result-tile"
+                    onClick={() => setSelectedAsset(i)}
+                    title={`Результат ${i + 1}`}
+                    className="press-inset group relative overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-black/30"
                   >
-                    {(appliedPreset.slots ?? []).map((s) => (
-                      <label key={s.key} className="flex flex-col gap-1">
-                        <span className="text-[11px] text-[color:var(--color-faint)]">
-                          {s.label}
-                          {s.required ? ' *' : ''}
-                        </span>
-                        <input
-                          type="text"
-                          data-testid={`preset-slot-${s.key}`}
-                          value={slotValues[s.key] ?? ''}
-                          placeholder={s.placeholder ?? ''}
-                          onChange={(e) =>
-                            setSlotValues((prev) => ({ ...prev, [s.key]: e.target.value }))
-                          }
-                          className="w-full rounded-[var(--radius-xs)] border-[1.5px] border-[color:var(--color-line)]/30 bg-[color:var(--color-surface)] px-2 py-1.5 text-[13px] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                )}
+                    {isVideoAsset(url) ? (
+                      <video
+                        src={assetSrc(url)}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="aspect-square h-full w-full object-cover"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={assetSrc(url)}
+                        alt={`Результат ${i + 1}`}
+                        className="aspect-square h-full w-full object-cover"
+                      />
+                    )}
+                    <span className="absolute left-2 top-2 rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-1.5 py-0.5 font-mono text-[11px] text-[color:var(--color-fg)]">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
-              {/* Settings — icon+value wells, no name labels (owner). Tidy grid so
-                they fill the dock width with even spacing. */}
+            {phase.kind === 'done' && !inGridView && curAsset && (
+              <div className="seed-develop flex h-full w-full items-center justify-center p-2.5">
+                {curIsVideo ? (
+                  <video
+                    src={assetSrc(curAsset)}
+                    data-testid="result-video"
+                    className="h-full w-full object-contain"
+                    controls
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={assetSrc(curAsset)}
+                    alt="Результат"
+                    data-testid="result-image"
+                    className="h-full w-full object-contain"
+                  />
+                )}
+              </div>
+            )}
+
+            {phase.kind === 'failed' && (
+              <div className="w-full max-w-md p-4">
+                <FailedState
+                  message={phase.message}
+                  stillRunning={phase.stillRunning ?? false}
+                  onRetry={reset}
+                />
+              </div>
+            )}
+            {phase.kind === 'unavailable' && (
+              <div className="w-full max-w-md p-4" data-testid="result-unavailable">
+                <UnavailableState message={phase.message} onReset={reset} />
+              </div>
+            )}
+            {phase.kind === 'insufficient' && (
+              <div className="w-full max-w-md p-4">
+                <InsufficientState balance={balance} cost={cost ?? 0} />
+              </div>
+            )}
+          </div>
+
+          {/* Footer — shown post-render only (actions · metering · session ·
+              models); hidden while idle so the steps / generations grid stay
+              clean, matching the approved Layout A. */}
+          {phase.kind === 'done' && (
+            <div
+              data-testid="result-details"
+              className="shrink-0 space-y-2.5 border-t-[1.5px] border-[color:var(--color-line)]/20 px-4 py-3 max-md:px-0 seed-scroll lg:w-[320px] lg:self-start lg:overflow-y-auto lg:border-t-0 lg:px-0 lg:pt-4 lg:max-h-full"
+            >
+              {workspaceProject && (
+                <p
+                  className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-[color:var(--color-positive)]"
+                  data-testid="generate-project-receipt"
+                >
+                  <span>Сохранено в проект «{workspaceProject.title}»</span>
+                  <a
+                    href={`/gallery?projectId=${encodeURIComponent(workspaceProject.id)}`}
+                    className="underline decoration-2 underline-offset-2"
+                  >
+                    ПОКАЗАТЬ В ПРОЕКТЕ
+                  </a>
+                </p>
+              )}
+              {!paidMediaStorage && phase.assets[0] && (
+                <p
+                  className="flex flex-wrap items-center gap-1 font-mono text-[11px] text-[color:var(--color-accent)]"
+                  data-testid="retention-reminder"
+                >
+                  <span>{FREE_MEDIA_RETENTION_COPY.split(' · ')[0]} · </span>
+                  <a
+                    href={assetSrc(phase.assets[0])}
+                    download
+                    className="underline decoration-2 underline-offset-2"
+                  >
+                    {FREE_MEDIA_RETENTION_COPY.split(' · ')[1]}
+                  </a>
+                  <span> · </span>
+                  <a href="/pricing" className="underline decoration-2 underline-offset-2">
+                    {FREE_MEDIA_RETENTION_COPY.split(' · ')[2]}
+                  </a>
+                </p>
+              )}
+              {/* Per-result actions — the iteration loop. Visible in single view. */}
+              {phase.kind === 'done' && curAsset && !inGridView && (
+                <div
+                  className="flex flex-wrap items-center gap-2 max-md:grid max-md:grid-cols-2 max-md:[&>*]:justify-center"
+                  data-testid="result-actions"
+                >
+                  {!curIsVideo && (
+                    <button
+                      type="button"
+                      data-testid="action-animate"
+                      onClick={() => animateImage(curAsset)}
+                      className="press inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] hover:shadow-[5px_5px_0_0_var(--color-shadow)]"
+                    >
+                      <Clapperboard size={14} weight="bold" /> Оживить
+                    </button>
+                  )}
+                  {curIsVideo && resultIsDraft && defaultModel && (
+                    <button
+                      type="button"
+                      data-testid="action-final"
+                      onClick={makeFinal}
+                      title={`Тот же промпт на «${cardName(defaultModel)}» — цена появится на «Создать»`}
+                      className="press inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] hover:shadow-[5px_5px_0_0_var(--color-shadow)]"
+                    >
+                      <Clapperboard size={14} weight="bold" /> Сделать финал
+                    </button>
+                  )}
+                  {curIsVideo && lastFrameAsset && (
+                    <button
+                      type="button"
+                      data-testid="action-extend"
+                      onClick={() => extendVideo(lastFrameAsset)}
+                      className="press inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] hover:shadow-[5px_5px_0_0_var(--color-shadow)]"
+                    >
+                      <Clapperboard size={14} weight="bold" /> Продолжить видео
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    data-testid="action-vary"
+                    onClick={vary}
+                    // «Вариации» submits the CURRENT form with a new seed, so it
+                    // needs the same settled quote «Создать» does — otherwise it
+                    // is the one result action that can ask for a generation whose
+                    // price is not on screen. The submit refuses either way; this
+                    // keeps the button from promising something it cannot do.
+                    disabled={
+                      isSubmitting || !projectContextReady || !hasKnownJobEstimate(estimate)
+                    }
+                    className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-50"
+                  >
+                    <RefreshCw size={14} weight="bold" /> Вариации
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="action-repeat"
+                    onClick={repeat}
+                    disabled={isSubmitting || repeatValidation || !projectContextReady}
+                    className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-50"
+                  >
+                    <Repeat size={14} weight="bold" /> Повторить
+                    <span className="tnum inline-flex items-center gap-1 border-l-[1.5px] border-[color:var(--color-line)]/30 pl-2 font-mono text-[12px] font-bold text-[color:var(--color-fg)]">
+                      <TokenStar size={11} />
+                      {repeatCost ?? '—'}
+                    </span>
+                  </button>
+                  {/* The rarer moves live one tap away, so the three above read as the
+                    next step instead of a toolbar. */}
+                  {/* On a phone a video result may have nothing left in here (Studio is
+                      desktop-only) — then there is no «•••» at all. */}
+                  {(!curIsVideo || referenceVideoModel || !isMobileViewport) && (
+                    <Popover open={moreOpen} onOpenChange={setMoreOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          data-testid="result-more"
+                          aria-label="Ещё действия"
+                          className="press-inset inline-flex h-9 items-center rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 text-[13px] font-bold text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
+                        >
+                          •••
+                        </button>
+                      </PopoverTrigger>
+                      {/* A click on any row runs its action, then bubbles here and closes. */}
+                      <PopoverContent
+                        side="top"
+                        align="start"
+                        collisionPadding={12}
+                        className="w-[240px] overflow-hidden p-0"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        {curIsVideo && !isMobileViewport && (
+                          <button
+                            type="button"
+                            data-testid="action-studio"
+                            onClick={() => void sendToStudio(curAsset)}
+                            disabled={handingOff}
+                            className="flex min-h-11 w-full items-center gap-3 border-t-[1.5px] border-[color:var(--color-line)]/16 px-4 py-2.5 text-left text-[13.5px] font-medium text-[color:var(--color-fg)] transition-colors first:border-t-0 hover:bg-[color:var(--color-surface2)] disabled:opacity-50"
+                          >
+                            {handingOff ? (
+                              <Loader2 size={14} weight="bold" className="seed-spin" />
+                            ) : (
+                              <Scissors size={14} weight="bold" />
+                            )}{' '}
+                            В Studio
+                          </button>
+                        )}
+                        {curIsVideo && referenceVideoModel && (
+                          <button
+                            type="button"
+                            data-testid="action-video-reference"
+                            onClick={() => addVideoReference(curAsset)}
+                            className="flex min-h-11 w-full items-center gap-3 border-t-[1.5px] border-[color:var(--color-line)]/16 px-4 py-2.5 text-left text-[13.5px] font-medium text-[color:var(--color-fg)] transition-colors first:border-t-0 hover:bg-[color:var(--color-surface2)]"
+                          >
+                            <AtSign size={14} weight="bold" /> В референсы
+                          </button>
+                        )}
+                        {!curIsVideo && editModelAvailable && (
+                          <button
+                            type="button"
+                            data-testid="action-edit"
+                            onClick={() => editImage(curAsset)}
+                            className="flex min-h-11 w-full items-center gap-3 border-t-[1.5px] border-[color:var(--color-line)]/16 px-4 py-2.5 text-left text-[13.5px] font-medium text-[color:var(--color-fg)] transition-colors first:border-t-0 hover:bg-[color:var(--color-surface2)]"
+                          >
+                            <Pencil size={14} weight="bold" /> Редактировать
+                          </button>
+                        )}
+                        {!curIsVideo && (
+                          <button
+                            type="button"
+                            data-testid="action-reference"
+                            onClick={() => addReference(curAsset)}
+                            className="flex min-h-11 w-full items-center gap-3 border-t-[1.5px] border-[color:var(--color-line)]/16 px-4 py-2.5 text-left text-[13.5px] font-medium text-[color:var(--color-fg)] transition-colors first:border-t-0 hover:bg-[color:var(--color-surface2)]"
+                          >
+                            <AtSign size={14} weight="bold" /> В референсы
+                          </button>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              )}
+              {phase.kind === 'done' && phase.assets[0] && (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[color:var(--color-faint)]">
+                  <span className="font-medium text-[color:var(--color-muted-foreground)]">
+                    {resultModelLabel}
+                  </span>
+                  <span>·</span>
+                  <span className="tnum">{resultDetails || 'Параметры не сохранены'}</span>
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className="ml-auto lg:ml-0 inline-flex items-center gap-1.5 font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-fg)]"
+                  >
+                    <Plus size={14} weight="bold" /> Создать ещё
+                  </button>
+                  {/* Studio is desktop-only on phones (lib/mobile-routes). */}
+                  {!isMobileViewport && (
+                    <Link
+                      href="/studio"
+                      className="ml-2 lg:ml-0 inline-flex items-center gap-1.5 font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-accent)]"
+                    >
+                      <Scissors size={14} weight="bold" /> В студию
+                    </Link>
+                  )}
+                </div>
+              )}
+              {resultPrompt && (
+                <p
+                  data-testid="result-prompt"
+                  className="break-words text-[13px] leading-relaxed text-[color:var(--color-faint)]"
+                >
+                  {resultPrompt}
+                </p>
+              )}
+              <p className="flex items-start gap-1.5 text-[13px] leading-relaxed text-[color:var(--color-faint)]">
+                <Info size={13} weight="bold" className="mt-0.5 shrink-0" />
+                <span>
+                  Стоимость подтверждается перед запуском
+                  {resultAudio !== null ? ` · звук ${resultAudio ? 'включён' : 'выключен'}` : ''}.
+                </span>
+              </p>
+              {/* F-m8: session filmstrip — past outputs stay one tap away. */}
+              {sessionResults.length > 1 && (
+                <div className="seed-scroll flex items-center gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible">
+                  <span className="label-eyebrow shrink-0">Сессия</span>
+                  {sessionResults.map((r, i) => {
+                    const active = phase.kind === 'done' && phase.assets[0] === r.url;
+                    return (
+                      <button
+                        key={`${r.url}-${i}`}
+                        type="button"
+                        data-testid="session-thumb"
+                        onClick={() => {
+                          displayedJobRef.current = null;
+                          setSelectedAsset(0);
+                          setPhase({
+                            kind: 'done',
+                            jobId: r.jobId,
+                            assets: [r.url],
+                            ...(r.modelId ? { modelId: r.modelId } : {}),
+                            ...(r.model ? { model: r.model } : {}),
+                            ...(r.params ? { params: r.params } : {}),
+                            ...(typeof r.creditsReserved === 'number'
+                              ? { creditsReserved: r.creditsReserved }
+                              : {}),
+                          });
+                        }}
+                        title={r.label}
+                        className={
+                          'relative h-12 w-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] transition-colors ' +
+                          (active
+                            ? 'border-[color:var(--color-accent)] shadow-[3px_3px_0_0_var(--color-shadow)]'
+                            : 'border-[color:var(--color-line)]')
+                        }
+                      >
+                        {r.isVideo ? (
+                          <video
+                            src={assetSrc(r.url)}
+                            muted
+                            playsInline
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={assetSrc(r.url)}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {models.length > 1 && (
+                <div className="seed-scroll flex items-center gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible">
+                  <span className="label-eyebrow shrink-0 lg:w-full">Ещё</span>
+                  {models
+                    // P-B2: don't offer one-tap switches to out-of-plan models.
+                    .filter((m) => m.id !== modelId && canUseModel(m))
+                    .slice(0, 6)
+                    .map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => selectModel(m.id)}
+                        className="press-inset h-8 shrink-0 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] px-3 text-[13px] text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
+                      >
+                        {cardName(m)}
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Input bar — one floating row under the feed: prompt on top, every choice a
+          chip that opens its own popover, and the price on the Create button.
+          Tablet (768–1023px): fixed to the bottom of the viewport (sticky can't
+          work — the page wrapper clips overflow-x). Phone (< 768px, the app's
+          mobile line): the «Управление» pane, filling the screen. */}
+      <form
+        onSubmit={onSubmit}
+        data-testid="action-dock"
+        className={
+          (pane === 'preview' ? 'max-md:hidden ' : '') +
+          'relative flex w-full shrink-0 flex-col gap-2 rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-2.5 shadow-[5px_5px_0_0_var(--color-shadow)] max-md:min-h-[calc(100dvh-250px)] max-md:gap-3 max-md:p-3 md:max-lg:fixed md:max-lg:inset-x-6 md:max-lg:bottom-4 md:max-lg:z-20 md:max-lg:w-auto'
+        }
+      >
+        {(!projectContextReady ||
+          priceRefusal ||
+          missingMedia ||
+          (cost !== null && balance < cost && !modelLocked)) && (
+          <div className="flex flex-col gap-1 px-1">
+            {!projectContextReady && (
+              <p
+                className="font-mono text-[11px] text-[color:var(--color-danger)]"
+                role="alert"
+                data-testid="project-context-submit-blocked"
+              >
+                {projectContext.mode === 'loading'
+                  ? 'Проверяем проект перед запуском…'
+                  : 'Генерация остановлена: контекст проекта недоступен.'}
+              </p>
+            )}
+            {priceRefusal && (
+              // The server declined to quote this configuration. Say so plainly
+              // instead of rendering the optimistic flat placeholder on a button
+              // that would 400 — a wrong price is worse than no price.
+              <p
+                className="font-mono text-[11px] text-[color:var(--color-danger)]"
+                role="alert"
+                data-testid="price-refused"
+                data-error-code={priceRefusal.code}
+              >
+                {priceRefusal.message ?? 'Не удалось посчитать стоимость этой конфигурации.'}
+              </p>
+            )}
+            {missingMedia && (
+              <p className="text-[11px] text-[color:var(--color-muted-foreground)]">
+                {isEditing
+                  ? 'Добавь изображение для правки.'
+                  : isReferenceMode
+                    ? referenceRequiredCopy(referenceMediaLimits!)
+                    : 'Добавь первый кадр.'}
+              </p>
+            )}
+            {/* Zero-balance nudge: the live balance already in state can't
+                      cover this exact quote — say so next to the submit with a
+                      refill path, instead of letting the press fail server-side.
+                      No new endpoints: `balance` is the existing widget-synced
+                      value, `cost` the settled quote for this configuration. */}
+            {!isAnonymous && cost !== null && balance < cost && (
+              <p
+                className="font-mono text-[11px] leading-relaxed text-[color:var(--color-muted-foreground)]"
+                data-testid="low-balance-hint"
+              >
+                Баланса не хватит ({balance} из {cost}) —{' '}
+                <a
+                  href="/pricing"
+                  className="text-[color:var(--color-accent)] underline decoration-2 underline-offset-2"
+                >
+                  пополнить
+                </a>
+              </p>
+            )}
+            {/* Anonymous guests hold no balance (no welcome grants until
+                      signup), so the authed nudge above never fires for them —
+                      route to login/signup, with pricing as a separate honest
+                      option instead of inventing a top-up amount. */}
+            {isAnonymous && cost !== null && balance < cost && (
+              <p
+                className="font-mono text-[11px] leading-relaxed text-[color:var(--color-muted-foreground)]"
+                data-testid="low-balance-hint"
+              >
+                Баланса не хватит ({balance} из {cost}) —{' '}
+                <a
+                  href="/login?next=/generate"
+                  className="text-[color:var(--color-accent)] underline decoration-2 underline-offset-2"
+                >
+                  войдите или зарегистрируйтесь
+                </a>
+                {', новым аккаунтам начислим '}
+                {GIFT_TOKENS_UPFRONT} токенов.{' '}
+                <a
+                  href="/pricing"
+                  className="text-[color:var(--color-accent)] underline decoration-2 underline-offset-2"
+                >
+                  Смотреть тарифы
+                </a>
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex flex-col gap-2 max-md:flex-1 max-md:gap-3">
+          <div
+            data-testid="prompt-block"
+            data-tour-target="prompt"
+            className="flex min-w-0 flex-col max-md:flex-1"
+          >
+            <div className="flex flex-col rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] max-md:min-h-[180px] max-md:flex-1">
+              <PromptEditor
+                value={prompt}
+                onChange={(t) => {
+                  setPrompt(t);
+                  setAppliedEnhancement(null);
+                  setPresetApplied(false);
+                  if (!appliedPreset) {
+                    setAppliedPresetSlug(null);
+                    presetAppliedRef.current = false;
+                  }
+                }}
+                images={imageUrls}
+                videos={videoUrls}
+                audios={audioUrls}
+                placeholder={
+                  isVideo
+                    ? 'Опиши сцену: объект, движение камеры, действие…'
+                    : 'Опиши, что нарисовать…'
+                }
+                minHeight={44}
+                fill={isMobileViewport}
+              />
+              <div className="flex items-center justify-between gap-2 border-t-[1.5px] border-[color:var(--color-line)]/20 px-3 py-1.5">
+                {/* status / hint share the slot — saves a row vs. an eyebrow */}
+                <span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-[color:var(--color-faint)]">
+                  {appliedPreset ? (
+                    <span
+                      data-testid="applied-preset-chip"
+                      className="flex min-w-0 items-center gap-1"
+                    >
+                      <span className="truncate text-[color:var(--color-positive)]">
+                        {presetKindLabel(appliedPreset.category)}: {appliedPreset.title}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Убрать пресет"
+                        onClick={clearAppliedPreset}
+                        className="press-inset shrink-0 text-[color:var(--color-faint)] transition-colors hover:text-[color:var(--color-fg)]"
+                      >
+                        <X size={11} weight="bold" />
+                      </button>
+                    </span>
+                  ) : presetApplied ? (
+                    <span className="text-[color:var(--color-positive)]">сцена применена</span>
+                  ) : (
+                    <>
+                      <kbd className="rounded-[var(--radius-xs)] border-[1.5px] border-[color:var(--color-line)]/40 px-1 font-mono">
+                        @
+                      </kbd>
+                      референс
+                    </>
+                  )}
+                </span>
+                <span className="flex shrink-0 items-center gap-2.5">
+                  {prompt.length > 0 && (
+                    <button
+                      type="button"
+                      data-testid="prompt-clear"
+                      aria-label="Очистить промпт"
+                      onClick={() => {
+                        setPrompt('');
+                        setAppliedEnhancement(null);
+                        setPresetApplied(false);
+                        if (!appliedPreset) {
+                          setAppliedPresetSlug(null);
+                          presetAppliedRef.current = false;
+                        }
+                      }}
+                      className="press-inset inline-flex items-center gap-1 text-[11px] text-[color:var(--color-faint)] transition-colors hover:text-[color:var(--color-fg)]"
+                    >
+                      <X size={12} weight="bold" /> очистить
+                    </button>
+                  )}
+                  <span className="tnum text-[11px] text-[color:var(--color-faint)]">
+                    {prompt.length} / 8000
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+          {appliedPreset &&
+            (appliedPreset.mergeMode ?? 'replace') === 'slots' &&
+            (appliedPreset.slots?.length ?? 0) > 1 && (
+              <div
+                data-testid="preset-slot-sheet"
+                className="flex shrink-0 flex-col gap-2 rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] p-3"
+              >
+                {(appliedPreset.slots ?? []).map((s) => (
+                  <label key={s.key} className="flex flex-col gap-1">
+                    <span className="text-[11px] text-[color:var(--color-faint)]">
+                      {s.label}
+                      {s.required ? ' *' : ''}
+                    </span>
+                    <input
+                      type="text"
+                      data-testid={`preset-slot-${s.key}`}
+                      value={slotValues[s.key] ?? ''}
+                      placeholder={s.placeholder ?? ''}
+                      onChange={(e) =>
+                        setSlotValues((prev) => ({ ...prev, [s.key]: e.target.value }))
+                      }
+                      className="w-full rounded-[var(--radius-xs)] border-[1.5px] border-[color:var(--color-line)]/30 bg-[color:var(--color-surface)] px-2 py-1.5 text-[13px] text-[color:var(--color-fg)] outline-none focus:border-[color:var(--color-accent)]"
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
+          {/* Chips and «Создать» share one row on md+; on the phone every chip
+              wraps into view and «Создать» spans the bottom. */}
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
+            <div
+              className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 [&>*]:shrink-0"
+              data-testid="composer-chips"
+            >
+              <div className="flex h-9 shrink-0 overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)]">
+                {(['image', 'video'] as const).map((m) => {
+                  const on = mode === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      data-testid={`mode-${m}`}
+                      aria-pressed={on}
+                      title={m === 'image' ? 'Изображение' : 'Видео'}
+                      onClick={() => setMode(m)}
+                      className={
+                        'press-inset flex items-center gap-1.5 px-2.5 text-[13px] font-semibold transition-colors ' +
+                        (on
+                          ? 'bg-[color:var(--color-accent)] text-[color:var(--color-primary-foreground)]'
+                          : 'text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]')
+                      }
+                    >
+                      <PixelGlyph name={m === 'image' ? 'image' : 'video'} size={14} />
+                      {m === 'image' ? 'Фото' : 'Видео'}
+                    </button>
+                  );
+                })}
+              </div>
+              {referenceInputs && (
+                <PillControl
+                  icon={<Plus size={15} weight="bold" />}
+                  label={isVideo ? 'Кадры и референсы' : 'Референсы'}
+                  value={
+                    imageUrls.length + videoUrls.length + audioUrls.length > 0
+                      ? String(imageUrls.length + videoUrls.length + audioUrls.length)
+                      : isVideo && videoMedia?.role === 'frame'
+                        ? 'Кадр'
+                        : 'Реф'
+                  }
+                  active={imageUrls.length + videoUrls.length + audioUrls.length > 0}
+                  width="w-[26rem]"
+                >
+                  {() => <div className="-mt-3">{referenceInputs}</div>}
+                </PillControl>
+              )}
+              <select
+                data-testid="model-select"
+                value={modelId}
+                onChange={(e) => selectModel(e.target.value)}
+                className="sr-only"
+                aria-label="Модель"
+              >
+                {models.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {cardName(m)}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                data-testid="model-trigger"
+                data-tour-target="model"
+                aria-haspopup="menu"
+                aria-expanded={pickerOpen && pickerView === 'model'}
+                title="Модель"
+                onClick={() => {
+                  openPickerFromControls();
+                  setPickerView('model');
+                  setPickerOpen(true);
+                }}
+                className={
+                  'press-inset inline-flex h-9 max-w-[240px] items-center gap-1.5 rounded-[var(--radius-sm)] px-2.5 text-[13px] font-semibold transition-colors ' +
+                  (pickerOpen && pickerView === 'model'
+                    ? 'bg-[color:var(--color-accent)] text-[color:var(--color-primary-foreground)]'
+                    : 'bg-[color:var(--color-surface2)] text-[color:var(--color-fg)] hover:bg-[color:var(--color-surface)]')
+                }
+              >
+                {modelLocked && <Lock size={13} weight="bold" className="shrink-0" />}
+                <span className="truncate">
+                  {currentCard?.name ?? (isVideo ? 'Видео-модель' : '—')}
+                </span>
+                <ChevronRight size={14} weight="bold" className="shrink-0 opacity-60" />
+              </button>
+              {isVideo && (
+                <button
+                  type="button"
+                  data-testid="effect-trigger"
+                  aria-haspopup="menu"
+                  aria-expanded={pickerOpen && pickerView === 'effect'}
+                  title="Эффект"
+                  onClick={() => {
+                    openPickerFromControls();
+                    setPickerView('effect');
+                    setPickerOpen(true);
+                  }}
+                  className={
+                    'press-inset inline-flex h-9 max-w-[240px] items-center gap-1.5 rounded-[var(--radius-sm)] px-2.5 text-[13px] font-semibold transition-colors ' +
+                    (pickerOpen && pickerView === 'effect'
+                      ? 'bg-[color:var(--color-accent)] text-[color:var(--color-primary-foreground)]'
+                      : selectedEffect
+                        ? 'bg-[color:var(--color-surface2)] text-[color:var(--color-fg)] hover:bg-[color:var(--color-surface)]'
+                        : 'bg-[color:var(--color-surface2)] text-[color:var(--color-muted-foreground)] hover:bg-[color:var(--color-surface)]')
+                  }
+                >
+                  {selectedEffect?.samplePreviewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={assetSrc(selectedEffect.samplePreviewUrl)}
+                      alt=""
+                      className="h-5 w-5 shrink-0 rounded-[var(--radius-xs)] object-cover"
+                    />
+                  ) : (
+                    <PixelGlyph name="effect" size={13} className="shrink-0" />
+                  )}
+                  <span className="truncate">{selectedEffect?.title ?? 'Эффект'}</span>
+                </button>
+              )}
+              {intentTiers.length > 1 && (
+                <PillControl
+                  icon={<Zap size={15} weight="bold" />}
+                  label="Уровень качества"
+                  value={
+                    intentTiers.find((rung) => rung.id === activeIntent)?.label ?? 'Своя модель'
+                  }
+                  width="w-[17rem]"
+                >
+                  {(close) => (
+                    <div className="space-y-0.5" data-testid="intent-tiers">
+                      {intentTiers.map((rung) => {
+                        const on = activeIntent === rung.id;
+                        const locked = !canUseModel(rung.model);
+                        return (
+                          <button
+                            key={rung.id}
+                            type="button"
+                            data-testid={`intent-${rung.id}`}
+                            aria-pressed={on}
+                            onClick={() => {
+                              chooseIntent(rung);
+                              close();
+                            }}
+                            className={
+                              'press-inset flex w-full items-center justify-between gap-3 rounded-[var(--radius-sm)] border-[1.5px] px-2.5 py-2 text-left text-[13px] transition-colors ' +
+                              (on
+                                ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)] text-[color:var(--color-primary-foreground)]'
+                                : 'border-transparent text-[color:var(--color-muted-foreground)] hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]')
+                            }
+                          >
+                            <span className="flex min-w-0 flex-col">
+                              <span className="font-semibold">{rung.label}</span>
+                              <span className="truncate text-[11px] opacity-75">
+                                {cardName(rung.model)}
+                              </span>
+                            </span>
+                            <span className="tnum shrink-0 font-mono text-[11px]">
+                              {locked
+                                ? lockedModelCtaLabel(rung.model.tierMin)
+                                : `от ✦${rung.model.minUnitCredits}${rung.model.unitKind === 'second' ? '/с' : ''}`}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </PillControl>
+              )}
               {isVideo ? (
-                <div className="grid shrink-0 grid-cols-3 gap-2">
+                <div className="contents">
                   {/* Duration */}
                   <PillControl
                     icon={<Clock size={15} weight="bold" />}
@@ -3583,7 +4297,7 @@ export function GenerateClient({
                   </div>
                 </div>
               ) : (
-                <div className="grid shrink-0 grid-cols-3 gap-2">
+                <div className="contents">
                   {/* Size */}
                   <PillControl
                     icon={<Crop size={15} weight="bold" />}
@@ -3710,49 +4424,8 @@ export function GenerateClient({
                   {/* Seed is API-only now — removed from the UI (Метро-док, D16). */}
                 </div>
               )}
-
-              {/* Reference inputs — image mode shows them here, BELOW the prompt
-                (video renders them above, before the prompt). */}
-              {!isVideo && referenceInputs}
-            </div>
-            {/* Action dock — pinned at the bottom of the calm dock panel, split
-              from the controls by a dim hairline; «Создать» is the one CTA.
-              Fixed-float only on phones (above the tab bar); on sm+ it stays
-              in normal flow directly under the controls so a short dock leaves
-              no dead gap before the CTA (M2). */}
-            <div
-              data-testid="action-dock"
-              className="shrink-0 space-y-2.5 border-t-[1.5px] border-[color:var(--color-line)]/20 pt-3.5 max-sm:fixed max-sm:inset-x-4 max-sm:bottom-[calc(4.5rem+env(safe-area-inset-bottom))] max-sm:z-20 max-sm:rounded-[var(--radius-md)] max-sm:border-[2.5px] max-sm:border-[color:var(--color-line)] max-sm:bg-[color:var(--color-surface)] max-sm:p-3 max-sm:shadow-[4px_4px_0_0_var(--color-shadow)]"
-            >
-              {/* Draft + Audio toggles (video) — neutral chips in one row. Audio is
-                per-model: interactive on audio-capable models (Seedance 2.0 + its
-                reference variant), shown disabled+off for models without audio
-                (the fast draft variants) so the state is always visible. */}
               {isVideo && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {draftVideoModel && (
-                    <button
-                      type="button"
-                      onClick={toggleDraft}
-                      aria-pressed={draft}
-                      data-testid="draft-toggle"
-                      title="Черновик — дешёвый быстрый просмотр (быстрая модель, 480p)"
-                      className={
-                        'press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] px-3.5 text-[13px] font-medium transition-colors ' +
-                        (draft
-                          ? 'selected-neutral'
-                          : 'bg-[color:var(--color-surface2)] text-[color:var(--color-muted-foreground)] hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]')
-                      }
-                    >
-                      <Zap size={14} weight="bold" />
-                      Черновик
-                      {draft && (
-                        <span className="tnum text-[11px] text-[color:var(--color-bg)] opacity-70">
-                          480p · быстро
-                        </span>
-                      )}
-                    </button>
-                  )}
+                <div className="contents">
                   <button
                     type="button"
                     onClick={() => setGenAudio((v) => !v)}
@@ -3782,101 +4455,66 @@ export function GenerateClient({
                   </button>
                 </div>
               )}
-              {!projectContextReady && (
-                <p
-                  className="font-mono text-[11px] text-[color:var(--color-danger)]"
-                  role="alert"
-                  data-testid="project-context-submit-blocked"
+              <span className="flex-1" />
+              {devTools && (
+                <div
+                  className="hidden items-center gap-1 rounded-[var(--radius-md)] p-1 sm:flex glass"
+                  title="Dev: провайдер генерации"
+                  data-testid="gateway-switch"
                 >
-                  {projectContext.mode === 'loading'
-                    ? 'Проверяем проект перед запуском…'
-                    : 'Генерация остановлена: контекст проекта недоступен.'}
-                </p>
+                  {(['openrouter', 'atlascloud'] as const).map((g) => {
+                    const on = gateway === g;
+                    return (
+                      <button
+                        key={g}
+                        type="button"
+                        data-testid={`gateway-${g}`}
+                        onClick={() => changeGateway(g)}
+                        className={
+                          'rounded-[var(--radius-sm)] px-3 py-1.5 font-mono text-[13px] font-bold uppercase tracking-[0.06em] transition-colors duration-200 ' +
+                          (on
+                            ? 'selected-neutral'
+                            : 'text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-fg)]')
+                        }
+                      >
+                        {g === 'openrouter' ? 'OpenRouter' : 'AtlasCloud'}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-              {priceRefusal && (
-                // The server declined to quote this configuration. Say so plainly
-                // instead of rendering the optimistic flat placeholder on a button
-                // that would 400 — a wrong price is worse than no price.
-                <p
-                  className="font-mono text-[11px] text-[color:var(--color-danger)]"
-                  role="alert"
-                  data-testid="price-refused"
-                  data-error-code={priceRefusal.code}
-                >
-                  {priceRefusal.message ?? 'Не удалось посчитать стоимость этой конфигурации.'}
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={resetAll}
+                title="Сбросить"
+                aria-label="Сбросить"
+                className="press-inset grid h-9 w-9 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[color:var(--color-surface2)] text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
+              >
+                <RotateCcw size={15} weight="bold" />
+              </button>
+            </div>
+            <div className="flex shrink-0">
               {modelLocked ? (
                 // P-B2: selected model is above the plan — route to upgrade.
                 <Button
                   asChild
                   size="lg"
-                  className="group h-12 w-full rounded-[var(--radius-md)] px-7 text-[15px]"
+                  className="group h-10 gap-2.5 px-4 text-[14px] max-md:h-12 max-md:w-full max-md:text-[15px] disabled:border-[color:var(--color-line)]/40 disabled:text-[color:var(--color-muted-foreground)]"
                 >
                   <a href={lockedCtaHref} data-testid="upsell-cta">
-                    <Lock size={16} weight="bold" />
+                    <Lock size={15} weight="bold" />
                     <span>{lockedModelCtaLabel(model?.tierMin)}</span>
-                    <ArrowRight
-                      size={17}
-                      weight="bold"
-                      className="transition-transform duration-150 group-hover:translate-x-0.5"
-                    />
                   </a>
                 </Button>
               ) : (
                 <>
-                  {/* Zero-balance nudge: the live balance already in state can't
-                      cover this exact quote — say so next to the submit with a
-                      refill path, instead of letting the press fail server-side.
-                      No new endpoints: `balance` is the existing widget-synced
-                      value, `cost` the settled quote for this configuration. */}
-                  {!isAnonymous && cost !== null && balance < cost && (
-                    <p
-                      className="font-mono text-[11px] leading-relaxed text-[color:var(--color-muted-foreground)]"
-                      data-testid="low-balance-hint"
-                    >
-                      Баланса не хватит ({balance} из {cost}) —{' '}
-                      <a
-                        href="/pricing"
-                        className="text-[color:var(--color-accent)] underline decoration-2 underline-offset-2"
-                      >
-                        пополнить
-                      </a>
-                    </p>
-                  )}
-                  {/* Anonymous guests hold no balance (no welcome grants until
-                      signup), so the authed nudge above never fires for them —
-                      route to login/signup, with pricing as a separate honest
-                      option instead of inventing a top-up amount. */}
-                  {isAnonymous && cost !== null && balance < cost && (
-                    <p
-                      className="font-mono text-[11px] leading-relaxed text-[color:var(--color-muted-foreground)]"
-                      data-testid="low-balance-hint"
-                    >
-                      Баланса не хватит ({balance} из {cost}) —{' '}
-                      <a
-                        href="/login?next=/generate"
-                        className="text-[color:var(--color-accent)] underline decoration-2 underline-offset-2"
-                      >
-                        войдите или зарегистрируйтесь
-                      </a>
-                      {', новым аккаунтам начислим '}
-                      {GIFT_TOKENS_UPFRONT} токенов.{' '}
-                      <a
-                        href="/pricing"
-                        className="text-[color:var(--color-accent)] underline decoration-2 underline-offset-2"
-                      >
-                        Смотреть тарифы
-                      </a>
-                    </p>
-                  )}
                   <Button
                     type="submit"
                     data-testid="submit"
                     data-tour-target="submit"
                     disabled={!canSubmit}
                     size="lg"
-                    className="group h-12 w-full rounded-[var(--radius-md)] px-7 text-[15px]"
+                    className="group h-10 gap-2.5 px-4 text-[14px] max-md:h-12 max-md:w-full max-md:text-[15px] disabled:border-[color:var(--color-line)]/40 disabled:text-[color:var(--color-muted-foreground)]"
                   >
                     {isSubmitting ? (
                       <>
@@ -3885,605 +4523,31 @@ export function GenerateClient({
                     ) : (
                       <>
                         <span>Создать{isVideo ? ' видео' : count > 1 ? ` (${count})` : ''}</span>
-                        {/* cost chip — lime spark, matching step-03 */}
+                        {/* Price rides in the button's own ink behind a hairline, so the
+                        one lime spark on screen stays the status badge. */}
                         {/* While a fresh quote is in flight the outgoing number stays
                         put, greyed — blanking it on every parameter click reads as a
                         broken price. The button is disabled throughout (`canSubmit`
                         needs a settled quote), so the greyed figure can never be
                         acted on, and it is never treated as the current price. */}
                         <span
-                          className="tnum inline-flex items-center gap-1 rounded-[var(--radius-xs)] px-2 py-0.5 text-[11px] font-bold transition-opacity duration-150"
+                          className="tnum inline-flex items-center gap-1 border-l-[1.5px] border-[color:var(--color-primary-foreground)]/30 pl-2.5 font-mono text-[13px] font-bold transition-opacity duration-150 group-disabled:border-[color:var(--color-line)]/30"
                           style={{
-                            background: 'var(--color-accent2)',
-                            color: 'var(--color-accent2-foreground)',
                             opacity: cost === null && recalculatingCost !== null ? 0.45 : 1,
                           }}
                         >
-                          <TokenStar size={11} />
+                          <TokenStar size={12} />
                           {cost ?? recalculatingCost ?? '—'}
                         </span>
-                        <ArrowRight
-                          size={17}
-                          weight="bold"
-                          className="transition-transform duration-150 group-hover:translate-x-0.5"
-                        />
                       </>
                     )}
                   </Button>
                 </>
               )}
             </div>
-          </form>
+          </div>
         </div>
-
-        {/* ---------------- Preview (one panel) ---------------- */}
-        <div
-          className={
-            'min-w-0 flex-col overflow-hidden rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] shadow-[6px_6px_0_0_var(--color-shadow)] lg:flex lg:min-h-0 ' +
-            (pane === 'preview' ? 'flex' : 'hidden')
-          }
-          data-testid="result-area"
-        >
-          {pickerOpen ? (
-            <ModelEffectPicker
-              cards={isVideo ? videoCards : imageCards}
-              currentModelId={modelId}
-              canUseModel={canUseModel}
-              onSelect={(m) => {
-                selectModel(m.id);
-              }}
-              effects={isVideo ? motionPresets : []}
-              selectedSlug={isVideo ? (selectedEffect?.slug ?? null) : null}
-              onToggleEffect={toggleMotion}
-              assetSrc={assetSrc}
-              view={pickerView}
-              onClose={() => setPickerOpen(false)}
-            />
-          ) : (
-            <>
-              <div className="flex shrink-0 items-center justify-between gap-3 border-b-[2.5px] border-[color:var(--color-line)] px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <span className="label-eyebrow">Результат</span>
-                  <StatusBadge kind={phase.kind} />
-                </div>
-                {/* The row is per-phase, NOT per-history: gating it on loaded
-                    history would strip download/share/fullscreen from a first
-                    result while the gallery fetch is still in flight. */}
-                {phase.kind !== 'idle' && (
-                  <div className="flex items-center gap-1">
-                    {/* Way out of a single result → back to the inline «Твои
-                        генерации» grid (phase=idle), the same view shown before
-                        a tile was opened. NOT a navigation to /gallery («Архив»)
-                        — staying in-place keeps the dock/state. mr-1 sets it
-                        slightly apart from the per-asset actions. */}
-                    <button
-                      type="button"
-                      data-testid="to-catalogue"
-                      onClick={() => {
-                        displayedJobRef.current = null;
-                        setSelectedAsset(0);
-                        setPhase({ kind: 'idle' });
-                      }}
-                      title="Твои генерации"
-                      aria-label="Твои генерации"
-                      className="press-inset mr-1 grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
-                    >
-                      <SquaresFour size={15} weight="bold" />
-                    </button>
-                    {phase.kind === 'done' && doneAssets.length > 1 && !inGridView && (
-                      <button
-                        type="button"
-                        data-testid="back-to-grid"
-                        onClick={() => setSelectedAsset(null)}
-                        className="press-inset mr-1 inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
-                      >
-                        <Layers size={13} weight="bold" /> Все ({doneAssets.length})
-                      </button>
-                    )}
-                    {phase.kind === 'done' && curAsset && !inGridView && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={enterFullscreen}
-                          title="На весь экран"
-                          aria-label="На весь экран"
-                          className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
-                        >
-                          <Maximize2 size={15} weight="bold" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void shareAsset(curAsset)}
-                          title="Поделиться"
-                          aria-label="Поделиться"
-                          className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
-                        >
-                          <Share2 size={15} weight="bold" />
-                        </button>
-                        <a
-                          href={assetSrc(curAsset)}
-                          download
-                          title="Скачать"
-                          aria-label="Скачать"
-                          className="press-inset grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors hover:bg-[color:var(--color-surface2)] hover:text-[color:var(--color-fg)]"
-                        >
-                          <Download size={15} weight="bold" />
-                        </a>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-              {/* Fixed stage — never resizes; the frame letterboxes inside it */}
-              <div
-                ref={canvasRef}
-                onDragOver={(e) => {
-                  if (!isVideo) return;
-                  e.preventDefault();
-                  setStageDrag(true);
-                }}
-                onDragLeave={() => setStageDrag(false)}
-                onDrop={(e) => void onStageDrop(e)}
-                className={
-                  'stage-grain relative flex min-h-[300px] flex-1 items-center justify-center overflow-hidden transition-colors [&>*:not(.stage-aurora)]:relative [&>*:not(.stage-aurora)]:z-10 ' +
-                  (stageDrag
-                    ? 'border-[color:var(--color-accent)]'
-                    : 'border-[color:var(--color-line)]')
-                }
-              >
-                <div className="stage-aurora" aria-hidden />
-                {stageDrag && (
-                  <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-[rgba(var(--accent-rgb),0.12)]">
-                    <span className="rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-4 py-2 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[5px_5px_0_0_var(--color-shadow)]">
-                      Отпусти — оживим этот кадр
-                    </span>
-                  </div>
-                )}
-                {/* Idle preview — the user's OWN past generations («Твои генерации»),
-                or the 01·02·03 steps when there's no history yet. (The inserted
-                reference is shown in the dock, not duplicated on the stage.) */}
-                {phase.kind === 'idle' &&
-                  (history.length > 0 || inflight.length > 0 ? (
-                    <GenerationsGrid
-                      items={
-                        historyFilter === 'all'
-                          ? history
-                          : history.filter((h) => h.kind === historyFilter)
-                      }
-                      total={history.length}
-                      inflight={inflight}
-                      filter={historyFilter}
-                      onFilterChange={setHistoryFilter}
-                      onSelectInflight={(generation) => {
-                        displayedJobRef.current = generation.jobId;
-                        jobStartedRef.current = generation.startedAt;
-                        jobDeadlineRef.current = renderDeadlineMs(
-                          generation.etaSec * 1000,
-                          generation.kind === 'video',
-                        );
-                        setElapsedSec(
-                          Math.max(0, Math.floor((Date.now() - generation.startedAt) / 1000)),
-                        );
-                        setPhase({
-                          kind: 'polling',
-                          jobId: generation.jobId,
-                          status: generation.status,
-                        });
-                      }}
-                      onSelect={(it) => {
-                        if (!it.assetUrl) return;
-                        if (it.jobId) void showJobResult(it.jobId, it.assetUrl);
-                        else {
-                          displayedJobRef.current = null;
-                          setPhase({
-                            kind: 'unavailable',
-                            message:
-                              'У этого файла нет исходной генерации, поэтому его модель, промпт и параметры неизвестны.',
-                          });
-                        }
-                      }}
-                    />
-                  ) : (
-                    <GenerateSteps kind={mode} />
-                  ))}
-
-                {/* Generating — full-bleed recessed «screen» covering the whole body
-                (only the panel header stays); scanline + stepped progress scale up. */}
-                {isBusy && (
-                  <div
-                    data-testid="progress-placeholder"
-                    role="status"
-                    aria-live="polite"
-                    className="brutal-scan absolute inset-0 z-10 flex flex-col items-center justify-center gap-8 overflow-hidden p-10 text-center"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="seed-pulse-dot h-4 w-4 rounded-full bg-[color:var(--color-accent)]" />
-                      <span className="font-display text-[clamp(28px,5vw,48px)] font-black uppercase leading-none tracking-[-0.01em] text-[color:var(--color-fg)]">
-                        {inflightStageLabel(
-                          loadingStageKey,
-                          displayedInflight?.kind ?? (isVideo ? 'video' : 'image'),
-                        )}
-                      </span>
-                    </div>
-                    {/* Full-width progress — transparent track (the preview area is the
-                    only background; no card), accent blocks fill to --pct. */}
-                    <div
-                      className="seed-step-bar h-6 w-full max-w-[820px] border-[2.5px] border-[color:var(--color-line)]"
-                      style={
-                        {
-                          ['--pct']: `${progressPct > 0 ? Math.max(6, progressPct) : 0}%`,
-                        } as React.CSSProperties
-                      }
-                    />
-                    <span className="tnum font-mono text-[15px] text-[color:var(--color-faint)]">
-                      {fmtClock(elapsedSec)}
-                      {elapsedSec < stageEtaSec
-                        ? ` · обычно ${fmtEtaHint(stageEtaSec)}`
-                        : ' · почти готово'}
-                    </span>
-                    {/* Cancel = stop watching and return to editing; the job keeps
-                    running and lands in the tray/filmstrip when it finishes. */}
-                    <button
-                      type="button"
-                      data-testid="cancel-generation"
-                      onClick={reset}
-                      title="Вернуться к редактированию — ролик до-генерируется в фоне"
-                      className="press-inset inline-flex h-11 items-center gap-2 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
-                    >
-                      <X size={16} weight="bold" /> Отменить
-                    </button>
-                  </div>
-                )}
-
-                {phase.kind === 'done' && inGridView && (
-                  // Batch grid — every result visible at once; click to inspect.
-                  <div
-                    data-testid="result-grid"
-                    className="seed-develop seed-scroll grid h-full w-full grid-cols-2 content-center gap-2.5 self-stretch overflow-y-auto p-3"
-                  >
-                    {doneAssets.map((url, i) => (
-                      <button
-                        key={url}
-                        type="button"
-                        data-testid="result-tile"
-                        onClick={() => setSelectedAsset(i)}
-                        title={`Результат ${i + 1}`}
-                        className="press-inset group relative overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-black/30"
-                      >
-                        {isVideoAsset(url) ? (
-                          <video
-                            src={assetSrc(url)}
-                            muted
-                            playsInline
-                            preload="metadata"
-                            className="aspect-square h-full w-full object-cover"
-                          />
-                        ) : (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={assetSrc(url)}
-                            alt={`Результат ${i + 1}`}
-                            className="aspect-square h-full w-full object-cover"
-                          />
-                        )}
-                        <span className="absolute left-2 top-2 rounded-[var(--radius-xs)] border-2 border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-1.5 py-0.5 font-mono text-[11px] text-[color:var(--color-fg)]">
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {phase.kind === 'done' && !inGridView && curAsset && (
-                  <div className="seed-develop flex h-full w-full items-center justify-center p-2.5">
-                    {curIsVideo ? (
-                      <video
-                        src={assetSrc(curAsset)}
-                        data-testid="result-video"
-                        className="h-full w-full object-contain"
-                        controls
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="metadata"
-                      />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={assetSrc(curAsset)}
-                        alt="Результат"
-                        data-testid="result-image"
-                        className="h-full w-full object-contain"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {phase.kind === 'failed' && (
-                  <div className="w-full max-w-md p-4">
-                    <FailedState
-                      message={phase.message}
-                      stillRunning={phase.stillRunning ?? false}
-                      onRetry={reset}
-                    />
-                  </div>
-                )}
-                {phase.kind === 'unavailable' && (
-                  <div className="w-full max-w-md p-4" data-testid="result-unavailable">
-                    <UnavailableState message={phase.message} onReset={reset} />
-                  </div>
-                )}
-                {phase.kind === 'insufficient' && (
-                  <div className="w-full max-w-md p-4">
-                    <InsufficientState balance={balance} cost={cost ?? 0} />
-                  </div>
-                )}
-              </div>
-
-              {/* Footer — shown post-render only (actions · metering · session ·
-              models); hidden while idle so the steps / generations grid stay
-              clean, matching the approved Layout A. */}
-              {phase.kind === 'done' && (
-                <div className="shrink-0 space-y-2.5 border-t-[1.5px] border-[color:var(--color-line)]/20 px-4 py-3">
-                  {workspaceProject && (
-                    <p
-                      className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-[color:var(--color-positive)]"
-                      data-testid="generate-project-receipt"
-                    >
-                      <span>Сохранено в проект «{workspaceProject.title}»</span>
-                      <a
-                        href={`/gallery?projectId=${encodeURIComponent(workspaceProject.id)}`}
-                        className="underline decoration-2 underline-offset-2"
-                      >
-                        ПОКАЗАТЬ В ПРОЕКТЕ
-                      </a>
-                    </p>
-                  )}
-                  {!paidMediaStorage && phase.assets[0] && (
-                    <p
-                      className="flex flex-wrap items-center gap-1 font-mono text-[11px] text-[color:var(--color-accent)]"
-                      data-testid="retention-reminder"
-                    >
-                      <span>{FREE_MEDIA_RETENTION_COPY.split(' · ')[0]} · </span>
-                      <a
-                        href={assetSrc(phase.assets[0])}
-                        download
-                        className="underline decoration-2 underline-offset-2"
-                      >
-                        {FREE_MEDIA_RETENTION_COPY.split(' · ')[1]}
-                      </a>
-                      <span> · </span>
-                      <a href="/pricing" className="underline decoration-2 underline-offset-2">
-                        {FREE_MEDIA_RETENTION_COPY.split(' · ')[2]}
-                      </a>
-                    </p>
-                  )}
-                  {/* Per-result actions — the iteration loop. Visible in single view. */}
-                  {phase.kind === 'done' && curAsset && !inGridView && (
-                    <div className="flex flex-wrap items-center gap-2" data-testid="result-actions">
-                      {!curIsVideo && (
-                        <button
-                          type="button"
-                          data-testid="action-animate"
-                          onClick={() => animateImage(curAsset)}
-                          className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors"
-                        >
-                          <Clapperboard size={14} weight="bold" /> Оживить
-                        </button>
-                      )}
-                      {curIsVideo && lastFrameAsset && (
-                        <button
-                          type="button"
-                          data-testid="action-extend"
-                          onClick={() => extendVideo(lastFrameAsset)}
-                          className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] bg-[color:var(--color-accent)] px-3.5 text-[13px] font-semibold text-[color:var(--color-primary-foreground)] shadow-[3px_3px_0_0_var(--color-shadow)] transition-colors"
-                        >
-                          <Clapperboard size={14} weight="bold" /> Продолжить видео
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        data-testid="action-vary"
-                        onClick={vary}
-                        // «Вариации» submits the CURRENT form with a new seed, so it
-                        // needs the same settled quote «Создать» does — otherwise it
-                        // is the one result action that can ask for a generation whose
-                        // price is not on screen. The submit refuses either way; this
-                        // keeps the button from promising something it cannot do.
-                        disabled={
-                          isSubmitting || !projectContextReady || !hasKnownJobEstimate(estimate)
-                        }
-                        className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-50"
-                      >
-                        <RefreshCw size={14} weight="bold" /> Вариации
-                      </button>
-                      <button
-                        type="button"
-                        data-testid="action-repeat"
-                        onClick={repeat}
-                        disabled={isSubmitting || repeatValidation || !projectContextReady}
-                        className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-50"
-                      >
-                        <Repeat size={14} weight="bold" /> Повторить
-                        <span
-                          className="tnum inline-flex items-center gap-1 rounded-[var(--radius-xs)] px-2 py-0.5 text-[11px] font-bold"
-                          style={{
-                            background: 'var(--color-accent2)',
-                            color: 'var(--color-accent2-foreground)',
-                          }}
-                        >
-                          <TokenStar size={11} />
-                          {repeatCost ?? '—'}
-                        </span>
-                      </button>
-                      {curIsVideo && (
-                        <button
-                          type="button"
-                          data-testid="action-studio"
-                          onClick={() => void sendToStudio(curAsset)}
-                          disabled={handingOff}
-                          className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)] disabled:opacity-50"
-                        >
-                          {handingOff ? (
-                            <Loader2 size={14} weight="bold" className="seed-spin" />
-                          ) : (
-                            <Scissors size={14} weight="bold" />
-                          )}{' '}
-                          В Studio
-                        </button>
-                      )}
-                      {curIsVideo && referenceVideoModel && (
-                        <button
-                          type="button"
-                          data-testid="action-video-reference"
-                          onClick={() => addVideoReference(curAsset)}
-                          className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
-                        >
-                          <AtSign size={14} weight="bold" /> В референсы
-                        </button>
-                      )}
-                      {!curIsVideo && editModelAvailable && (
-                        <button
-                          type="button"
-                          data-testid="action-edit"
-                          onClick={() => editImage(curAsset)}
-                          className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
-                        >
-                          <Pencil size={14} weight="bold" /> Редактировать
-                        </button>
-                      )}
-                      {!curIsVideo && (
-                        <button
-                          type="button"
-                          data-testid="action-reference"
-                          onClick={() => addReference(curAsset)}
-                          className="press-inset inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3.5 text-[13px] font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
-                        >
-                          <AtSign size={14} weight="bold" /> В референсы
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  {phase.kind === 'done' && phase.assets[0] && (
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[color:var(--color-faint)]">
-                      <span className="font-medium text-[color:var(--color-muted-foreground)]">
-                        {resultModelLabel}
-                      </span>
-                      <span>·</span>
-                      <span className="tnum">{resultDetails || 'Параметры не сохранены'}</span>
-                      <button
-                        type="button"
-                        onClick={reset}
-                        className="ml-auto inline-flex items-center gap-1.5 font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-fg)]"
-                      >
-                        <Plus size={14} weight="bold" /> Создать ещё
-                      </button>
-                      <Link
-                        href="/studio"
-                        className="ml-2 inline-flex items-center gap-1.5 font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-accent)]"
-                      >
-                        <Scissors size={14} weight="bold" /> В студию
-                      </Link>
-                    </div>
-                  )}
-                  {resultPrompt && (
-                    <p
-                      data-testid="result-prompt"
-                      className="break-words text-[13px] leading-relaxed text-[color:var(--color-faint)]"
-                    >
-                      {resultPrompt}
-                    </p>
-                  )}
-                  <p className="flex items-start gap-1.5 text-[13px] leading-relaxed text-[color:var(--color-faint)]">
-                    <Info size={13} weight="bold" className="mt-0.5 shrink-0" />
-                    <span>
-                      Стоимость подтверждается перед запуском
-                      {resultAudio !== null
-                        ? ` · звук ${resultAudio ? 'включён' : 'выключен'}`
-                        : ''}
-                      .
-                    </span>
-                  </p>
-                  {/* F-m8: session filmstrip — past outputs stay one tap away. */}
-                  {sessionResults.length > 1 && (
-                    <div className="seed-scroll flex items-center gap-2 overflow-x-auto pb-1">
-                      <span className="label-eyebrow shrink-0">Сессия</span>
-                      {sessionResults.map((r, i) => {
-                        const active = phase.kind === 'done' && phase.assets[0] === r.url;
-                        return (
-                          <button
-                            key={`${r.url}-${i}`}
-                            type="button"
-                            data-testid="session-thumb"
-                            onClick={() => {
-                              displayedJobRef.current = null;
-                              setSelectedAsset(0);
-                              setPhase({
-                                kind: 'done',
-                                jobId: r.jobId,
-                                assets: [r.url],
-                                ...(r.modelId ? { modelId: r.modelId } : {}),
-                                ...(r.model ? { model: r.model } : {}),
-                                ...(r.params ? { params: r.params } : {}),
-                                ...(typeof r.creditsReserved === 'number'
-                                  ? { creditsReserved: r.creditsReserved }
-                                  : {}),
-                              });
-                            }}
-                            title={r.label}
-                            className={
-                              'relative h-12 w-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border-[2.5px] transition-colors ' +
-                              (active
-                                ? 'border-[color:var(--color-accent)] shadow-[3px_3px_0_0_var(--color-shadow)]'
-                                : 'border-[color:var(--color-line)]')
-                            }
-                          >
-                            {r.isVideo ? (
-                              <video
-                                src={assetSrc(r.url)}
-                                muted
-                                playsInline
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={assetSrc(r.url)}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {models.length > 1 && (
-                    <div className="seed-scroll flex items-center gap-2 overflow-x-auto pb-1">
-                      <span className="label-eyebrow shrink-0">Ещё</span>
-                      {models
-                        // P-B2: don't offer one-tap switches to out-of-plan models.
-                        .filter((m) => m.id !== modelId && canUseModel(m))
-                        .slice(0, 6)
-                        .map((m) => (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => selectModel(m.id)}
-                            className="press-inset shrink-0 rounded-[var(--radius-sm)] border-[2.5px] border-[color:var(--color-line)] px-3 py-1.5 text-[13px] text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-fg)]"
-                          >
-                            {cardName(m)}
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+      </form>
     </div>
   );
 }

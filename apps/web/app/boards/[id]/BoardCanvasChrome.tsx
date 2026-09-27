@@ -122,8 +122,9 @@ function overviewTitle(
 function overviewThumbnail(node: Node): string | undefined {
   const raw = node.data as Record<string, unknown>;
   if (node.type === 'generate') {
+    // A video without a saved last frame still has a picture: its own first frame.
     return raw['resultKind'] === 'video'
-      ? (raw['lastFrameUrl'] as string | undefined)
+      ? ((raw['lastFrameUrl'] ?? raw['resultUrl']) as string | undefined)
       : ((raw['resultUrl'] ?? raw['lastFrameUrl']) as string | undefined);
   }
   if (node.type === 'media' && raw['mediaKind'] === 'image') return raw['url'] as string;
@@ -158,9 +159,63 @@ function truncateCanvasText(
   return truncated;
 }
 
+/** Word-wrap for the overview canvas; the last kept line ends in «…» when cut. */
+function wrapCanvasText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+): string[] {
+  const words = text.trim().split(/\s+/);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (context.measureText(next).width <= maxWidth || !line) {
+      line = next;
+      continue;
+    }
+    lines.push(line);
+    line = word;
+    if (lines.length === maxLines) break;
+  }
+  if (lines.length < maxLines && line) lines.push(line);
+  if (lines.length === maxLines && words.join(' ') !== lines.join(' ')) {
+    let last = lines[maxLines - 1]!;
+    while (last && context.measureText(`${last}…`).width > maxWidth) last = last.slice(0, -1);
+    lines[maxLines - 1] = `${last}…`;
+  }
+  return lines;
+}
+
+// A video with no saved still is loaded only long enough to grab one frame into
+// a small canvas, then released — a zoomed-out board with many shots must not
+// hold (or download) many full videos at once.
+type ThumbnailSource = HTMLImageElement | HTMLVideoElement | HTMLCanvasElement;
+const MAX_VIDEO_THUMBNAIL_LOADS = 3;
+const VIDEO_SNAPSHOT_WIDTH = 240;
+
+function releaseVideo(video: HTMLVideoElement) {
+  video.onloadeddata = null;
+  video.onseeked = null;
+  video.onerror = null;
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+}
+
+function releaseLoadingVideos(cache: Map<string, ThumbnailCacheEntry>) {
+  for (const [url, entry] of cache) {
+    if (entry.status === 'loading' && entry.image instanceof HTMLVideoElement) {
+      releaseVideo(entry.image);
+      cache.delete(url);
+    }
+  }
+}
+
 type ThumbnailCacheEntry =
-  | { status: 'loading'; image: HTMLImageElement }
-  | { status: 'loaded'; image: HTMLImageElement }
+  | { status: 'loading'; image: ThumbnailSource }
+  | { status: 'loaded'; image: ThumbnailSource }
   | { status: 'failed' };
 
 type CanvasColors = {
@@ -173,6 +228,14 @@ type CanvasColors = {
   label: string;
   title: string;
   selected: string;
+  surface: string;
+  screen: string;
+  line: string;
+  faint: string;
+  hairline: string;
+  /** Font stacks from the design tokens — the canvas can't inherit CSS fonts. */
+  sans: string;
+  mono: string;
 };
 
 function overviewCanvasColors(canvas: HTMLCanvasElement): CanvasColors {
@@ -189,6 +252,13 @@ function overviewCanvasColors(canvas: HTMLCanvasElement): CanvasColors {
     label: rgba('--paper-rgb', 0.98),
     title: rgba('--paper-rgb', 0.78),
     selected: styles.getPropertyValue('--color-accent').trim(),
+    surface: styles.getPropertyValue('--color-surface').trim(),
+    screen: styles.getPropertyValue('--color-surface2').trim(),
+    line: styles.getPropertyValue('--color-line').trim(),
+    faint: rgba('--paper-rgb', 0.5),
+    hairline: rgba('--paper-rgb', 0.18),
+    sans: styles.getPropertyValue('--font-sans').trim() || 'sans-serif',
+    mono: styles.getPropertyValue('--font-mono').trim() || 'monospace',
   };
 }
 
@@ -210,7 +280,15 @@ export function BoardOverviewCanvas({
   const { x, y, zoom } = useViewport();
 
   useEffect(() => {
-    if (!visible) return;
+    const cache = imageCacheRef.current;
+    return () => releaseLoadingVideos(cache);
+  }, []);
+
+  useEffect(() => {
+    if (!visible) {
+      releaseLoadingVideos(imageCacheRef.current);
+      return;
+    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const viewportRect = canvas.getBoundingClientRect();
@@ -231,8 +309,12 @@ export function BoardOverviewCanvas({
         return thumbnailUrl ? [thumbnailUrl] : [];
       }),
     );
-    for (const thumbnailUrl of imageCacheRef.current.keys()) {
-      if (!activeThumbnailUrls.has(thumbnailUrl)) imageCacheRef.current.delete(thumbnailUrl);
+    for (const [thumbnailUrl, entry] of imageCacheRef.current) {
+      if (activeThumbnailUrls.has(thumbnailUrl)) continue;
+      if (entry.status === 'loading' && entry.image instanceof HTMLVideoElement) {
+        releaseVideo(entry.image);
+      }
+      imageCacheRef.current.delete(thumbnailUrl);
     }
     const thumbnailCacheLimit = Math.min(256, Math.max(64, activeThumbnailUrls.size));
     const draw = () => {
@@ -263,74 +345,183 @@ export function BoardOverviewCanvas({
         const sourceWidth = source.width ?? source.measured?.width ?? 240;
         const sourceHeight = source.height ?? source.measured?.height ?? 260;
         const targetHeight = target.height ?? target.measured?.height ?? 260;
+        const sx = source.position.x + sourceWidth;
+        const sy = source.position.y + sourceHeight / 2;
+        const tx = target.position.x;
+        const ty = target.position.y + targetHeight / 2;
+        const bend = Math.max(40, Math.abs(tx - sx) / 2);
         context.beginPath();
-        context.moveTo(source.position.x + sourceWidth, source.position.y + sourceHeight / 2);
-        context.lineTo(target.position.x, target.position.y + targetHeight / 2);
+        context.moveTo(sx, sy);
+        context.bezierCurveTo(sx + bend, sy, tx - bend, ty, tx, ty);
         context.stroke();
       }
 
+      const loadingVideos = () =>
+        [...imageCacheRef.current.values()].filter(
+          (entry) => entry.status === 'loading' && entry.image instanceof HTMLVideoElement,
+        ).length;
+      const loadThumbnail = (thumbnailUrl: string) => {
+        if (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(thumbnailUrl)) {
+          // Queue: the next draw() after a video settles picks up the rest.
+          if (loadingVideos() >= MAX_VIDEO_THUMBNAIL_LOADS) return;
+          const video = document.createElement('video');
+          video.muted = true;
+          video.playsInline = true;
+          video.preload = 'metadata';
+          // A stalled load must not hold one of the few slots forever.
+          window.setTimeout(() => video.onerror?.(new Event('error')), 15_000);
+          video.onloadeddata = () => {
+            video.currentTime = Math.min(0.1, video.duration || 0.1);
+          };
+          video.onseeked = () => {
+            const current = imageCacheRef.current.get(thumbnailUrl);
+            if (current?.status !== 'loading' || current.image !== video) return;
+            const scale = Math.min(1, VIDEO_SNAPSHOT_WIDTH / (video.videoWidth || 1));
+            const still = document.createElement('canvas');
+            still.width = Math.max(1, Math.round(video.videoWidth * scale));
+            still.height = Math.max(1, Math.round(video.videoHeight * scale));
+            still.getContext('2d')?.drawImage(video, 0, 0, still.width, still.height);
+            releaseVideo(video);
+            imageCacheRef.current.set(thumbnailUrl, { status: 'loaded', image: still });
+            draw();
+          };
+          video.onerror = () => {
+            const current = imageCacheRef.current.get(thumbnailUrl);
+            releaseVideo(video);
+            if (current?.status === 'loading' && current.image === video) {
+              imageCacheRef.current.set(thumbnailUrl, { status: 'failed' });
+              draw();
+            }
+          };
+          imageCacheRef.current.set(thumbnailUrl, { status: 'loading', image: video });
+          video.src = assetSrc(thumbnailUrl);
+          return;
+        }
+        const image = new Image();
+        image.onload = () => {
+          const current = imageCacheRef.current.get(thumbnailUrl);
+          if (current?.status !== 'loading' || current.image !== image) return;
+          imageCacheRef.current.set(thumbnailUrl, { status: 'loaded', image });
+          draw();
+        };
+        image.onerror = () => {
+          const current = imageCacheRef.current.get(thumbnailUrl);
+          if (current?.status === 'loading' && current.image === image) {
+            imageCacheRef.current.set(thumbnailUrl, { status: 'failed' });
+          }
+        };
+        imageCacheRef.current.set(thumbnailUrl, { status: 'loading', image });
+        image.src = assetSrc(thumbnailUrl);
+      };
+      // Cover-fit a thumbnail into a box, the way the node's own preview crops it.
+      const drawCover = (
+        image: ThumbnailSource,
+        bx: number,
+        by: number,
+        bw: number,
+        bh: number,
+      ) => {
+        const iw =
+          image instanceof HTMLVideoElement
+            ? image.videoWidth
+            : image instanceof HTMLCanvasElement
+              ? image.width
+              : image.naturalWidth;
+        const ih =
+          image instanceof HTMLVideoElement
+            ? image.videoHeight
+            : image instanceof HTMLCanvasElement
+              ? image.height
+              : image.naturalHeight;
+        if (!iw || !ih) return;
+        const scale = Math.max(bw / iw, bh / ih);
+        const sw = bw / scale;
+        const sh = bh / scale;
+        context.drawImage(image, (iw - sw) / 2, (ih - sh) / 2, sw, sh, bx, by, bw, bh);
+      };
+
+      // Flora-style overview: the picture is the node; its name and length sit
+      // small above it. Type is sized in board units (0.25–0.45 zoom → 7–13px).
+      const roundRect = (x: number, y: number, w: number, h: number) => {
+        context.beginPath();
+        context.roundRect(x, y, w, h, 4);
+      };
       for (const node of nodes) {
         const width = node.width ?? node.measured?.width ?? 240;
         const height = node.height ?? node.measured?.height ?? 260;
-        const status = (node.data as Record<string, unknown>)['status'];
-        context.fillStyle =
-          status === 'done'
-            ? colors.done
-            : status === 'running'
-              ? colors.running
-              : status === 'failed'
-                ? colors.failed
-                : node.type === 'generate'
-                  ? colors.generate
-                  : colors.node;
-        context.fillRect(node.position.x, node.position.y, width, height);
+        const px = node.position.x;
+        const py = node.position.y;
+        const raw = node.data as Record<string, unknown>;
+        const status = raw['status'];
+        const label = overviewLabel(node);
+        const title = overviewTitle(node, label, resolvedPrompts);
         const thumbnailUrl = isVisible(node) ? overviewThumbnail(node) : undefined;
         const thumbnail = thumbnailUrl ? imageCacheRef.current.get(thumbnailUrl) : undefined;
-        if (thumbnail?.status === 'loaded') {
-          context.drawImage(thumbnail.image, node.position.x + 10, node.position.y + 10, 72, 54);
-        } else if (thumbnailUrl && !thumbnail && imageCacheRef.current.size < thumbnailCacheLimit) {
-          const image = new Image();
-          image.onload = () => {
-            const current = imageCacheRef.current.get(thumbnailUrl);
-            if (current?.status !== 'loading' || current.image !== image) return;
-            imageCacheRef.current.set(thumbnailUrl, { status: 'loaded', image });
-            draw();
-          };
-          image.onerror = () => {
-            const current = imageCacheRef.current.get(thumbnailUrl);
-            if (current?.status === 'loading' && current.image === image) {
-              imageCacheRef.current.set(thumbnailUrl, { status: 'failed' });
-            }
-          };
-          imageCacheRef.current.set(thumbnailUrl, { status: 'loading', image });
-          image.src = assetSrc(thumbnailUrl);
+        if (thumbnailUrl && !thumbnail && imageCacheRef.current.size < thumbnailCacheLimit) {
+          loadThumbnail(thumbnailUrl);
         }
-        const textX = node.position.x + (thumbnailUrl ? 92 : 12);
-        const textWidth = Math.max(20, node.position.x + width - textX - 12);
-        const label = overviewLabel(node);
-        context.fillStyle = colors.label;
-        context.font = '700 20px ui-monospace, monospace';
-        context.fillText(
-          truncateCanvasText(context, label, textWidth, textCacheRef.current),
-          textX,
-          node.position.y + 31,
-        );
+
+        // Caption above the card: name left, seconds (video shots) right.
+        const named =
+          node.type === 'generate' || node.type === 'cast' || node.type === 'scene' ? title : label;
         context.fillStyle = colors.title;
-        context.font = '500 16px system-ui, sans-serif';
+        context.font = `600 24px ${colors.sans}`;
         context.fillText(
-          truncateCanvasText(
-            context,
-            overviewTitle(node, label, resolvedPrompts),
-            textWidth,
-            textCacheRef.current,
-          ),
-          textX,
-          node.position.y + 54,
+          truncateCanvasText(context, named, width - 90, textCacheRef.current),
+          px + 2,
+          py - 14,
         );
-        if (node.selected) {
-          context.strokeStyle = colors.selected;
-          context.lineWidth = 4 / zoom;
-          context.strokeRect(node.position.x, node.position.y, width, height);
+        if (
+          node.type === 'generate' &&
+          raw['mode'] !== 'image' &&
+          typeof raw['durationSeconds'] === 'number'
+        ) {
+          context.fillStyle = colors.faint;
+          context.font = `500 22px ${colors.mono}`;
+          context.textAlign = 'right';
+          context.fillText(`${raw['durationSeconds']} с`, px + width - 2, py - 14);
+          context.textAlign = 'left';
+        }
+
+        roundRect(px, py, width, height);
+        context.save();
+        context.clip();
+        if (thumbnail?.status === 'loaded') {
+          drawCover(thumbnail.image, px, py, width, height);
+        } else {
+          context.fillStyle = node.type === 'generate' ? colors.screen : colors.surface;
+          context.fillRect(px, py, width, height);
+          if (node.type !== 'generate') {
+            const body =
+              node.type === 'scene' && typeof raw['synopsis'] === 'string'
+                ? raw['synopsis']
+                : node.type === 'cast'
+                  ? label
+                  : title;
+            context.fillStyle = colors.title;
+            context.font = `500 24px ${colors.sans}`;
+            wrapCanvasText(
+              context,
+              body,
+              width - 48,
+              Math.max(1, Math.floor((height - 40) / 32)),
+            ).forEach((line, index) => context.fillText(line, px + 24, py + 44 + index * 32));
+          }
+        }
+        context.restore();
+
+        roundRect(px, py, width, height);
+        context.strokeStyle = node.selected ? colors.selected : colors.hairline;
+        context.lineWidth = node.selected ? 6 : 2;
+        context.stroke();
+
+        // Status as a dot, not a stripe: running / done / failed.
+        if (node.type === 'generate' && status && status !== 'idle') {
+          context.beginPath();
+          context.arc(px + width - 22, py + 22, 10, 0, Math.PI * 2);
+          context.fillStyle =
+            status === 'done' ? colors.done : status === 'running' ? colors.running : colors.failed;
+          context.fill();
         }
       }
       context.restore();

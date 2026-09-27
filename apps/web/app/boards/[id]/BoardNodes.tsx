@@ -62,6 +62,7 @@ import {
   PROMPT_STUDIO_CREDITS,
   PROMPT_STUDIO_BRIEF_CHAR_LIMIT,
   resolveBoardModelContract,
+  resolveBoardVideoSettings,
   validateBoardConnections,
   validateBoardConnectionShape,
   type BoardAiPromptData,
@@ -525,11 +526,17 @@ function NodeTitle({
   label,
   testid,
   nodeType,
+  meta,
+  plain = false,
 }: {
   id: string;
   label: string;
   testid?: string;
   nodeType?: BoardNodeType;
+  /** Right-aligned detail beside the name (a shot's seconds). */
+  meta?: string | undefined;
+  /** A user/planner name, shown as written instead of as a type caption. */
+  plain?: boolean;
 }) {
   const { remove, requestFrameDelete } = useGraph();
   return (
@@ -541,9 +548,21 @@ function NodeTitle({
         size={12}
         className="shrink-0 text-[color:var(--color-faint)] transition-colors group-hover/node:text-[color:var(--color-accent)]"
       />
-      <span className="truncate font-mono text-[11px] font-bold uppercase tracking-wide text-[color:var(--color-muted-foreground)] transition-colors group-hover/node:text-[color:var(--color-fg)]">
+      <span
+        className={
+          'truncate transition-colors group-hover/node:text-[color:var(--color-fg)] ' +
+          (plain
+            ? 'text-[13px] font-semibold text-[color:var(--color-fg)]'
+            : 'font-mono text-[11px] font-bold uppercase tracking-wide text-[color:var(--color-muted-foreground)]')
+        }
+      >
         {label}
       </span>
+      {meta && (
+        <span className="ml-auto shrink-0 font-mono text-[11px] text-[color:var(--color-faint)]">
+          {meta}
+        </span>
+      )}
       <button
         type="button"
         onClick={() => (nodeType === 'frame' ? requestFrameDelete(id) : remove(id))}
@@ -2593,7 +2612,14 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
       {/* Name floats ABOVE the card — the single design shared by every widget. */}
       <NodeTitle
         id={id}
-        label={`Генерация ${isVideo ? 'видео' : 'изображения'}`}
+        label={d.title || `Генерация ${isVideo ? 'видео' : 'изображения'}`}
+        plain={Boolean(d.title)}
+        meta={[
+          current ? modelDisplayName(current) : null,
+          isVideo ? `${resolveBoardVideoSettings(d, current).durationSeconds} с` : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
         testid="node-generate-header"
       />
       <DragHitFrame />
@@ -2672,7 +2698,13 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
               trailing chevron so it READS as a changeable selector (was a bare
               label). Border stays soft at rest, periwinkle when open / hovered;
               the dropdown opens DOWN, over the preview, inside the widget. */}
-          <div className="nodrag relative px-1.5 pt-1.5" onPointerDown={(e) => e.stopPropagation()}>
+          <div
+            className={
+              'nodrag absolute inset-x-0 top-0 z-20 p-1.5 transition-opacity duration-150 focus-within:opacity-100 group-hover/node:opacity-100 ' +
+              (selected || modelMenuOpen || noModel || currentLocked ? 'opacity-100' : 'opacity-0')
+            }
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             <button
               data-testid="node-model-trigger"
               ref={modelBtnRef}
@@ -2761,21 +2793,11 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
             </NodeMenu>
           </div>
 
-          {d.title && (
-            <div
-              data-testid="generate-shot-title"
-              className="nodrag truncate px-3 pt-1 text-[13px] font-semibold text-[color:var(--color-fg)]"
-              title={d.title}
-            >
-              {d.title}
-            </div>
-          )}
-
           {/* THE SCREEN — the preview fills the card and is part of the drag
               handle (the whole card moves; only the controls are nodrag). */}
           <div
             data-testid="node-screen"
-            className="relative mx-3 my-2 min-h-[150px] flex-1 overflow-hidden rounded-[var(--radius-sm)] border-2 border-[color:var(--color-line-soft)] bg-black"
+            className="relative min-h-[150px] flex-1 overflow-hidden rounded-t-[calc(var(--radius-md)-2px)] bg-black"
           >
             {hasResult && d.resultUrl ? (
               <>
@@ -2798,7 +2820,7 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
                     className="seed-develop h-full w-full object-cover"
                   />
                 )}
-                <div className="absolute top-1.5 right-1.5 flex items-center gap-1.5">
+                <div className="absolute top-12 right-1.5 flex items-center gap-1.5">
                   <button
                     type="button"
                     data-testid="reroll"
@@ -2828,6 +2850,8 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
                     </button>
                   )}
                 </div>
+                {/* Below the model bar (it overlays the top edge on hover/select
+                    and would swallow these clicks), above the video controls. */}
                 {/* B-5: mark this take as identity-drifted + reroll keeping the
                     wired character's refs (reroll = re-run; refs re-pulled from
                     the connected cast node → same identity pack). */}
@@ -2838,7 +2862,7 @@ function GenerateNodeDetail({ id, data, selected }: NodeProps) {
                   onClick={() => patch(id, { drifted: !d.drifted } as Partial<GenerateData>)}
                   title={d.drifted ? 'Снять пометку дрейфа образа' : 'Образ персонажа дрейфует'}
                   className={
-                    'nodrag absolute left-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full text-[13px] font-bold leading-none ' +
+                    'nodrag absolute top-12 left-1.5 grid h-6 w-6 place-items-center rounded-full text-[13px] font-bold leading-none ' +
                     (d.drifted
                       ? 'bg-[rgba(var(--accent-rgb),0.9)] text-[color:var(--color-primary-foreground)]'
                       : 'bg-black/55 text-white/75 hover:text-white')
@@ -3752,7 +3776,9 @@ function TypedEdgeDetail({
             pointerEvents: 'all',
           }}
         >
-          {kind && (
+          {/* A valid prompt wire is self-evident (text colour, prompt port);
+              its chip only collided with the frame-port hints beside it. */}
+          {kind && (invalid || selected || kind !== 'text') && (
             <span
               data-testid={`edge-role-${id}`}
               data-invalid={invalid ? 'true' : 'false'}

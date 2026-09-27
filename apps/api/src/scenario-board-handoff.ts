@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { parseFountain, sceneList } from '@seed/screenplay';
 import {
+  BOARD_DURATION_MAX,
+  BOARD_DURATION_MIN,
   BOARD_LIMITS,
   BOARD_NODE_VERSION,
   parseBoardDocument,
@@ -452,7 +454,9 @@ function materializeScenarioShotPlan(input: {
       requiredLocks: shot.requiredLocks,
       unresolvedAssets: shot.unresolvedAssets,
       ...(shot.shotGrammar ? { shot: shot.shotGrammar } : {}),
-      durationSeconds: shot.durationSec,
+      // A shot's screen time can be shorter or longer than any board video model
+      // renders; generate within the board's range and let the cut trim it.
+      durationSeconds: Math.min(BOARD_DURATION_MAX, Math.max(BOARD_DURATION_MIN, shot.durationSec)),
       count: 1 as const,
       status:
         previousGenerateStatus === 'done' || previousGenerateStatus === 'running'
@@ -471,7 +475,7 @@ function materializeScenarioShotPlan(input: {
         id: generateId,
         type: 'generate',
         version: BOARD_NODE_VERSION,
-        position: { x: 940, y },
+        position: { x: 1000, y },
         width: 380,
         height: 300,
         data: generateData,

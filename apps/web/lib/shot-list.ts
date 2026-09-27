@@ -47,10 +47,21 @@ export interface ShotListRow {
   locations: string[];
   /** B-4: compact camera/lens/light/genre grammar label ('' when unset). */
   grammarLabel: string;
+  /** Title of the scene node this shot was planned from, when it still exists. */
+  sceneTitle?: string | undefined;
 }
 
 const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
 const num = (v: unknown): number | undefined => (typeof v === 'number' ? v : undefined);
+
+function sceneTitleOf(
+  nodesById: Map<string, ShotNodeLike>,
+  sceneNodeId: string | undefined,
+): string | undefined {
+  const scene = sceneNodeId ? nodesById.get(sceneNodeId) : undefined;
+  if (scene?.type !== 'scene') return undefined;
+  return str(scene.data?.['title'])?.trim() || undefined;
+}
 
 export function deriveShotList(nodes: ShotNodeLike[], edges: ShotEdgeLike[]): ShotListRow[] {
   const generates = nodes.filter(
@@ -115,6 +126,7 @@ export function deriveShotList(nodes: ShotNodeLike[], edges: ShotEdgeLike[]): Sh
       cast: [...namesOfKind('character'), ...namesOfKind('product')],
       locations: namesOfKind('location'),
       grammarLabel: shotGrammarLabel(d['shot'] as ShotGrammar | undefined),
+      sceneTitle: sceneTitleOf(nodesById, str(d['sourceSceneNodeId'])),
     };
   });
 }
